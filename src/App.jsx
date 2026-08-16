@@ -228,6 +228,12 @@ const GlobalStyle = () => (
     .mm3 .init-item.atual .init-val { color:var(--accent); }
     .mm3 .init-nome { font-size:0.88rem; flex:1; }
     .mm3 .init-turno-tag { font-size:0.62rem; color:var(--accent); text-transform:uppercase; letter-spacing:0.06em; }
+    .mm3 .turno-balao { position:fixed; top:14px; right:14px; z-index:60; background:var(--surface2); border:1px solid var(--accent); border-radius:14px;
+      padding:14px 16px; max-width:320px; box-shadow:0 8px 30px rgba(0,0,0,0.45); }
+    .mm3 .turno-balao-nome { font-family:'Bebas Neue', sans-serif; font-size:1.3rem; color:var(--accent); letter-spacing:0.03em; }
+    .mm3 .turno-balao-aviso { font-size:0.85rem; color:var(--text); margin-bottom:8px; }
+    .mm3 .turno-balao-acao { display:flex; flex-direction:column; gap:6px; font-size:0.74rem; color:var(--muted); background:var(--surface3); border-radius:10px; padding:8px 10px; margin-bottom:8px; }
+    @media (max-width: 640px) { .mm3 .turno-balao { left:10px; right:10px; max-width:none; top:8px; } }
 
     .mm3 .oculto-box { background:var(--surface2); border:1px dashed var(--border); border-radius:10px; padding:10px 12px; margin-bottom:12px; }
     .mm3 .hist-item.oculto { border-style:dashed; opacity:0.9; }
@@ -585,6 +591,7 @@ const CONDICOES_LISTA = [
   { nome: "Paralisado", desc: "Indefeso; não pode agir, exceto ações puramente mentais.", efeito: { aparar: "zero", esquiva: "zero" } },
   { nome: "Surpreso", desc: "Vulnerável e é o último na ordem de iniciativa.", efeito: { aparar: "metade", esquiva: "metade" } },
   { nome: "Transe", desc: "Só presta atenção ao efeito que o mantém em transe." },
+  { nome: "Morto", desc: "Sem pontos de vida e sem chance de resistir; personagem morreu." },
 ];
 const NORMALIZAR_CONDICAO = { "Em transe": "Transe", "Em chamas": "Em Chamas" };
 function normalizarCondicao(nome) { return NORMALIZAR_CONDICAO[nome] || nome; }
@@ -683,6 +690,24 @@ function computeBonusBase(ent, tipo, chave) {
   if (tipo === "defesa") return statDefesa(ent, chave);
   return 0;
 }
+/* processa o efeito colateral de uma mudança de Vida: entrar/sair da condição Morrendo.
+   Retorna um patch parcial de campos da entidade (pvAtual, condicoes, morrendoInfo). */
+function processarMudancaPv(e, novoPvRaw) {
+  const novoPv = Number(novoPvRaw) || 0;
+  const estavaMorrendo = condicaoAtiva(e, "Morrendo");
+  const estavaMorto = condicaoAtiva(e, "Morto");
+  const condicoes = { ...(e?.condicoes || {}) };
+  let morrendoInfo = e?.morrendoInfo || null;
+  if (novoPv <= 0 && !estavaMorrendo && !estavaMorto) {
+    condicoes["Morrendo"] = 1;
+    morrendoInfo = { vidaNegativa: Math.abs(novoPv), contador: 3 };
+  } else if (novoPv > 0 && estavaMorrendo) {
+    delete condicoes["Morrendo"];
+    condicoes["Machucado"] = (condicoes["Machucado"] || 0) + 1;
+    morrendoInfo = null;
+  }
+  return { pvAtual: novoPv, condicoes, morrendoInfo };
+}
 function pvMaxCalc(ent) { return (5 + attr(ent, "vigor")) * (ent?.nivel || 1); }
 function nenMaxCalc(ent) { return (3 + attr(ent, "prontidao")) * (ent?.nivel || 1); }
 function deslocamentoTexto(ent) {
@@ -727,18 +752,24 @@ function valorAlvoComoCD(ent, key) {
   return 10 + bonusPericia(ent, key);
 }
 
-const EFEITO_CATEGORIAS = ["Dano", "Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Outros"];
+const EFEITO_CATEGORIAS = ["Dano", "Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Leitura Mental", "Outros"];
 const SALVAMENTOS_ESCOLHA = ["Fortitude", "Vontade"];
 const AFLICOES_G1 = ["Adoecido", "Caído", "Impedido", "Machucado", "Tonto", "Vulnerável"];
 const AFLICOES_G2 = ["Atordoado", "Compelido", "Em chamas", "Envenenado", "Imóvel", "Indefeso", "Sangrando", "Em transe"];
 const AFLICOES_G3 = ["Controlado", "Incapacitado", "Paralisado"];
+/* categorias de efeito que, ao serem sofridas, geram uma condição contínua que pode
+   ser testada novamente no início dos turnos do alvo para encerrar o efeito */
+const CATEGORIAS_COM_RETESTE = ["Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Leitura Mental"];
+/* categorias que aceitam o checkbox "Grau limitado" */
+const CATEGORIAS_GRAU_LIMITADO = ["Nulificar", "Aflição", "Leitura Mental"];
 
 function efeitoPadrao(categoria) {
   if (categoria === "Dano") return { categoria, graduacao: 0 };
-  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
+  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "", grauLimitado: false, grauMaximo: 3 };
   if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 5, caracteristica: "" };
   if (categoria === "Camuflagem") return { categoria, salvamento: "Fortitude", graduacao: 5, sentidos: [] };
-  if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5 };
+  if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5, grauLimitado: false, grauMaximo: 4 };
+  if (categoria === "Leitura Mental") return { categoria, graduacaoLeitura: 5, grauLimitado: false, grauMaximo: 4 };
   if (categoria === "Outros") return { categoria, texto: "" };
   return { categoria };
 }
@@ -748,7 +779,15 @@ function dadosEfeito(efeito, oponente) {
   if (efeito.categoria === "Enfraquecer") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0), salvLabel: efeito.salvamento };
   if (efeito.categoria === "Camuflagem") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 15 + (efeito.graduacao || 0), salvLabel: efeito.salvamento };
   if (efeito.categoria === "Nulificar") return { bonus: efeito.graduacaoNulificar || 0, cd: 10 + statDefesa(oponente, "vontade"), salvLabel: "Vontade do alvo", quemRolaAtacante: true };
+  if (efeito.categoria === "Leitura Mental") return { bonus: efeito.graduacaoLeitura || 0, cd: 10 + statDefesa(oponente, "vontade"), salvLabel: "Vontade do alvo", quemRolaAtacante: true };
   return { bonus: 0, cd: 10 };
+}
+function limitarGraus(efeito, graus) {
+  if (!efeito.grauLimitado) return graus;
+  const max = efeito.grauMaximo || 0;
+  if (graus > 0 && graus > max) return max;
+  if (graus < 0 && -graus > max) return -max;
+  return graus;
 }
 
 function fmtBonus(n) { return (n >= 0 ? "+" : "") + n; }
@@ -795,6 +834,13 @@ function textoNulificar(graus) {
   if (graus === 2) return "2 graus: nulifica uma habilidade do alvo";
   if (graus === 3) return "3 graus: nulifica todas as habilidades de um tipo de Nen escolhido";
   return "4+ graus: nulifica tudo e deixa o alvo Indefeso";
+}
+function textoLeituraMental(graus) {
+  if (graus <= 0) return "Sem efeito — não superou a Vontade do alvo";
+  if (graus === 1) return "1 grau — Pensamentos superficiais";
+  if (graus === 2) return "2 graus — Pensamentos pessoais";
+  if (graus === 3) return "3 graus — Memória";
+  return "4+ graus — Subconsciente";
 }
 
 /* ---------- resultado visual ---------- */
@@ -1045,7 +1091,7 @@ function VantagemModal({ ctx, onFechar, onToggle }) {
 }
 
 /* ---------- modal de rolagem ---------- */
-function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDano, atualizarCampo }) {
+function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDano, atualizarCampo, atualizarCampos }) {
   const [escolha, setEscolha] = useState(null);
   const [cdManual, setCdManual] = useState(15);
   const [oponenteId, setOponenteId] = useState("");
@@ -1143,19 +1189,37 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
      os efeitos colaterais (dano na vida, condições, etc). Não mexe em estado de UI — quem chama
      decide onde guardar o resultado. Isso permite reaproveitar a mesma lógica tanto no fluxo normal
      quanto no Multiataque (vários alvos/ataques) e no Dividido (efeito com graduação repartida). */
+  /* registra a condição contínua causada por um efeito (Aflição/Enfraquecer/Camuflagem/
+     Nulificar/Leitura Mental) e agenda o reteste no início dos turnos do alvo */
+  const registrarCondicaoRecorrente = (alvo, condNome, cd, salvamento, categoria) => {
+    if (!condNome || !atualizarCampos) return;
+    const condicoes = { ...(alvo.condicoes || {}) };
+    condicoes[condNome] = (condicoes[condNome] || 0) + 1;
+    const testes = [...(alvo.testesRecorrentes || []), { id: uid(), condNome, cd, salvamento, categoria }];
+    atualizarCampos(alvo.id, { condicoes, testesRecorrentes: testes });
+  };
+
   const rolarEfeitoGenerico = (efeito, alvo) => {
     const dados = dadosEfeito(efeito, alvo);
     if (dados.quemRolaAtacante) {
       const dado = rolarD20();
       const r = montarTeste(dado, dados.bonus, dados.cd);
+      const grausLimitados = limitarGraus(efeito, r.graus);
+      const ehLeitura = efeito.categoria === "Leitura Mental";
+      const texto = ehLeitura ? textoLeituraMental(grausLimitados) : textoNulificar(grausLimitados);
       registrar({
         tipo: "rolagem",
-        desc: `${origemAtual.nome} tenta Nulificar em ${alvo.nome}`,
+        desc: `${origemAtual.nome} tenta ${efeito.categoria} em ${alvo.nome}`,
         detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}`,
         total: r.sucesso ? r.grauTexto : "Sem efeito", tipoClasse: r.tipoClasse,
       });
       if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? r.grauTexto : "Sem efeito" });
-      return { r, texto: textoNulificar(r.graus) };
+      if (r.sucesso && grausLimitados > 0) {
+        const condNome = ehLeitura ? "Leitura Mental" : "Nulificado";
+        const cdReteste = 10 + (ehLeitura ? (efeito.graduacaoLeitura || 0) : statDefesa(origemAtual, "vontade"));
+        registrarCondicaoRecorrente(alvo, condNome, cdReteste, "Vontade", efeito.categoria);
+      }
+      return { r, texto };
     }
     const dado = rolarD20();
     const r = montarTeste(dado, dados.bonus, dados.cd);
@@ -1171,7 +1235,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         extra.arremesso = distancia;
       }
     }
-    if (efeito.categoria === "Aflição") extra.texto = r.sucesso ? "Resistiu" : textoAflicao(efeito, r.graus);
+    if (efeito.categoria === "Aflição") extra.texto = r.sucesso ? "Resistiu" : textoAflicao(efeito, limitarGraus(efeito, r.graus));
     if (efeito.categoria === "Enfraquecer") extra.perda = r.sucesso ? 0 : Math.min(Math.abs(r.diff), efeito.graduacao || 0);
     if (efeito.categoria === "Camuflagem") extra.sentidos = r.sucesso ? [] : (efeito.sentidos || []);
     registrar({
@@ -1182,15 +1246,16 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu efeito" });
     if (efeito.categoria === "Dano" && extra.dano > 0) aplicarDano(alvo.id, extra.dano);
-    if (efeito.categoria === "Aflição" && !r.sucesso && atualizarCampo) {
-      const nivel = Math.min(Math.abs(r.graus), 3);
+    if (efeito.categoria === "Aflição" && !r.sucesso && atualizarCampos) {
+      const nivel = Math.min(Math.abs(limitarGraus(efeito, r.graus)), 3);
       const condNome = nivel === 1 ? efeito.grau1 : nivel === 2 ? efeito.grau2 : nivel === 3 ? efeito.grau3 : null;
-      if (condNome) {
-        const nome = normalizarCondicao(condNome);
-        const atuais = { ...(alvo.condicoes || {}) };
-        atuais[nome] = (atuais[nome] || 0) + 1;
-        atualizarCampo(alvo.id, "condicoes", atuais);
-      }
+      if (condNome) registrarCondicaoRecorrente(alvo, normalizarCondicao(condNome), dados.cd, dados.salvLabel, efeito.categoria);
+    }
+    if (efeito.categoria === "Enfraquecer" && !r.sucesso && atualizarCampos) {
+      registrarCondicaoRecorrente(alvo, `Enfraquecido (${efeito.caracteristica || "característica"})`, dados.cd, dados.salvLabel, efeito.categoria);
+    }
+    if (efeito.categoria === "Camuflagem" && !r.sucesso && atualizarCampos) {
+      registrarCondicaoRecorrente(alvo, "Camuflado", dados.cd, dados.salvLabel, efeito.categoria);
     }
     return { r, ...extra };
   };
@@ -1250,13 +1315,14 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [usarDividido, setUsarDividido] = useState(false);
   const [dividAlvo2Id, setDividAlvo2Id] = useState("");
   const [dividGrad, setDividGrad] = useState({});
-  const efeitosResistiveisDividido = efeitosDoAtaque.filter((ef) => ef.categoria !== "Nulificar");
+  const efeitosResistiveisDividido = efeitosDoAtaque.filter((ef) => ef.categoria !== "Nulificar" && ef.categoria !== "Leitura Mental");
   const alvo2Dividido = entidades.find((e2) => e2.id === dividAlvo2Id);
 
   const montarEfeitoCard = (efeito, res) => {
     if (!res) return null;
     if (efeito.categoria === "Dano") return { classe: res.dano === 0 ? "ok" : "dano", titulo: res.dano === 0 ? "Sem dano" : "Dano sofrido (já descontado da Vida)", valor: res.dano, formula: res.arremesso ? `Arremessado ${res.arremesso}m em direção oposta ao atacante` : undefined };
     if (efeito.categoria === "Nulificar") return { classe: res.r.sucesso ? "dano" : "ok", titulo: res.texto };
+    if (efeito.categoria === "Leitura Mental") return { classe: res.r.sucesso ? "dano" : "ok", titulo: res.texto };
     if (efeito.categoria === "Aflição") return { classe: res.r.sucesso ? "ok" : "dano", titulo: res.texto };
     if (efeito.categoria === "Enfraquecer") return { classe: res.perda > 0 ? "dano" : "ok", titulo: res.perda > 0 ? `-${res.perda} em ${efeito.caracteristica || "característica"}` : "Sem efeito" };
     if (efeito.categoria === "Camuflagem") return { classe: res.sentidos.length ? "dano" : "ok", titulo: res.sentidos.length ? `Perde: ${res.sentidos.filter(Boolean).join(", ")}` : "Sem efeito" };
@@ -2356,14 +2422,23 @@ export default function MesaMM3() {
   };
   const aplicarDano = async (entidadeId, dano) => {
     setEntidades((atual) => {
-      const nova = atual.map((e) => (e.id === entidadeId ? { ...e, pvAtual: (e.pvAtual || 0) - dano } : e));
+      const nova = atual.map((e) => (e.id === entidadeId ? { ...e, ...processarMudancaPv(e, (e.pvAtual || 0) - dano) } : e));
       escreverCompartilhado("entidades", nova);
       return nova;
     });
   };
   const atualizarCampo = async (id, campo, valor) => {
     setEntidades((atual) => {
-      const nova = atual.map((e) => (e.id === id ? { ...e, [campo]: valor } : e));
+      const nova = atual.map((e) => (e.id === id ? { ...e, ...(campo === "pvAtual" ? processarMudancaPv(e, valor) : { [campo]: valor }) } : e));
+      escreverCompartilhado("entidades", nova);
+      return nova;
+    });
+  };
+  /* atualiza vários campos de uma entidade de uma vez, de forma atômica (evita duas escritas
+     concorrentes na mesma entidade sobrescreverem uma a outra) */
+  const atualizarCampos = async (id, patch) => {
+    setEntidades((atual) => {
+      const nova = atual.map((e) => (e.id === id ? { ...e, ...patch } : e));
       escreverCompartilhado("entidades", nova);
       return nova;
     });
@@ -2406,6 +2481,90 @@ export default function MesaMM3() {
   };
   const zerarIniciativa = async () => salvarIniciativa(INICIATIVA_VAZIA);
 
+  /* atrasa o turno de uma entidade (só pode ser usado no próprio turno dela) para
+     depois de outra entidade que já esteja na ordem de iniciativa e ainda vá agir depois */
+  const atrasarTurno = async (entidadeId, alvoId) => {
+    const ordem = iniciativa.ordem || [];
+    const idxAtual = ordem.findIndex((o) => o.entidadeId === entidadeId);
+    const idxAlvo = ordem.findIndex((o) => o.entidadeId === alvoId);
+    if (idxAtual === -1 || idxAlvo === -1 || idxAlvo <= idxAtual || idxAtual !== iniciativa.turnoAtual) return;
+    const item = ordem[idxAtual];
+    const semItem = ordem.filter((_, i) => i !== idxAtual);
+    const novoIdxAlvo = semItem.findIndex((o) => o.entidadeId === alvoId);
+    const novaOrdem = [...semItem.slice(0, novoIdxAlvo + 1), item, ...semItem.slice(novoIdxAlvo + 1)];
+    let turnoAtual = idxAtual, rodada = iniciativa.rodada;
+    if (idxAtual >= ordem.length - 1) { turnoAtual = 0; rodada += 1; }
+    await salvarIniciativa({ ...iniciativa, ordem: novaOrdem, turnoAtual, rodada });
+    const prox = novaOrdem[turnoAtual];
+    if (prox) limparTurnoFlags(prox.entidadeId);
+    registrar({ desc: `${item.nome} atrasa o turno para depois de ${ordem[idxAlvo].nome}`, detalhe: "Iniciativa reordenada", total: "Atrasado", tipoClasse: "hs" });
+  };
+
+  /* teste de resistência de Morrendo, feito no início dos turnos do próprio moribundo */
+  const testeDeMorte = async (entidade) => {
+    const cd = Math.max(15, (entidade.morrendoInfo && entidade.morrendoInfo.vidaNegativa) || 15);
+    const dado = rolarD20();
+    const bonus = statDefesa(entidade, "fortitude");
+    const r = montarTeste(dado, bonus, cd);
+    const contadorAtual = (entidade.morrendoInfo && entidade.morrendoInfo.contador) || 3;
+    const novoContador = contadorAtual - 1 + (r.sucesso ? 1 : 0);
+    registrar({
+      tipo: "rolagem", desc: `${entidade.nome} resiste à morte (Fortitude)`,
+      detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`,
+      total: r.sucesso ? "Resistiu (+1 turno)" : "Falhou", tipoClasse: r.tipoClasse,
+    });
+    dispararAnimacao({ modo: "cd", nome: entidade.nome, foto: entidade.foto, nomeAlvo: entidade.nome, fotoAlvo: entidade.foto, dado, bonus, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu!" : "Falhou" });
+    if (novoContador <= 0) {
+      const condicoes = { ...(entidade.condicoes || {}) };
+      delete condicoes["Morrendo"];
+      condicoes["Morto"] = 1;
+      await atualizarCampos(entidade.id, { condicoes, morrendoInfo: null });
+      registrar({ desc: `${entidade.nome} morreu`, detalhe: "Contador de Morrendo chegou a 0", total: "Morto", tipoClasse: "hd" });
+    } else {
+      await atualizarCampos(entidade.id, { morrendoInfo: { ...entidade.morrendoInfo, contador: novoContador } });
+    }
+  };
+
+  /* teste de Tratamento feito por qualquer personagem em um alvo Morrendo, para estabilizá-lo com 1 PV */
+  const testeDeTratamento = async (origem, alvo) => {
+    const cd = Math.max(15, (alvo.morrendoInfo && alvo.morrendoInfo.vidaNegativa) || 15);
+    const dado = rolarD20();
+    const bonus = bonusPericia(origem, "Tratamento");
+    const r = montarTeste(dado, bonus, cd);
+    registrar({
+      tipo: "rolagem", desc: `${origem.nome} tenta Tratamento em ${alvo.nome} (Morrendo)`,
+      detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`,
+      total: r.sucesso ? "Estabilizado com 1 PV" : "Falhou", tipoClasse: r.tipoClasse,
+    });
+    dispararAnimacao({ modo: "cd", nome: origem.nome, foto: origem.foto, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Estabilizado!" : "Falhou" });
+    if (r.sucesso) {
+      const condicoes = { ...(alvo.condicoes || {}) };
+      delete condicoes["Morrendo"];
+      condicoes["Machucado"] = (condicoes["Machucado"] || 0) + 1;
+      await atualizarCampos(alvo.id, { pvAtual: 1, condicoes, morrendoInfo: null });
+    }
+  };
+
+  /* reteste, no início do turno, de uma condição contínua causada por Aflição/Enfraquecer/
+     Camuflagem/Nulificar/Leitura Mental — sucesso encerra o efeito */
+  const retestarCondicao = async (entidade, teste) => {
+    const dado = rolarD20();
+    const bonus = salvBonus(entidade, teste.salvamento === "Vontade" ? "Vontade" : teste.salvamento);
+    const r = montarTeste(dado, bonus, teste.cd);
+    registrar({
+      tipo: "rolagem", desc: `${entidade.nome} repete o teste contra ${teste.condNome} (${teste.salvamento})`,
+      detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${teste.cd}`,
+      total: r.sucesso ? "Encerrou o efeito" : "Continua sob efeito", tipoClasse: r.tipoClasse,
+    });
+    dispararAnimacao({ modo: "cd", nome: entidade.nome, foto: entidade.foto, nomeAlvo: entidade.nome, fotoAlvo: entidade.foto, dado, bonus, total: r.total, cd: teste.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Livre!" : "Falhou" });
+    if (r.sucesso) {
+      const condicoes = { ...(entidade.condicoes || {}) };
+      if (condicoes[teste.condNome] > 1) condicoes[teste.condNome] -= 1; else delete condicoes[teste.condNome];
+      const testesRecorrentes = (entidade.testesRecorrentes || []).filter((t) => t.id !== teste.id);
+      await atualizarCampos(entidade.id, { condicoes, testesRecorrentes });
+    }
+  };
+
   if (authCarregando || carregando) return <div className="mm3"><GlobalStyle /><div className="wrap"><div className="empty">Carregando mesa…</div></div></div>;
   if (!usuario) return <div className="mm3"><GlobalStyle /><TelaLogin onCadastrar={cadastrar} onEntrar={entrar} /></div>;
   if (!identidade) return <div className="mm3"><GlobalStyle /><TelaIdentidade onEscolher={escolherIdentidade} /></div>;
@@ -2421,11 +2580,15 @@ export default function MesaMM3() {
           <button className="link" onClick={trocarIdentidade}>sair</button>
         </div>
       </div>
+      <TurnoBalao iniciativa={iniciativa} entidades={entidades} identidade={identidade}
+        onFimDeTurno={avancarTurno} onTesteDeMorte={testeDeMorte} onRetestarCondicao={retestarCondicao} />
       <div className="wrap">
         <div className="split-wrap">
           <div className="split-col col-fichas">
             <FichasTab entidades={entidades} salvar={salvarEntidades} identidade={identidade} registrar={registrar}
-              onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa} />
+              onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} atualizarCampos={atualizarCampos}
+              onRolarIniciativa={rolarIniciativa} iniciativa={iniciativa} onFimDeTurno={avancarTurno} onAtrasarTurno={atrasarTurno}
+              onTratarMorrendo={testeDeTratamento} />
           </div>
           <div className="split-col col-lateral">
             <div className="tabs-row">
@@ -2441,7 +2604,7 @@ export default function MesaMM3() {
           </div>
         </div>
       </div>
-      {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} />}
+      {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} atualizarCampos={atualizarCampos} />}
       {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} onFechar={() => setAcaoCtx(null)} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} />}
       <AnimacaoOverlay eventos={eventosAnim} onTerminar={removerEventoAnim} />
     </div>
@@ -2558,21 +2721,36 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
             <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
           </div>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.condicaoExtra} onChange={(e) => upd("condicaoExtra", e.target.checked)} />Condição extra</label>
+          <label className="checkbox-row"><input type="checkbox" checked={!!efeito.grauLimitado} onChange={(e) => upd("grauLimitado", e.target.checked)} />Grau limitado</label>
+          {efeito.grauLimitado && (
+            <div style={{ marginBottom: 8 }}>
+              <label className="label">Grau Máximo</label>
+              <input type="number" min={1} max={3} value={efeito.grauMaximo} onChange={(e) => upd("grauMaximo", Math.max(1, Math.min(3, Number(e.target.value))))} />
+            </div>
+          )}
           <label className="label">Falha (um grau)</label>
           <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
             <select value={efeito.grau1} onChange={(e) => upd("grau1", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G1.map((a) => <option key={a} value={a}>{a}</option>)}</select>
             {efeito.condicaoExtra && <select value={efeito.grau1b} onChange={(e) => upd("grau1b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G1.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
           </div>
-          <label className="label">Falha (dois graus)</label>
-          <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
-            <select value={efeito.grau2} onChange={(e) => upd("grau2", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            {efeito.condicaoExtra && <select value={efeito.grau2b} onChange={(e) => upd("grau2b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
-          </div>
-          <label className="label">Falha (três graus)</label>
-          <div className={efeito.condicaoExtra ? "grid2" : ""}>
-            <select value={efeito.grau3} onChange={(e) => upd("grau3", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            {efeito.condicaoExtra && <select value={efeito.grau3b} onChange={(e) => upd("grau3b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
-          </div>
+          {(!efeito.grauLimitado || efeito.grauMaximo >= 2) && (
+            <>
+              <label className="label">Falha (dois graus)</label>
+              <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
+                <select value={efeito.grau2} onChange={(e) => upd("grau2", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</select>
+                {efeito.condicaoExtra && <select value={efeito.grau2b} onChange={(e) => upd("grau2b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
+              </div>
+            </>
+          )}
+          {(!efeito.grauLimitado || efeito.grauMaximo >= 3) && (
+            <>
+              <label className="label">Falha (três graus)</label>
+              <div className={efeito.condicaoExtra ? "grid2" : ""}>
+                <select value={efeito.grau3} onChange={(e) => upd("grau3", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</select>
+                {efeito.condicaoExtra && <select value={efeito.grau3b} onChange={(e) => upd("grau3b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
+              </div>
+            </>
+          )}
         </>
       )}
       {efeito.categoria === "Enfraquecer" && (
@@ -2603,6 +2781,27 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
           <div className="field-note">CD: 10 + Vontade do alvo</div>
           <label className="label">Graduação de Nulificar</label>
           <input type="number" value={efeito.graduacaoNulificar} onChange={(e) => upd("graduacaoNulificar", Number(e.target.value))} />
+          <label className="checkbox-row" style={{ marginTop: 8 }}><input type="checkbox" checked={!!efeito.grauLimitado} onChange={(e) => upd("grauLimitado", e.target.checked)} />Grau limitado</label>
+          {efeito.grauLimitado && (
+            <div style={{ marginTop: 8 }}>
+              <label className="label">Grau Máximo</label>
+              <input type="number" min={1} value={efeito.grauMaximo} onChange={(e) => upd("grauMaximo", Math.max(1, Number(e.target.value)))} />
+            </div>
+          )}
+        </>
+      )}
+      {efeito.categoria === "Leitura Mental" && (
+        <>
+          <div className="field-note">Teste de efeito oposto por um teste de Vontade do alvo. CD: 10 + Vontade do alvo.</div>
+          <label className="label">Graduação de Leitura Mental</label>
+          <input type="number" value={efeito.graduacaoLeitura} onChange={(e) => upd("graduacaoLeitura", Number(e.target.value))} />
+          <label className="checkbox-row" style={{ marginTop: 8 }}><input type="checkbox" checked={!!efeito.grauLimitado} onChange={(e) => upd("grauLimitado", e.target.checked)} />Grau limitado</label>
+          {efeito.grauLimitado && (
+            <div style={{ marginTop: 8 }}>
+              <label className="label">Grau Máximo</label>
+              <input type="number" min={1} value={efeito.grauMaximo} onChange={(e) => upd("grauMaximo", Math.max(1, Number(e.target.value)))} />
+            </div>
+          )}
         </>
       )}
       {efeito.categoria === "Outros" && (
@@ -2936,18 +3135,25 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   );
 }
 
-function FichasTab({ entidades, salvar, identidade, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa }) {
+/* uma entidade antiga pode não ter donoPapel salvo; nesse caso, deduzimos pelo rótulo */
+function papelDoDono(e) {
+  if (e.donoPapel) return e.donoPapel;
+  return (e.rotulo === "Criatura" || e.rotulo === "NPC") ? "mestre" : "jogador";
+}
+
+function FichasTab({ entidades, salvar, identidade, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, atualizarCampos, onRolarIniciativa, iniciativa, onFimDeTurno, onAtrasarTurno, onTratarMorrendo }) {
   const [editando, setEditando] = useState(null);
   const [busca, setBusca] = useState("");
   const [vantagemCtx, setVantagemCtx] = useState(null);
   const rotulosProprio = identidade.papel === "mestre" ? ["Criatura", "NPC"] : ["Personagem", "Invocação"];
   const meusTodos = entidades.filter((e) => e.dono === identidade.nome);
   const meus = busca.trim() ? meusTodos.filter((e) => e.nome.toLowerCase().includes(busca.trim().toLowerCase())) : meusTodos;
-  const outros = entidades.filter((e) => e.dono !== identidade.nome);
+  /* jogadores não podem ver as fichas do mestre; o mestre vê todas */
+  const outros = entidades.filter((e) => e.dono !== identidade.nome && (identidade.papel === "mestre" || papelDoDono(e) !== "mestre"));
 
   const salvarFicha = async (f) => {
     const criando = !f.id;
-    const nova = criando ? [...entidades, { ...f, id: uid(), dono: identidade.nome }] : entidades.map((e) => (e.id === f.id ? { ...f } : e));
+    const nova = criando ? [...entidades, { ...f, id: uid(), dono: identidade.nome, donoPapel: identidade.papel }] : entidades.map((e) => (e.id === f.id ? { ...f } : e));
     await salvar(nova);
     registrar({ desc: `${identidade.nome} ${criando ? "criou" : "editou"} a ficha "${f.nome}"`, detalhe: f.rotulo, total: criando ? "Criada" : "Editada", tipoClasse: criando ? "hs" : "hw" });
     setEditando(null);
@@ -2973,12 +3179,14 @@ function FichasTab({ entidades, salvar, identidade, registrar, onAbrirRolagem, o
       <div className="section-title">Minhas fichas ({identidade.papel === "mestre" ? "criaturas e NPCs" : "personagens e invocações"})</div>
       <input type="text" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ marginBottom: 10 }} />
       {meus.length === 0 && <div className="card empty">Nenhuma ficha encontrada.</div>}
-      {meus.map((e) => <EntidadeItem key={e.id} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar} />)}
+      {meus.map((e) => <EntidadeItem key={e.id} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAtualizarCampos={atualizarCampos} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar} identidade={identidade}
+        iniciativa={iniciativa} onFimDeTurno={onFimDeTurno} onAtrasarTurno={onAtrasarTurno} onTratarMorrendo={onTratarMorrendo} />)}
       <button className="btn btn-accent btn-block" onClick={() => setEditando("novo")} style={{ marginBottom: 20 }}>+ Nova ficha</button>
 
       <div className="section-title">Outras fichas na mesa</div>
       {outros.length === 0 && <div className="card empty">Ninguém mais cadastrou fichas ainda.</div>}
-      {outros.map((e) => <EntidadeItem key={e.id} e={e} onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} />)}
+      {outros.map((e) => <EntidadeItem key={e.id} e={e} onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} identidade={identidade}
+        iniciativa={iniciativa} onFimDeTurno={onFimDeTurno} />)}
 
       {vantagemCtx && <VantagemModal ctx={vantagemCtx} onFechar={() => setVantagemCtx(null)} onToggle={toggleVantagem} />}
     </div>
@@ -2989,7 +3197,7 @@ function StatChip({ label, value, onClick }) {
   return <button className="stat-chip" onClick={onClick}>{label} <b>{value >= 0 ? "+" : ""}{value}</b></button>;
 }
 
-function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar }) {
+function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAtualizarCampos, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, identidade, iniciativa, onFimDeTurno, onAtrasarTurno, onTratarMorrendo }) {
   const [aberto, setAberto] = useState(false);
   const [secoes, setSecoes] = useState({ acoes: false, manobras: false, ataques: false, defesas: false, atributos: false, pericias: false, condicoes: false });
   const toggleSecao = (k) => setSecoes((s) => ({ ...s, [k]: !s[k] }));
@@ -2997,6 +3205,18 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
   const abrirAtaque = (ataque) => onAbrirRolagem({ origem: e, tipo: "ataque", ataque, label: `${e.nome} · ${ataque.nome || "Ataque"}` });
   const abrirAcao = (acao) => onAbrirAcao({ origem: e, acao });
   const pvMax = pvMaxCalc(e), nenMax = nenMaxCalc(e);
+
+  /* ----- controle de turno (visível em qualquer ficha) ----- */
+  const ordemIni = (iniciativa && iniciativa.ordem) || [];
+  const idxNaOrdem = ordemIni.findIndex((o) => o.entidadeId === e.id);
+  const ehTurnoDeE = iniciativa && idxNaOrdem !== -1 && idxNaOrdem === iniciativa.turnoAtual;
+  const podeControlarE = identidade && (identidade.papel === "mestre" || e.dono === identidade.nome);
+  const candidatosAtraso = ehTurnoDeE ? ordemIni.slice(idxNaOrdem + 1) : [];
+  const [atrasoAlvoId, setAtrasoAlvoId] = useState("");
+
+  /* ----- estabilizar personagem Morrendo (Tratamento) ----- */
+  const alvosMorrendo = (entidades || []).filter((j) => j.id !== e.id && condicaoAtiva(j, "Morrendo"));
+  const [tratamentoMorrendoId, setTratamentoMorrendoId] = useState("");
 
   /* ----- ações de descanso ----- */
   const [descansoAberto, setDescansoAberto] = useState(false);
@@ -3046,6 +3266,11 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
             {e.oponente && <span className="badge-status">Engajado</span>}
             {e.sustentado && <span className="badge-status">Sustentando</span>}
           </div>
+          {ehTurnoDeE && podeControlarE && (
+            <div className="actions" onClick={(ev) => ev.stopPropagation()}>
+              <button className="btn btn-accent btn-sm" onClick={onFimDeTurno}>Fim de Turno</button>
+            </div>
+          )}
           {editavel && (
             <div className="actions" onClick={(ev) => ev.stopPropagation()}>
               <button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button>
@@ -3067,7 +3292,11 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
             <div className="rotulo">{e.rotulo} · Nv.{e.nivel} · {e.tipoNen} · {e.dono}</div>
           </div>
         </div>
-        {editavel && <div className="actions"><button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button><button className="btn btn-danger btn-sm" onClick={onExcluir}>Excluir</button></div>}
+        <div className="actions">
+          {ehTurnoDeE && podeControlarE && <button className="btn btn-accent btn-sm" onClick={onFimDeTurno}>Fim de Turno</button>}
+          {editavel && <button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button>}
+          {editavel && <button className="btn btn-danger btn-sm" onClick={onExcluir}>Excluir</button>}
+        </div>
       </div>
 
       <div className="status-toggle-row">
@@ -3104,9 +3333,33 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
       {editavel && (
         <div style={{ marginBottom: 10, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
           <button className="btn btn-ghost btn-sm" onClick={() => onRolarIniciativa(e)}>⚄ Iniciativa</button>
+          {ehTurnoDeE && candidatosAtraso.length > 0 && (
+            <>
+              <select value={atrasoAlvoId} onChange={(ev) => setAtrasoAlvoId(ev.target.value)} style={{ width: "auto" }}>
+                <option value="">Atrasar turno para depois de…</option>
+                {candidatosAtraso.map((o) => <option key={o.entidadeId} value={o.entidadeId}>{o.nome}</option>)}
+              </select>
+              <button className="btn btn-ghost btn-sm" disabled={!atrasoAlvoId} onClick={() => { onAtrasarTurno(e.id, atrasoAlvoId); setAtrasoAlvoId(""); }}>Atrasar Turno</button>
+            </>
+          )}
           <button className="btn btn-ghost btn-sm" onClick={() => setDescansoAberto((s) => !s)}>Ações de descanso</button>
           {e.defendendo && <span className="badge-status" onClick={() => onAtualizarCampo(e.id, "defendendo", false)}>Defendendo ×</span>}
           {e.mirando && <span className="badge-status" onClick={() => onAtualizarCampo(e.id, "mirando", false)}>Mirando ×</span>}
+        </div>
+      )}
+
+      {editavel && alvosMorrendo.length > 0 && (
+        <div className="subcard2" style={{ marginBottom: 10 }}>
+          <div style={{ marginBottom: 8 }}><b>Tratamento de emergência</b><div className="field-note">Teste de Tratamento ({fmtBonus(bonusPericia(e, "Tratamento"))}) para estabilizar um personagem Morrendo com 1 PV.</div></div>
+          <select value={tratamentoMorrendoId} onChange={(ev) => setTratamentoMorrendoId(ev.target.value)} style={{ marginBottom: 8 }}>
+            <option value="">Selecione um alvo Morrendo…</option>
+            {alvosMorrendo.map((j) => <option key={j.id} value={j.id}>{j.nome}</option>)}
+          </select>
+          <button className="btn btn-accent btn-sm btn-block" disabled={!tratamentoMorrendoId} onClick={() => {
+            const alvo = alvosMorrendo.find((j) => j.id === tratamentoMorrendoId);
+            if (alvo && onTratarMorrendo) onTratarMorrendo(e, alvo);
+            setTratamentoMorrendoId("");
+          }}>Tentar Estabilizar</button>
         </div>
       )}
 
@@ -3420,6 +3673,36 @@ function HistoricoTab({ historico, onAtualizar, identidade, registrar }) {
 }
 
 /* ---------- iniciativa ---------- */
+/* ---------- balão de turno: aparece só para o dono da ficha cujo turno é agora ---------- */
+function TurnoBalao({ iniciativa, entidades, identidade, onFimDeTurno, onTesteDeMorte, onRetestarCondicao }) {
+  const ordem = iniciativa.ordem || [];
+  const atualItem = ordem[iniciativa.turnoAtual];
+  if (!atualItem) return null;
+  const entidade = entidades.find((e) => e.id === atualItem.entidadeId);
+  if (!entidade || entidade.dono !== identidade.nome) return null;
+  const morrendo = condicaoAtiva(entidade, "Morrendo");
+  const testes = entidade.testesRecorrentes || [];
+  return (
+    <div className="turno-balao">
+      <div className="turno-balao-nome">{entidade.nome}</div>
+      <div className="turno-balao-aviso">É seu turno!</div>
+      {morrendo && (
+        <div className="turno-balao-acao">
+          <span>Morrendo — teste de resistência (Fortitude, CD {Math.max(15, (entidade.morrendoInfo && entidade.morrendoInfo.vidaNegativa) || 15)})</span>
+          <button className="btn btn-accent btn-sm" onClick={() => onTesteDeMorte(entidade)}>Rolar teste</button>
+        </div>
+      )}
+      {testes.map((t) => (
+        <div className="turno-balao-acao" key={t.id}>
+          <span>Repetir teste contra {t.condNome} ({t.salvamento}, CD {t.cd})</span>
+          <button className="btn btn-accent btn-sm" onClick={() => onRetestarCondicao(entidade, t)}>Rolar teste</button>
+        </div>
+      ))}
+      <button className="btn btn-ghost btn-sm btn-block" style={{ marginTop: 8 }} onClick={onFimDeTurno}>Fim de Turno</button>
+    </div>
+  );
+}
+
 function IniciativaTab({ iniciativa, identidade, onAvancar, onRetroceder, onZerar }) {
   const ordem = iniciativa.ordem || [];
   const ehMestre = identidade?.papel === "mestre";
