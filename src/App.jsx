@@ -455,7 +455,7 @@ const VANTAGENS = [
   { nome: "Avaliação", desc: "Escolha um alvo que possa perceber e faça um teste de Intuição como uma ação livre, oposto pelo teste de Enganação do alvo. Se você vencer, peça ao mestre o atributo que deseja descobrir com exatidão ou o tipo de Nen do alvo. A cada grau de sucesso adicional, você descobre um atributo a mais do alvo ou o tipo de Nen caso não tenha sido escolhido anteriormente. Se perder o teste oposto, você não descobre nada.", graduacaoMax: 1 },
   { nome: "Bem Informado", desc: "Quando encontrar um indivíduo ou organização pela primeira vez, você pode fazer um teste das perícias Investigação ou Persuasão para ver se seu personagem já ouviu alguma coisa sobre o alvo. Use as diretrizes para obter informações na descrição da perícia Investigação para determinar o nível de informação que você obtém. Você recebe apenas um teste por alvo na primeira vez que o encontrar." },
   { nome: "Benefício", desc: "Você possui um benefício, escolha entre uma das 6 opções. Graduações adicionais nessa vantagem permite você escolher o benefício adicional.\nAmbidestria: você é igualmente apto com as duas mãos, e não sofre penalidades de circunstância por usar sua mão inepta." },
-  { nome: "Crítico Aprimorado", desc: "Aumente sua ameaça de crítico com um ataque específico (escolhido quando você adquire esta vantagem) em 1, permitindo que você tire um acerto crítico com um 19 ou 20 naturais. Cada graduação adicional se aplica a um ataque diferente ou aumenta sua ameaça de crítico com um mesmo ataque em mais 1, até um máximo de ameaça de 16-20 com 4 graduações." },
+  { nome: "Crítico Aprimorado", desc: "Escolha uma habilidade específica sua (ao editar esta vantagem). Cada graduação aumenta a ameaça de crítico dessa habilidade em 1, até um máximo de ameaça 16-20 com 4 graduações. A rolagem de ataque dessa habilidade passa a considerar crítico automaticamente.", graduacaoMax: 4, pedeHabilidade: true },
   { nome: "De Pé", desc: "Você passa de caído para de pé sem custo de ação sem a necessidade de um teste da perícia Acrobacia.", graduacaoMax: 1 },
   { nome: "Defesa Aprimorada", desc: "Quando usa a ação defender-se e rolar um teste de resistência e tirar um resultado abaixo de 10 no d20, o resultado se torna a 10.", graduacaoMax: 1 },
   { nome: "Derrubar Aprimorado", desc: "Quando acerta um ataque desarmado, você pode fazer um teste de derrubar imediatamente contra o alvo como uma ação livre. Seu ataque desarmado causa dano normal e conta como o teste de ataque inicial exigido para derrubar seu oponente.", graduacaoMax: 1 },
@@ -620,9 +620,275 @@ function aplicarAjusteDefesa(valor, ajustes) {
   return v;
 }
 function condicaoAtiva(ent, nome) { return !!(ent?.condicoes && ent.condicoes[nome]); }
+function limiarCritico(ent, ataqueId) {
+  if (!ataqueId) return 20;
+  const v = (ent?.vantagens || []).find((x) => x.nome === "Crítico Aprimorado" && x.alvoId === ataqueId);
+  if (!v) return 20;
+  return Math.max(16, 20 - (v.graduacoes || 1));
+}
 
 /* ---------- helpers de valores derivados ---------- */
-function attr(ent, key) { return (ent && ent.atributos && ent.atributos[key]) || 0; }
+function attrBase(ent, key) { return (ent && ent.atributos && ent.atributos[key]) || 0; }
+function attr(ent, key) { return attrBase(ent, key) + bonusAtributoPassivo(ent, key); }
+
+/* ---------- efeitos passivos (habilidades que não fazem rolagem: viram bônus fixos na ficha) ----------
+   Cada tipo define custoBase (pontos por graduação), extras/falhas (checkboxes que ajustam o custo,
+   e quando é numericamente claro, também entram no cálculo), e aplicar1()/aplicar2() que somam os
+   efeitos num acumulador. aplicar1 roda antes de saber os atributos finais (pode alterar atributos e
+   tamanho); aplicar2 roda depois (pode usar attr() já com os bônus de aplicar1, útil para deslocamento). */
+const SENTIDOS_BASE = ["Visão", "Audição", "Olfato", "Paladar"];
+const SENTIDOS_ESPECIAIS = ["Infravisão", "Percepção às Cegas", "Rastrear", "Sentido de Perigo", "Sentido Sísmico", "Ver Nen", "Visão no Escuro"];
+
+const PODERES_PASSIVOS = [
+  { id: "camuflagem", nome: "Camuflagem (pessoal)", categoria: "Coringa", custoBase: 2,
+    desc: "Escolha um sentido: você fica camuflado contra ele (CD 15 + graduação para ser detectado por outro sentido ou por Percepção). O sentido Tato não pode ser camuflado.",
+    campoEscolha: { chave: "sentido", label: "Sentido camuflado", opcoes: SENTIDOS_BASE },
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { if (inst.campos?.sentido) acc.notas.push(`Camuflado contra ${inst.campos.sentido}`); } },
+
+  { id: "caracteristica", nome: "Característica Aumentada", categoria: "Fortificador", custoBase: 2,
+    desc: "Aumenta um atributo em graduações iguais à graduação deste efeito, até o máximo de nível+4.",
+    campoEscolha: { chave: "atributo", label: "Atributo aumentado", opcoes: ATRIBUTOS.map((a) => a.k), rotulos: ATRIBUTOS },
+    extras: [
+      { chave: "explosao", label: "Explosão (+3 no atributo até o início do próximo turno; ao acabar, fica Fadigado — ative manualmente)", custoPorGrad: 1 },
+      { chave: "brutal", label: "Brutal (+2 na CD ao acertar um crítico com este atributo)", custoPorGrad: 1 },
+    ], falhas: [],
+    aplicar1(ent, inst, acc) {
+      const chave = inst.campos?.atributo; if (!chave) return;
+      const base = attrBase(ent, chave);
+      const teto = (ent?.nivel || 1) + 4;
+      const bonus = Math.max(0, Math.min(inst.graduacao || 0, teto - base));
+      acc.atributos[chave] = (acc.atributos[chave] || 0) + bonus;
+    }, aplicar2() {} },
+
+  { id: "comunicacao", nome: "Comunicação", categoria: "Emissão", custoBase: 2,
+    desc: "Comunicação por um meio diferente da voz normal. Alcance base 10m, dobrando a cada graduação adicional.",
+    campoEscolha: { chave: "meio", label: "Meio de comunicação", opcoes: ["Telepatia", "Rádio (Nen)", "Vibração", "Outro"] },
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { const g = inst.graduacao || 0; acc.comunicacaoAlcance = Math.max(acc.comunicacaoAlcance, 10 * Math.pow(2, Math.max(0, g))); if (inst.campos?.meio) acc.notas.push(`Comunicação via ${inst.campos.meio} (${Math.round(10 * Math.pow(2, Math.max(0, g)))}m)`); } },
+
+  { id: "sorte", nome: "Controle de Sorte", categoria: "Manipulador", custoBase: 6,
+    desc: "Você tem pontos de sorte (igual à graduação) para refazer uma rolagem de d20 e ficar com o maior resultado. Recupera todos ao descansar.",
+    extras: [
+      { chave: "azar", label: "Azar (pode inverter para o alvo ficar com o pior resultado)", custoPorGrad: 1 },
+      { chave: "sortudo", label: "Sortudo (recupera 1 ponto ao tirar um crítico natural)", custoPorGrad: 1 },
+    ],
+    falhas: [
+      { chave: "ataque", label: "Ataque (usar em outros exige um teste de ataque, mesmo em aliados)", custoPorGrad: -1 },
+      { chave: "azarado", label: "Azarado (perde 1 ponto ao tirar uma falha crítica, mesmo se mudou o resultado)", custoPorGrad: -1 },
+      { chave: "resistir", label: "Resistir (o alvo pode resistir com Vontade CD 15+graduação)", custoPorGrad: -1 },
+    ],
+    aplicar1(ent, inst, acc) { acc.pontosSorteMax = Math.max(acc.pontosSorteMax, inst.graduacao || 0); }, aplicar2() {} },
+
+  { id: "crescimento", nome: "Crescimento", categoria: "Modelador", custoBase: 6,
+    desc: "Para cada graduação, Tamanho, Força, Vigor e Alcance de Ataque aumentam 1, mas Esquiva, Aparar e Furtividade diminuem 1.",
+    extras: [
+      { chave: "musculosDensos", label: "Músculos Densos (controla o quanto cresce, sem precisar do tamanho máximo)", custoPorGrad: 1 },
+      { chave: "soTamanho", label: "Só Tamanho (não perde Esquiva/Aparar, mas também não ganha Vigor)", custoFixo: 1 },
+    ],
+    falhas: [ { chave: "pesadoDemais", label: "Pesado Demais (-1 Agilidade por graduação, dinâmico)", custoDinamico: (g) => -2 * g } ],
+    aplicar1(ent, inst, acc) {
+      const g = inst.graduacao || 0; const soT = !!inst.extrasAtivos?.soTamanho;
+      acc.tamanho += g;
+      acc.atributos.forca = (acc.atributos.forca || 0) + g;
+      if (!soT) acc.atributos.vigor = (acc.atributos.vigor || 0) + g;
+      if (!soT) { acc.esquiva -= g; acc.aparar -= g; }
+      acc.furtividade -= g;
+      if (inst.extrasAtivos?.pesadoDemais) acc.atributos.agilidade = (acc.atributos.agilidade || 0) - g;
+      if (g > 0) acc.notas.push(`Alcance de ataque +${g} graduação(ões) (Crescimento)`);
+    }, aplicar2() {} },
+
+  { id: "cura", nome: "Cura", categoria: "Fortificador", custoBase: 3,
+    desc: "Ao tocar um alvo, teste de Cura CD 10. Se bem-sucedido, cura graduação em PV (dobro por 2 graus de sucesso, triplo por 3, e assim vai). Não faz rolagem automática aqui — use como uma ação normal e aplique o resultado manualmente na Vida do alvo.",
+    extras: [ { chave: "energizante", label: "Energizante (cura uma condição em vez de PV, por grau de sucesso)", custoPorGrad: 2 } ],
+    falhas: [
+      { chave: "empatico", label: "Empático (não precisa mais de teste, mas cada ponto curado é descontado da sua própria Vida)", custoFixo: -1 },
+      { chave: "temporario", label: "Temporário (cura é PV temporário, ligado ao começo do próximo turno)", custoPorGrad: -2 },
+    ],
+    aplicar1() {}, aplicar2(ent, inst, acc) { acc.notas.push(`Cura: graduação ${inst.graduacao || 0} (aplique manualmente ao usar)`); } },
+
+  { id: "deflexao", nome: "Deflexão", categoria: "Fortificador", custoBase: 6,
+    desc: "Pode usar Aparar para se defender de ataques à distância, e recebe um bônus em Aparar igual à graduação.",
+    extras: [
+      { chave: "queVaiVolta", label: "O Que Vai Volta (2+ graduações: pode refletir o ataque no atacante)", custoPorGrad: 1 },
+      { chave: "multitarefas", label: "Multitarefas (pode usar Deflexão num ataque adicional na rodada)", custoPorGrad: 1 },
+    ], falhas: [],
+    aplicar1(ent, inst, acc) { acc.aparar += (inst.graduacao || 0); }, aplicar2() {} },
+
+  { id: "encolhimento", nome: "Encolhimento", categoria: "Modelador", custoBase: 2,
+    desc: "Para cada graduação, Tamanho, Força e Agilidade diminuem 1, mas Esquiva, Aparar e Furtividade aumentam 1.",
+    extras: [
+      { chave: "forcaNormal", label: "Força Normal (não reduz mais Força e Agilidade)", custoPorGrad: 2 },
+      { chave: "encolhedor", label: "Encolhedor (equipamentos e itens também encolhem com você)", custoPorGrad: 1 },
+    ], falhas: [],
+    aplicar1(ent, inst, acc) {
+      const g = inst.graduacao || 0; const fn = !!inst.extrasAtivos?.forcaNormal;
+      acc.tamanho -= g;
+      if (!fn) { acc.atributos.forca = (acc.atributos.forca || 0) - g; acc.atributos.agilidade = (acc.atributos.agilidade || 0) - g; }
+      acc.esquiva += g; acc.aparar += g; acc.furtividade += g;
+    }, aplicar2() {} },
+
+  { id: "escavacao", nome: "Escavação", categoria: "Modelador", custoBase: 1,
+    desc: "Move-se através da terra e areia a uma graduação de velocidade igual à sua graduação de Escavação -3.",
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { acc.deslocamentos.escavacao = Math.max(acc.deslocamentos.escavacao, (inst.graduacao || 0) - 3); acc.deslocamentos.temEscavacao = true; } },
+
+  { id: "membrosExtras", nome: "Membros Extras", categoria: "Modelador", custoBase: 4,
+    desc: "Cada graduação concede um membro manipulador extra (considerado inábil). +1 em Aparar e Fintar por graduação.",
+    extras: [], falhas: [],
+    aplicar1(ent, inst, acc) { acc.membrosExtras += (inst.graduacao || 0); acc.aparar += (inst.graduacao || 0); }, aplicar2() {} },
+
+  { id: "movimento", nome: "Movimento Especial", categoria: "Coringa", custoBase: 3,
+    desc: "Para cada graduação, escolha uma forma especial de movimento: Andar na Água, Balançar-se, Deslizar, Escalar Paredes ou Permear.",
+    campoEscolha: { chave: "opcoes", multi: true, label: "Opções (uma por graduação)", opcoes: ["Andar na Água", "Balançar-se", "Deslizar", "Escalar Paredes", "Permear"] },
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { (inst.campos?.opcoes || []).forEach((o) => acc.notas.push(`Movimento: ${o}`)); } },
+
+  { id: "natacao", nome: "Natação", categoria: "Coringa", custoBase: 1,
+    desc: "Velocidade aquática igual à sua velocidade terrestre -1. Com 2 graduações, igual à terrestre; a cada graduação acima, +1.",
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) {
+      const g = inst.graduacao || 0; if (g <= 0) return;
+      const idxAgil = Math.max(-2, Math.min(24, attr(ent, "agilidade")));
+      let idxAgua = g === 1 ? idxAgil - 1 : idxAgil + (g - 2);
+      acc.deslocamentos.natacao = Math.max(acc.deslocamentos.natacao, idxAgua);
+      acc.deslocamentos.temNatacao = true;
+    } },
+
+  { id: "protecao", nome: "Proteção", categoria: "Fortificador", custoBase: 4,
+    desc: "Reduz qualquer dano em uma quantidade igual à graduação. Se a graduação for maior que o nível, o excedente reduz a CD do teste de Resistência em vez de reduzir dano.",
+    extras: [], falhas: [],
+    aplicar1(ent, inst, acc) {
+      const g = inst.graduacao || 0; const nivel = ent?.nivel || 1;
+      acc.reducaoDano += Math.min(g, nivel);
+      const excedente = Math.max(0, g - nivel);
+      if (excedente > 0) acc.notas.push(`Proteção: ${excedente} graduação(ões) excedente(s) reduzem a CD do teste de Resistência em vez de reduzir dano (aplique manualmente)`);
+    }, aplicar2() {} },
+
+  { id: "regeneracao", nome: "Regeneração", categoria: "Modelador", custoBase: 3,
+    desc: "Recupera em PV a graduação neste efeito por turno. Com 10 graduações, recupera membros perdidos em 1 minuto.",
+    extras: [], falhas: [],
+    aplicar1(ent, inst, acc) { acc.regenPorTurno += (inst.graduacao || 0); }, aplicar2() {} },
+
+  { id: "salto", nome: "Salto", categoria: "Coringa", custoBase: 2,
+    desc: "Saltos para cima com graduação de distância igual à graduação -1, ou o dobro em parábola.",
+    extras: [ { chave: "quicar", label: "Quicar (pode dividir o movimento do salto em direções diferentes)", custoPorGrad: 1 } ],
+    falhas: [ { chave: "poderTotal", label: "Poder Total (só pode saltar com a distância máxima)", custoPorGrad: -1 } ],
+    aplicar1() {}, aplicar2(ent, inst, acc) {
+      const g = Math.max(0, (inst.graduacao || 0) - 1);
+      acc.notas.push(`Salto: ${graduacaoParaDistancia(g)}m para cima ou ${graduacaoParaDistancia(g) * 2}m em parábola`);
+    } },
+
+  { id: "sentidos", nome: "Sentidos", categoria: "Coringa", custoBase: 3,
+    desc: "Escolha um sentido especial (aumentar graduações neste efeito melhora esse sentido).",
+    campoEscolha: { chave: "sentido", label: "Sentido especial", opcoes: SENTIDOS_ESPECIAIS },
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { if (inst.campos?.sentido) acc.notas.push(`${inst.campos.sentido} (graduação ${inst.graduacao || 0})`); } },
+
+  { id: "sentidoRemoto", nome: "Sentido Remoto", categoria: "Emissão", custoBase: 4,
+    desc: "Desloca um ou mais sentidos para longe. Custa 4 pontos por graduação para um tipo, 5 para dois tipos, 6 para todos os tipos.",
+    campoEscolha: { chave: "abrangencia", label: "Abrangência", opcoes: ["Um tipo de sentido", "Dois tipos", "Todos os tipos"] },
+    extras: [
+      { chave: "camuflagemSR", label: "Camuflagem (o sentido remoto ganha camuflagem)", custoPorGrad: 1 },
+      { chave: "formaAstral", label: "Forma Astral (o sentido remoto se move e atravessa objetos)", custoPorGrad: 3 },
+      { chave: "simultanea", label: "Simultânea (usa o sentido remoto e os normais ao mesmo tempo, sem ficar vulnerável)", custoPorGrad: 2 },
+    ], falhas: [],
+    custoBasePorAbrangencia: { "Um tipo de sentido": 4, "Dois tipos": 5, "Todos os tipos": 6 },
+    aplicar1() {}, aplicar2(ent, inst, acc) { acc.notas.push(`Sentido Remoto (${inst.campos?.abrangencia || "um tipo"}, alcance graduação ${inst.graduacao || 0})`); } },
+
+  { id: "velocidade", nome: "Velocidade", categoria: "Fortificador", custoBase: 3,
+    desc: "Move-se mais rápido que o normal. Graduações somam na sua graduação de deslocamento terrestre.",
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { acc.deslocamentos.base += (inst.graduacao || 0); } },
+
+  { id: "voo", nome: "Voo", categoria: "Coringa", custoBase: 5,
+    desc: "Pode voar (incluindo flutuar no lugar) com graduação de velocidade de voo igual à graduação neste efeito.",
+    extras: [ { chave: "aquatico", label: "Aquático (velocidade na água igual à graduação em Voo)", custoPorGrad: 1 } ],
+    falhas: [
+      { chave: "asas", label: "Asas (não pode voar se estiver imobilizado, amarrado ou preso)", custoPorGrad: -1 },
+      { chave: "levitacao", label: "Levitação (só se move na vertical, não para os lados)", custoPorGrad: -1 },
+      { chave: "planar", label: "Planar (não ganha altura com o voo, plana a até o dobro da altitude)", custoPorGrad: -2 },
+      { chave: "plataforma", label: "Plataforma (depende de ficar de pé ou sentado sobre algo; falha em salvamento ou ser agarrado derruba)", custoPorGrad: -1 },
+    ],
+    aplicar1() {}, aplicar2(ent, inst, acc) {
+      const g = inst.graduacao || 0;
+      let vooEfetivo = g;
+      if (inst.extrasAtivos?.asas && (condicaoAtiva(ent, "Amarrado") || condicaoAtiva(ent, "Agarrado") || condicaoAtiva(ent, "Imóvel"))) vooEfetivo = 0;
+      acc.deslocamentos.voo = Math.max(acc.deslocamentos.voo, vooEfetivo);
+      acc.deslocamentos.temVoo = true;
+      if (inst.extrasAtivos?.aquatico) { acc.deslocamentos.natacao = Math.max(acc.deslocamentos.natacao, g); acc.deslocamentos.temNatacao = true; }
+    } },
+];
+
+function custoPassivo(inst, def) {
+  if (!def) return 0;
+  const g = Math.max(0, inst?.graduacao || 0);
+  let base = def.custoBasePorAbrangencia ? (def.custoBasePorAbrangencia[inst?.campos?.abrangencia] || def.custoBase) : def.custoBase;
+  let total = base * g;
+  (def.extras || []).forEach((ex) => {
+    if (!inst?.extrasAtivos?.[ex.chave]) return;
+    if (ex.custoFixo) total += ex.custoFixo;
+    else if (ex.custoPorGrad) total += ex.custoPorGrad * g;
+  });
+  (def.falhas || []).forEach((fa) => {
+    if (!inst?.extrasAtivos?.[fa.chave]) return;
+    if (fa.custoDinamico) total += fa.custoDinamico(g);
+    else if (fa.custoFixo) total += fa.custoFixo;
+    else if (fa.custoPorGrad) total += fa.custoPorGrad * g;
+  });
+  return Math.max(1, total);
+}
+
+function acumuladorPassivoVazio() {
+  return {
+    atributos: {}, tamanho: 0, aparar: 0, esquiva: 0, furtividade: 0,
+    reducaoDano: 0, regenPorTurno: 0, pontosSorteMax: 0, membrosExtras: 0,
+    comunicacaoAlcance: 0, deslocamentos: { base: 0, voo: 0, natacao: 0, escavacao: 0, temVoo: false, temNatacao: false, temEscavacao: false },
+    notas: [],
+  };
+}
+function habilidadesPassivasAtivas(ent) {
+  return (ent?.ataques || []).filter((a) => a.tipo === "passiva" && a.passivo?.ativo && a.passivo?.tipoId);
+}
+function modificadoresPassivos(ent) {
+  const acc = acumuladorPassivoVazio();
+  const ativos = habilidadesPassivasAtivas(ent);
+  ativos.forEach((a) => {
+    const def = PODERES_PASSIVOS.find((p) => p.id === a.passivo.tipoId);
+    if (def) def.aplicar1(ent, a.passivo, acc);
+  });
+  ativos.forEach((a) => {
+    const def = PODERES_PASSIVOS.find((p) => p.id === a.passivo.tipoId);
+    if (def) def.aplicar2(ent, a.passivo, acc);
+  });
+  return acc;
+}
+function bonusAtributoPassivo(ent, key) {
+  if (!ent) return 0;
+  let total = 0;
+  habilidadesPassivasAtivas(ent).forEach((a) => {
+    const def = PODERES_PASSIVOS.find((p) => p.id === a.passivo.tipoId);
+    if (!def) return;
+    const acc = acumuladorPassivoVazio();
+    def.aplicar1(ent, a.passivo, acc);
+    total += acc.atributos[key] || 0;
+  });
+  return total;
+}
+function tamanhoPassivo(ent) { return modificadoresPassivos(ent).tamanho; }
+function deslocamentoIndexPara(ent, chave) {
+  const acc = modificadoresPassivos(ent);
+  if (chave === "voo") return acc.deslocamentos.voo > 0 ? acc.deslocamentos.voo : null;
+  if (chave === "natacao") return acc.deslocamentos.natacao !== 0 ? acc.deslocamentos.natacao : null;
+  if (chave === "escavacao") return acc.deslocamentos.escavacao !== -3 ? acc.deslocamentos.escavacao : null;
+  return null;
+}
+function deslocamentoTextoDe(idx) {
+  const gi = Math.max(-2, Math.min(24, Math.round(idx || 0)));
+  return DESLOC_TABELA[gi + 2];
+}
+
+/* ---------- helpers de valores derivados ---------- */
 
 function bonusVantagemToggle(ent, chave) {
   let total = 0;
@@ -648,7 +914,8 @@ function bonusPericia(ent, nomePericia) {
   if (!ent) return 0;
   const p = PERICIAS.find((x) => x.nome === nomePericia);
   if (!p) return 0;
-  return attr(ent, p.atributo) + ((ent.periciaPontos && ent.periciaPontos[nomePericia]) || 0) + bonusVantagemToggle(ent, nomePericia) + calcModCondicoes(ent).testesGerais;
+  const passivo = nomePericia === "Furtividade" ? modificadoresPassivos(ent).furtividade : 0;
+  return attr(ent, p.atributo) + ((ent.periciaPontos && ent.periciaPontos[nomePericia]) || 0) + bonusVantagemToggle(ent, nomePericia) + calcModCondicoes(ent).testesGerais + passivo;
 }
 function melhorDe(ent, nomesPericias) {
   return Math.max(...nomesPericias.map((n) => bonusPericia(ent, n)));
@@ -674,6 +941,9 @@ function statDefesa(ent, key) {
     else if (key === "vontade") base = attr(ent, "prontidao");
     else if (key === "resistencia") base = attr(ent, "vigor");
     total = base + bonusVantagemToggle(ent, key);
+    const passivo = modificadoresPassivos(ent);
+    if (key === "aparar") total += passivo.aparar;
+    if (key === "esquiva") total += passivo.esquiva;
   }
   const mods = calcModCondicoes(ent);
   if (key === "fortitude") total += mods.testesGerais + mods.fortitude + somaEfeitoManobra(ent, "agora");
@@ -692,18 +962,24 @@ function computeBonusBase(ent, tipo, chave) {
 function pvMaxCalc(ent) { return (5 + attr(ent, "vigor")) * (ent?.nivel || 1); }
 function nenMaxCalc(ent) { return (3 + attr(ent, "prontidao")) * (ent?.nivel || 1); }
 function deslocamentoTexto(ent) {
-  const g = Math.max(-2, Math.min(24, attr(ent, "agilidade")));
+  const g = Math.max(-2, Math.min(24, attr(ent, "agilidade") + modificadoresPassivos(ent).deslocamentos.base));
   return DESLOC_TABELA[g + 2];
 }
 function pontosPoderMax(ent) {
   const base = ent?.rotulo === "Invocação" ? 15 : 25;
-  return base + (Math.max(1, ent?.nivel || 1) - 1) * 15;
+  const complic = Math.max(0, Math.min(2, ent?.complicacoes?.pontos || 0));
+  return base + (Math.max(1, ent?.nivel || 1) - 1) * 15 + complic;
+}
+function custoAtaque(a) {
+  if (a.equipamento) return 0;
+  if (a.tipo === "passiva") return custoPassivo(a.passivo, PODERES_PASSIVOS.find((p) => p.id === a.passivo?.tipoId));
+  return a.pp || 0;
 }
 function pontosPoderGastos(ent) {
   const custoAtr = Object.values(ent?.atributos || {}).reduce((s, v) => s + (v || 0), 0) * 2;
   const custoPer = Object.values(ent?.periciaPontos || {}).reduce((s, v) => s + (v || 0), 0) * 1;
   const custoVant = (ent?.vantagens || []).reduce((s, v) => s + (v.graduacoes || 1), 0) * 1;
-  const custoHabilidades = (ent?.ataques || []).reduce((s, a) => s + (a.equipamento ? 0 : (a.pp || 0)), 0);
+  const custoHabilidades = (ent?.ataques || []).reduce((s, a) => s + custoAtaque(a), 0);
   return custoAtr + custoPer + custoVant + custoHabilidades;
 }
 function pontosEquipamentoMax(ent) {
@@ -767,11 +1043,11 @@ function calcGraus(diff) {
   return -Math.floor((-diff - 1) / 5) - 1;
 }
 function rolarD20() { return Math.floor(Math.random() * 20) + 1; }
-function montarTeste(dado, bonus, cd) {
+function montarTeste(dado, bonus, cd, limiarCrit = 20) {
   const total = dado + bonus;
   const diff = total - cd;
   const graus = calcGraus(diff);
-  const ehCrit = dado === 20;
+  const ehCrit = dado >= limiarCrit;
   let tipoClasse, grauLabel, grauTexto, desc;
   if (graus > 0) {
     tipoClasse = ehCrit ? "hc" : "hs";
@@ -1130,7 +1406,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const bonusFinal = info.bonus + bonusTreinoValor;
     const dado = rolarD20();
     const defVal = (10 + statDefesa(oponente, info.defKey));
-    const r = montarTeste(dado, bonusFinal, defVal);
+    const r = montarTeste(dado, bonusFinal, defVal, limiarCritico(origemAtual, contexto.ataque?.id));
     setAtaqueAcertoR(r);
     consumirAjudaSeHouver();
     consumirNossoAlvo();
@@ -1170,6 +1446,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       const nivelAtacante = Math.max(1, origemAtual.nivel || 1);
       const graduacaoDano = Math.min(efeito.graduacao || 0, nivelAtacante);
       extra.dano = r.sucesso ? 0 : graduacaoDano * Math.abs(r.graus);
+      extra.dano = Math.max(0, extra.dano - (modificadoresPassivos(alvo).reducaoDano || 0));
       if (!r.sucesso && Math.abs(r.graus) >= 2) {
         const graduacaoArremesso = Math.floor((efeito.graduacao || 0) / 2);
         let distancia = graduacaoParaDistancia(graduacaoArremesso);
@@ -1232,7 +1509,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const bonusFinal = info.bonus + penalidade;
     const dado = rolarD20();
     const defVal = (10 + statDefesa(alvoMA, info.defKey));
-    const r = montarTeste(dado, bonusFinal, defVal);
+    const r = montarTeste(dado, bonusFinal, defVal, limiarCritico(origemAtual, contexto.ataque?.id));
     setMultiAtaques((s) => [...s, { id: idMA, alvo: alvoMA, penalidade, r, efeitosR: {} }]);
     registrar({
       tipo: "rolagem",
@@ -2674,26 +2951,105 @@ function RichTextEditor({ value, onChange, placeholder }) {
 }
 
 /* ---------- habilidade (form) ---------- */
+function PassivoEditor({ passivo, onMudar }) {
+  const def = PODERES_PASSIVOS.find((p) => p.id === passivo?.tipoId);
+  const upd = (campo, valor) => onMudar({ ...passivo, [campo]: valor });
+  const updCampo = (chave, valor) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), [chave]: valor } });
+  const toggleExtra = (chave) => onMudar({ ...passivo, extrasAtivos: { ...(passivo.extrasAtivos || {}), [chave]: !passivo.extrasAtivos?.[chave] } });
+  const mudarTipo = (novoId) => onMudar({ tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, ativo: passivo?.ativo || false });
+  const custo = def ? custoPassivo(passivo, def) : 0;
+  return (
+    <div className="subcard2" style={{ marginBottom: 10 }}>
+      <label className="label">Tipo de efeito passivo</label>
+      <select value={passivo?.tipoId || ""} onChange={(e) => mudarTipo(e.target.value)} style={{ marginBottom: 8 }}>
+        <option value="">Escolha um efeito…</option>
+        {PODERES_PASSIVOS.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+      </select>
+      {def && (
+        <>
+          <div className="field-note" style={{ marginBottom: 8 }}>{def.desc}</div>
+          <div className="grid2" style={{ marginBottom: 8 }}>
+            <div><label className="label">Graduação</label><input type="number" min={0} value={passivo.graduacao || 0} onChange={(e) => upd("graduacao", Math.max(0, Number(e.target.value)))} /></div>
+            <div><label className="label">Custo calculado (pontos de poder)</label><input type="number" value={custo} disabled /></div>
+          </div>
+          {def.campoEscolha && !def.campoEscolha.multi && (
+            <div style={{ marginBottom: 8 }}>
+              <label className="label">{def.campoEscolha.label}</label>
+              <select value={passivo.campos?.[def.campoEscolha.chave] || ""} onChange={(e) => updCampo(def.campoEscolha.chave, e.target.value)}>
+                <option value="">Escolha…</option>
+                {def.campoEscolha.opcoes.map((o) => <option key={o} value={o}>{def.campoEscolha.rotulos ? def.campoEscolha.rotulos.find((r) => r.k === o)?.l || o : o}</option>)}
+              </select>
+            </div>
+          )}
+          {def.campoEscolha && def.campoEscolha.multi && (
+            <div style={{ marginBottom: 8 }}>
+              <label className="label">{def.campoEscolha.label}</label>
+              {def.campoEscolha.opcoes.map((o) => (
+                <label className="checkbox-row" key={o}>
+                  <input type="checkbox" checked={(passivo.campos?.opcoes || []).includes(o)}
+                    onChange={(e) => {
+                      const atuais = passivo.campos?.opcoes || [];
+                      updCampo("opcoes", e.target.checked ? [...atuais, o] : atuais.filter((x) => x !== o));
+                    }} />
+                  {o}
+                </label>
+              ))}
+            </div>
+          )}
+          {(def.extras || []).length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div className="label">Extras</div>
+              {def.extras.map((ex) => (
+                <label className="checkbox-row" key={ex.chave}>
+                  <input type="checkbox" checked={!!passivo.extrasAtivos?.[ex.chave]} onChange={() => toggleExtra(ex.chave)} />
+                  {ex.label}
+                </label>
+              ))}
+            </div>
+          )}
+          {(def.falhas || []).length > 0 && (
+            <div style={{ marginBottom: 8 }}>
+              <div className="label">Falhas</div>
+              {def.falhas.map((fa) => (
+                <label className="checkbox-row" key={fa.chave}>
+                  <input type="checkbox" checked={!!passivo.extrasAtivos?.[fa.chave]} onChange={() => toggleExtra(fa.chave)} />
+                  {fa.label}
+                </label>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
 function AtaqueForm({ ataque, onMudar, onRemover }) {
   const [extrasAberto, setExtrasAberto] = useState(false);
   const upd = (campo, valor) => onMudar({ ...ataque, [campo]: valor });
   const updEfeito = (idx, novo) => { const arr = [...ataque.efeitos]; arr[idx] = novo; upd("efeitos", arr); };
   const addEfeito = () => upd("efeitos", [...ataque.efeitos, { id: uid(), ...efeitoPadrao("Dano") }]);
   const rmEfeito = (idx) => upd("efeitos", ataque.efeitos.filter((_, i) => i !== idx));
+  const ehPassiva = ataque.tipo === "passiva";
+  const alternarTipo = () => upd("tipo", ehPassiva ? "ativa" : "passiva");
   return (
     <div className="subcard">
       <div className="row-inline"><input type="text" placeholder="Nome da habilidade" value={ataque.nome} onChange={(e) => upd("nome", e.target.value)} /><button className="small-btn" onClick={onRemover}>×</button></div>
-      <div style={{ marginBottom: 10 }}>
-        <label className="label">Tipo de acerto</label>
-        <select value={ataque.tipoAcerto} onChange={(e) => upd("tipoAcerto", e.target.value)}>{TIPOS_ACERTO.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}</select>
-      </div>
-      <div className="grid2" style={{ marginBottom: 10 }}>
-        <div>
-          <label className="label">{ataque.equipamento ? "Custo (pontos de equipamento)" : "Custo (pontos de poder)"}</label>
-          <input type="number" min={0} value={ataque.pp || 0} onChange={(e) => upd("pp", Math.max(0, Number(e.target.value)))} />
+      {!ehPassiva && (
+        <div style={{ marginBottom: 10 }}>
+          <label className="label">Tipo de acerto</label>
+          <select value={ataque.tipoAcerto} onChange={(e) => upd("tipoAcerto", e.target.value)}>{TIPOS_ACERTO.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}</select>
         </div>
+      )}
+      <div className="grid2" style={{ marginBottom: 10 }}>
+        {!ehPassiva && (
+          <div>
+            <label className="label">{ataque.equipamento ? "Custo (pontos de equipamento)" : "Custo (pontos de poder)"}</label>
+            <input type="number" min={0} value={ataque.pp || 0} onChange={(e) => upd("pp", Math.max(0, Number(e.target.value)))} />
+          </div>
+        )}
         <label className="checkbox-row" style={{ alignSelf: "end", marginBottom: 11 }}>
-          <input type="checkbox" checked={!!ataque.equipamento} onChange={(e) => upd("equipamento", e.target.checked)} />
+          <input type="checkbox" checked={!!ataque.equipamento} onChange={(e) => upd("equipamento", e.target.checked)} disabled={ehPassiva} />
           Equipamento
         </label>
       </div>
@@ -2730,34 +3086,52 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
           <input type="number" min={0} value={ataque.custoNen || 0} onChange={(e) => upd("custoNen", Math.max(0, Number(e.target.value)))} />
         </div>
       </div>
-      <div className="acoes-header" onClick={() => setExtrasAberto((s) => !s)}>
-        <div className="section-title" style={{ marginBottom: 0 }}>Extras</div>
-        <span className={"arrow" + (extrasAberto ? " open" : "")}>▶</span>
-      </div>
-      {extrasAberto && (
-        <div className="subcard2" style={{ marginBottom: 10 }}>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!!ataque.extras?.dividido}
-              onChange={(e) => upd("extras", { ...(ataque.extras || {}), dividido: e.target.checked, multiataque: e.target.checked ? false : !!ataque.extras?.multiataque })} />
-            Dividido <span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>(+1 ponto por graduação)</span>
-          </label>
-          <div className="field-note" style={{ marginBottom: 10 }}>
-            Um efeito resistível que funciona em um alvo pode ser dividido entre dois alvos diferentes. O atacante escolhe quantas graduações se aplicam a cada alvo. Cada graduação adicional deste modificador permite que o poder seja dividido mais uma vez. Não pode ser combinado com Multiataque.
+
+      <button className={"btn btn-block " + (ehPassiva ? "btn-accent" : "btn-ghost")} onClick={alternarTipo} style={{ marginBottom: 10 }}>
+        {ehPassiva ? "Habilidade Passiva — clique para tornar Ativa" : "Habilidade Ativa — clique para tornar Passiva"}
+      </button>
+      {ehPassiva && <div className="field-note" style={{ marginBottom: 10 }}>Habilidades passivas não fazem rolagem: elas ficam ligadas/desligadas na ficha e aplicam o efeito direto nos cálculos do personagem.</div>}
+
+      {!ehPassiva && (
+        <>
+          <div className="acoes-header" onClick={() => setExtrasAberto((s) => !s)}>
+            <div className="section-title" style={{ marginBottom: 0 }}>Extras</div>
+            <span className={"arrow" + (extrasAberto ? " open" : "")}>▶</span>
           </div>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!!ataque.extras?.multiataque}
-              onChange={(e) => upd("extras", { ...(ataque.extras || {}), multiataque: e.target.checked, dividido: e.target.checked ? false : !!ataque.extras?.dividido })} />
-            Multiataque <span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>(+2 pontos por graduação)</span>
-          </label>
-          <div className="field-note">
-            Permite fazer um único ataque extra por ataque. Ao acertar, pode fazer esse ataque extra contra o mesmo alvo com -10 no teste de ataque, ou contra um alvo diferente engajado no combate com -5. Não pode ser combinado com Dividido.
-          </div>
-        </div>
+          {extrasAberto && (
+            <div className="subcard2" style={{ marginBottom: 10 }}>
+              <label className="checkbox-row">
+                <input type="checkbox" checked={!!ataque.extras?.dividido}
+                  onChange={(e) => upd("extras", { ...(ataque.extras || {}), dividido: e.target.checked, multiataque: e.target.checked ? false : !!ataque.extras?.multiataque })} />
+                Dividido <span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>(+1 ponto por graduação)</span>
+              </label>
+              <div className="field-note" style={{ marginBottom: 10 }}>
+                Um efeito resistível que funciona em um alvo pode ser dividido entre dois alvos diferentes. O atacante escolhe quantas graduações se aplicam a cada alvo. Cada graduação adicional deste modificador permite que o poder seja dividido mais uma vez. Não pode ser combinado com Multiataque.
+              </div>
+              <label className="checkbox-row">
+                <input type="checkbox" checked={!!ataque.extras?.multiataque}
+                  onChange={(e) => upd("extras", { ...(ataque.extras || {}), multiataque: e.target.checked, dividido: e.target.checked ? false : !!ataque.extras?.dividido })} />
+                Multiataque <span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>(+2 pontos por graduação)</span>
+              </label>
+              <div className="field-note">
+                Permite fazer um único ataque extra por ataque. Ao acertar, pode fazer esse ataque extra contra o mesmo alvo com -10 no teste de ataque, ou contra um alvo diferente engajado no combate com -5. Não pode ser combinado com Dividido.
+              </div>
+            </div>
+          )}
+
+          <div className="section-title">Efeitos</div>
+          {ataque.efeitos.map((ef, i) => <EfeitoForm key={ef.id} efeito={ef} onMudar={(novo) => updEfeito(i, novo)} onRemover={() => rmEfeito(i)} />)}
+          <button className="btn btn-ghost btn-sm" onClick={addEfeito} style={{ marginBottom: 12 }}>+ Efeito</button>
+        </>
       )}
 
-      <div className="section-title">Efeitos</div>
-      {ataque.efeitos.map((ef, i) => <EfeitoForm key={ef.id} efeito={ef} onMudar={(novo) => updEfeito(i, novo)} onRemover={() => rmEfeito(i)} />)}
-      <button className="btn btn-ghost btn-sm" onClick={addEfeito} style={{ marginBottom: 12 }}>+ Efeito</button>
+      {ehPassiva && (
+        <>
+          <div className="section-title">Efeito passivo</div>
+          <PassivoEditor passivo={ataque.passivo || { tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {}, ativo: false }} onMudar={(novo) => upd("passivo", novo)} />
+        </>
+      )}
+
       <label className="label">Descrição / texto da habilidade</label>
       <RichTextEditor value={ataque.textoFormatado || ""} onChange={(html) => upd("textoFormatado", html)} placeholder="Descreva a habilidade…" />
     </div>
@@ -2775,6 +3149,7 @@ function fichaPadrao(rotulos) {
     periciaPontos: { ...PERICIA_PONTOS_VAZIO },
     ataques: [],
     vantagens: [],
+    complicacoes: { texto: "", pontos: 0 },
   };
 }
 
@@ -2785,6 +3160,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
     return { ...base, ...inicial, atributos: { ...ATRIBUTOS_VAZIOS, ...(inicial.atributos || {}) }, periciaPontos: { ...PERICIA_PONTOS_VAZIO, ...(inicial.periciaPontos || {}) }, vantagens: inicial.vantagens || [] };
   });
   const [erro, setErro] = useState("");
+  const [complicOpen, setComplicOpen] = useState(false);
 
   const upd = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const maxAtr = atributoMax(f.nivel);
@@ -2793,7 +3169,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   const updPericia = (nome, v) => setF((s) => ({ ...s, periciaPontos: { ...s.periciaPontos, [nome]: Math.max(0, Math.min(periciaPontosMax(s.nivel), v)) } }));
 
   const updAtaque = (idx, novo) => { const arr = [...f.ataques]; arr[idx] = novo; upd("ataques", arr); };
-  const addAtaque = () => upd("ataques", [...f.ataques, { id: uid(), nome: "", tipoAcerto: "corpo", custoVida: 0, custoNen: 0, extras: {}, efeitos: [{ id: uid(), ...efeitoPadrao("Dano") }] }]);
+  const addAtaque = () => upd("ataques", [...f.ataques, { id: uid(), nome: "", tipo: "ativa", tipoAcerto: "corpo", custoVida: 0, custoNen: 0, extras: {}, efeitos: [{ id: uid(), ...efeitoPadrao("Dano") }], passivo: { tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {}, ativo: false } }]);
   const rmAtaque = (idx) => upd("ataques", f.ataques.filter((_, i) => i !== idx));
 
   const updVantagem = (idx, campo, valor) => { const arr = [...f.vantagens]; arr[idx] = { ...arr[idx], [campo]: valor }; upd("vantagens", arr); };
@@ -2933,6 +3309,12 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
             {info?.mecanica?.pedeTexto && (
               <input type="text" placeholder="Inimigo escolhido" value={v.textoExtra || ""} onChange={(e) => updVantagem(i, "textoExtra", e.target.value)} style={{ marginBottom: 8 }} />
             )}
+            {info?.pedeHabilidade && (
+              <select value={v.alvoId || ""} onChange={(e) => updVantagem(i, "alvoId", e.target.value)} style={{ marginBottom: 8 }}>
+                <option value="">Habilidade afetada…</option>
+                {(f.ataques || []).filter((a) => a.nome.trim()).map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
+              </select>
+            )}
           </div>
         );
       })}
@@ -2942,6 +3324,20 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       <div className="section-title">Pontos de Poder</div>
       <div className={"pp-box" + (excedido ? " excedido" : "")}><span>Gastos / Máximo</span><span className="pp-val">{ppGastos} / {ppMax}</span></div>
       {eqMax > 0 && <div className={"pp-box" + (eqExcedido ? " excedido" : "")}><span>Equipamento gasto / máximo</span><span className="pp-val">{eqGastos} / {eqMax}</span></div>}
+
+      <div className="divider" />
+      <div className="section-title colapsavel" onClick={() => setComplicOpen((s) => !s)} style={{ cursor: "pointer" }}>
+        Complicações {complicOpen ? "▾" : "▸"}
+      </div>
+      {complicOpen && (
+        <div style={{ marginBottom: 10 }}>
+          <label className="label">Descreva as complicações do personagem</label>
+          <textarea rows={4} value={f.complicacoes?.texto || ""} onChange={(e) => upd("complicacoes", { ...(f.complicacoes || {}), texto: e.target.value })} style={{ marginBottom: 8 }} />
+          <label className="label">Pontos de Poder extras concedidos por complicações (máx. 2)</label>
+          <input type="number" min={0} max={2} value={f.complicacoes?.pontos || 0}
+            onChange={(e) => upd("complicacoes", { ...(f.complicacoes || {}), pontos: Math.max(0, Math.min(2, Number(e.target.value))) })} />
+        </div>
+      )}
 
       <div className="divider" />
       <div className="section-title">Habilidades</div>
@@ -3016,8 +3412,14 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
   const toggleSecao = (k) => setSecoes((s) => ({ ...s, [k]: !s[k] }));
   const abrirStat = (tipo, chave, label) => onAbrirRolagem({ origem: e, tipo, chave, label: `${e.nome} · ${label}` });
   const abrirAtaque = (ataque) => onAbrirRolagem({ origem: e, tipo: "ataque", ataque, label: `${e.nome} · ${ataque.nome || "Ataque"}` });
+  const alternarPassiva = (ataque) => {
+    if (!onAtualizarCampo) return;
+    const novos = (e.ataques || []).map((x) => (x.id === ataque.id ? { ...x, passivo: { ...x.passivo, ativo: !x.passivo?.ativo } } : x));
+    onAtualizarCampo(e.id, "ataques", novos);
+  };
   const abrirAcao = (acao) => onAbrirAcao({ origem: e, acao });
   const pvMax = pvMaxCalc(e), nenMax = nenMaxCalc(e);
+  const passivos = modificadoresPassivos(e);
 
   /* ----- ações de descanso ----- */
   const [descansoAberto, setDescansoAberto] = useState(false);
@@ -3295,10 +3697,16 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
           {secoes.ataques && (
             <div className="chip-row">
               {e.ataques.map((a) => (
-                <button key={a.id} className={"stat-chip ataque-chip" + (itemQuebrado(a) ? " item-quebrado" : "")} onClick={() => abrirAtaque(a)}>
-                  {a.nome || "(sem nome)"} <b>{TIPOS_ACERTO.find((t) => t.v === a.tipoAcerto)?.l}</b>
-                  {itemQuebrado(a) && <b style={{ color: "var(--danger, #e05a5a)" }}> · Quebrado</b>}
-                </button>
+                a.tipo === "passiva" ? (
+                  <button key={a.id} className={"stat-chip vantagem-chip" + (a.passivo?.ativo ? " ativo" : "")} onClick={() => (editavel ? alternarPassiva(a) : null)} disabled={!editavel}>
+                    {a.nome || "(sem nome)"} <b>{PODERES_PASSIVOS.find((p) => p.id === a.passivo?.tipoId)?.nome || "passiva"}</b>
+                  </button>
+                ) : (
+                  <button key={a.id} className={"stat-chip ataque-chip" + (itemQuebrado(a) ? " item-quebrado" : "")} onClick={() => abrirAtaque(a)}>
+                    {a.nome || "(sem nome)"} <b>{TIPOS_ACERTO.find((t) => t.v === a.tipoAcerto)?.l}</b>
+                    {itemQuebrado(a) && <b style={{ color: "var(--danger, #e05a5a)" }}> · Quebrado</b>}
+                  </button>
+                )
               ))}
             </div>
           )}
@@ -3351,6 +3759,33 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {(passivos.notas.length > 0 || passivos.reducaoDano > 0 || passivos.regenPorTurno > 0 || passivos.comunicacaoAlcance > 0 || passivos.pontosSorteMax > 0 || passivos.deslocamentos.temVoo || passivos.deslocamentos.temNatacao || passivos.deslocamentos.temEscavacao || passivos.membrosExtras > 0 || passivos.tamanho !== 0) && (
+        <div className="stat-group">
+          <div className="stat-group-label">Efeitos Passivos Ativos</div>
+          <div className="readonly-grid">
+            {passivos.tamanho !== 0 && <div className="ro-row"><span>Tamanho</span><b>{passivos.tamanho >= 0 ? "+" : ""}{passivos.tamanho}</b></div>}
+            {passivos.reducaoDano > 0 && <div className="ro-row"><span>Redução de Dano</span><b>{passivos.reducaoDano}</b></div>}
+            {passivos.regenPorTurno > 0 && <div className="ro-row"><span>Regeneração/turno</span><b>{passivos.regenPorTurno} PV</b></div>}
+            {passivos.membrosExtras > 0 && <div className="ro-row"><span>Membros Extras</span><b>{passivos.membrosExtras}</b></div>}
+            {passivos.comunicacaoAlcance > 0 && <div className="ro-row"><span>Alcance de Comunicação</span><b>{Math.round(passivos.comunicacaoAlcance)}m</b></div>}
+            {passivos.deslocamentos.temVoo && <div className="ro-row"><span>Voo</span><b>{deslocamentoTextoDe(passivos.deslocamentos.voo)}</b></div>}
+            {passivos.deslocamentos.temNatacao && <div className="ro-row"><span>Natação</span><b>{deslocamentoTextoDe(passivos.deslocamentos.natacao)}</b></div>}
+            {passivos.deslocamentos.temEscavacao && <div className="ro-row"><span>Escavação</span><b>{deslocamentoTextoDe(passivos.deslocamentos.escavacao)}</b></div>}
+          </div>
+          {passivos.pontosSorteMax > 0 && (
+            <div className="ro-row" style={{ marginTop: 6 }}>
+              <span>Pontos de Sorte</span>
+              <span>
+                {editavel && <button className="small-btn" onClick={() => onAtualizarCampo(e.id, "pontosSorteAtual", Math.max(0, (e.pontosSorteAtual ?? passivos.pontosSorteMax) - 1))}>-</button>}
+                {" "}{e.pontosSorteAtual ?? passivos.pontosSorteMax}/{passivos.pontosSorteMax}{" "}
+                {editavel && <button className="small-btn" onClick={() => onAtualizarCampo(e.id, "pontosSorteAtual", Math.min(passivos.pontosSorteMax, (e.pontosSorteAtual ?? passivos.pontosSorteMax) + 1))}>+</button>}
+              </span>
+            </div>
+          )}
+          {passivos.notas.length > 0 && <div className="field-note" style={{ marginTop: 6 }}>{passivos.notas.join(" · ")}</div>}
         </div>
       )}
 
