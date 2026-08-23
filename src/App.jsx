@@ -4,7 +4,7 @@ import {
   getShared, setShared, ouvirShared,
   ouvirEntidades, salvarEntidade, removerEntidadeDoc,
   ouvirHistorico, adicionarHistorico,
-  migrarDadosAntigos,
+  migrarDadosAntigos, ouvirErrosSalvamento,
 } from "./firebase.js";
 
 /* ---------- estilo global ---------- */
@@ -109,6 +109,23 @@ const GlobalStyle = () => (
     .mm3 .ataque-chip b { color:var(--accent); }
     .mm3 .item-quebrado { opacity:0.65; border-style:dashed; }
     .mm3 .vantagem-chip.ativo { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+    .mm3 .passiva-chip { gap:7px; }
+    .mm3 .passiva-chip-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .15s ease, box-shadow .15s ease; }
+    .mm3 .passiva-chip.ativo { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+    .mm3 .passiva-chip.ativo .passiva-chip-dot { background:var(--accent); box-shadow:0 0 6px var(--accent); }
+    .mm3 .passiva-chip:disabled { cursor:default; opacity:0.85; }
+
+    .mm3 .sync-erro-banner {
+      position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:950;
+      background:#241417; border:1px solid var(--danger-border); color:#ffb3b3; border-radius:12px;
+      padding:10px 14px; font-size:0.8rem; display:flex; align-items:center; gap:10px;
+      box-shadow:0 10px 28px rgba(0,0,0,0.45); max-width:min(92vw, 460px);
+      opacity:0; transform:translateX(-50%) translateY(-10px); animation:sync-erro-in 0.25s ease forwards;
+    }
+    @keyframes sync-erro-in { to { opacity:1; transform:translateX(-50%) translateY(0); } }
+    .mm3 .sync-erro-banner span { flex:1; line-height:1.4; }
+    .mm3 .sync-erro-banner button { background:none; border:none; color:inherit; cursor:pointer; font-size:1.05rem; line-height:1; opacity:0.7; flex-shrink:0; padding:2px; }
+    .mm3 .sync-erro-banner button:hover { opacity:1; }
     .mm3 .ent-collapsed { display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; }
     .mm3 .ent-collapsed .nome-row { display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-width:0; }
     .mm3 .ent-collapsed .nome { font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:0.03em; }
@@ -225,6 +242,17 @@ const GlobalStyle = () => (
     .mm3 .tab-btn { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:9px; text-align:center;
       cursor:pointer; font-family:'Bebas Neue',sans-serif; letter-spacing:0.04em; color:var(--muted); font-size:0.95rem; }
     .mm3 .tab-btn.sel { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+
+    .mm3 .tipo-toggle { display:inline-flex; background:var(--surface3); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px; flex-shrink:0; }
+    .mm3 .tipo-toggle button {
+      border:none; background:none; color:var(--muted); font-family:'Bebas Neue',sans-serif; letter-spacing:0.04em;
+      font-size:0.85rem; padding:8px 16px; border-radius:999px; cursor:pointer;
+      display:inline-flex; align-items:center; gap:6px; transition:background .15s ease, color .15s ease;
+    }
+    .mm3 .tipo-toggle button .dot { width:6px; height:6px; border-radius:50%; background:currentColor; opacity:0.55; }
+    .mm3 .tipo-toggle button:not(.sel):hover { color:var(--text); }
+    .mm3 .tipo-toggle button.sel { background:var(--accent); color:#0e0e12; }
+    .mm3 .tipo-toggle button.sel .dot { opacity:1; }
 
     .mm3 .init-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
     .mm3 .init-rodada { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; color:var(--accent); }
@@ -835,30 +863,65 @@ function acumuladorPassivoVazio() {
     notas: [],
   };
 }
+/* ---------- suporte a múltiplos efeitos passivos por habilidade ----------
+   Formato novo: ataque.passivos é uma LISTA de instâncias { id, tipoId, graduacao,
+   campos, extrasAtivos, explosaoLigada } — igual "efeitos" já funciona pras
+   habilidades ativas. O ativo/desativado da habilidade como um todo mora em
+   ataque.ativo (nível da habilidade, não de cada efeito).
+   Formato antigo (fichas salvas antes desta versão): ataque.passivo era um
+   objeto ÚNICO, com "ativo" dentro dele mesmo. As funções abaixo leem os dois
+   formatos sem exigir nenhuma migração manual — ao editar e salvar a
+   habilidade pelo formulário (ou só ligar/desligar ela na ficha), ela já é
+   regravada automaticamente no formato novo. */
+function passivosDe(ataque) {
+  if (Array.isArray(ataque?.passivos)) return ataque.passivos;
+  if (ataque?.passivo && (ataque.passivo.tipoId || ataque.passivo.graduacao)) {
+    const { ativo, ...inst } = ataque.passivo;
+    return [inst];
+  }
+  return [];
+}
+function passivaEstaAtiva(ataque) {
+  return !!(ataque?.ativo ?? ataque?.passivo?.ativo);
+}
+function instanciasPassivasAtivas(ent) {
+  const out = [];
+  (ent?.ataques || []).forEach((a) => {
+    if (a.tipo !== "passiva" || !passivaEstaAtiva(a)) return;
+    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId) out.push({ ataque: a, inst, idx }); });
+  });
+  return out;
+}
 function habilidadesPassivasAtivas(ent) {
-  return (ent?.ataques || []).filter((a) => a.tipo === "passiva" && a.passivo?.ativo && a.passivo?.tipoId);
+  const vistos = new Set();
+  return instanciasPassivasAtivas(ent).map((x) => x.ataque).filter((a) => (vistos.has(a.id) ? false : (vistos.add(a.id), true)));
+}
+function rotuloPassivos(ataque) {
+  const nomes = passivosDe(ataque).map((p) => PODERES_PASSIVOS.find((x) => x.id === p.tipoId)?.nome).filter(Boolean);
+  if (!nomes.length) return "passiva";
+  return nomes.length === 1 ? nomes[0] : `${nomes[0]} +${nomes.length - 1}`;
 }
 function modificadoresPassivos(ent) {
   const acc = acumuladorPassivoVazio();
-  const ativos = habilidadesPassivasAtivas(ent);
-  ativos.forEach((a) => {
-    const def = PODERES_PASSIVOS.find((p) => p.id === a.passivo.tipoId);
-    if (def) def.aplicar1(ent, a.passivo, acc);
+  const instancias = instanciasPassivasAtivas(ent);
+  instancias.forEach(({ inst }) => {
+    const def = PODERES_PASSIVOS.find((p) => p.id === inst.tipoId);
+    if (def) def.aplicar1(ent, inst, acc);
   });
-  ativos.forEach((a) => {
-    const def = PODERES_PASSIVOS.find((p) => p.id === a.passivo.tipoId);
-    if (def) def.aplicar2(ent, a.passivo, acc);
+  instancias.forEach(({ inst }) => {
+    const def = PODERES_PASSIVOS.find((p) => p.id === inst.tipoId);
+    if (def) def.aplicar2(ent, inst, acc);
   });
   return acc;
 }
 function bonusAtributoPassivo(ent, key) {
   if (!ent) return 0;
   let total = 0;
-  habilidadesPassivasAtivas(ent).forEach((a) => {
-    const def = PODERES_PASSIVOS.find((p) => p.id === a.passivo.tipoId);
+  instanciasPassivasAtivas(ent).forEach(({ inst }) => {
+    const def = PODERES_PASSIVOS.find((p) => p.id === inst.tipoId);
     if (!def) return;
     const acc = acumuladorPassivoVazio();
-    def.aplicar1(ent, a.passivo, acc);
+    def.aplicar1(ent, inst, acc);
     total += acc.atributos[key] || 0;
   });
   return total;
@@ -1294,6 +1357,22 @@ function AnimacaoOverlay({ eventos, onTerminar }) {
 }
 
 /* ---------- modal de descrição / ativação de vantagem ---------- */
+/* ---------- modal de confirmação (ex: excluir ficha) ---------- */
+function ConfirmModal({ titulo, mensagem, textoConfirmar = "Confirmar", textoCancelar = "Cancelar", perigo = true, onConfirmar, onCancelar }) {
+  return (
+    <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) onCancelar(); }}>
+      <div className="modal-box" style={{ maxWidth: 380 }}>
+        <div className="modal-head"><span className="mt">{titulo}</span><button className="modal-close" onClick={onCancelar}>×</button></div>
+        <div className="modal-desc">{mensagem}</div>
+        <div className="grid2">
+          <button className="btn btn-ghost" onClick={onCancelar}>{textoCancelar}</button>
+          <button className={"btn " + (perigo ? "btn-danger" : "btn-accent")} onClick={onConfirmar}>{textoConfirmar}</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function VantagemModal({ ctx, onFechar, onToggle }) {
   const { entidade, vantagem, info, editavel } = ctx;
   return (
@@ -1303,7 +1382,7 @@ function VantagemModal({ ctx, onFechar, onToggle }) {
         <div className="modal-desc">{info?.desc}</div>
         {vantagem.graduacoes > 1 && <div className="field-note">Graduações: {vantagem.graduacoes}</div>}
         {(vantagem.periciasEscolhidas || []).some(Boolean) && <div className="field-note">Perícias escolhidas: {vantagem.periciasEscolhidas.filter(Boolean).join(", ")}</div>}
-        {vantagem.textoExtra !== undefined && <div className="field-note">Alvo: {vantagem.textoExtra || "não definido"}</div>}
+        {vantagem.textoExtra != null && <div className="field-note">Alvo: {vantagem.textoExtra || "não definido"}</div>}
         {editavel && info?.mecanica?.modo === "toggle" && (
           <button className={"btn btn-block " + (vantagem.ativo ? "btn-accent" : "btn-ghost")} onClick={() => onToggle(entidade.id, vantagem.id, !vantagem.ativo)}>
             {vantagem.ativo ? "Ativada — clique para desativar" : "Desativada — clique para ativar"}
@@ -2569,7 +2648,21 @@ export default function MesaMM3() {
   const [acaoCtx, setAcaoCtx] = useState(null);
   const [abaDireita, setAbaDireita] = useState("iniciativa");
   const [eventosAnim, setEventosAnim] = useState([]);
+  const [erroSync, setErroSync] = useState(null);
   const animSeenRef = useRef(new Set());
+  const erroSyncTimeoutRef = useRef(null);
+
+  /* mostra um aviso no topo sempre que uma escrita no Firestore falhar de verdade
+     (sem internet, permissão negada, etc.) — antes essas falhas eram 100% silenciosas
+     e é isso que fazia fichas "sumirem sem aviso". Ver src/firebase.js. */
+  useEffect(() => {
+    const unsub = ouvirErrosSalvamento((mensagem) => {
+      setErroSync(mensagem);
+      if (erroSyncTimeoutRef.current) clearTimeout(erroSyncTimeoutRef.current);
+      erroSyncTimeoutRef.current = setTimeout(() => setErroSync(null), 9000);
+    });
+    return () => { unsub(); if (erroSyncTimeoutRef.current) clearTimeout(erroSyncTimeoutRef.current); };
+  }, []);
 
   /* ---- escrita serializada no storage compartilhado ----
      Cada chamada a setShared(chave, valor) é assíncrona e "solta". Se duas escritas na MESMA
@@ -2667,8 +2760,8 @@ export default function MesaMM3() {
      vez de sobrescrever a coleção inteira. Assim, se outro jogador mexeu numa
      ficha diferente enquanto isso, a mudança dele não é apagada. */
   const salvarEntidades = async (novaLista) => {
-    const antigas = entidades;
-    setEntidades(novaLista);
+    let antigas;
+    setEntidades((atual) => { antigas = atual; return novaLista; });
     const idsAntigos = new Set(antigas.map((e) => e.id));
     const idsNovos = new Set(novaLista.map((e) => e.id));
     const tarefas = [];
@@ -2744,6 +2837,12 @@ export default function MesaMM3() {
   return (
     <div className="mm3">
       <GlobalStyle />
+      {erroSync && (
+        <div className="sync-erro-banner">
+          <span>⚠ {erroSync}</span>
+          <button onClick={() => setErroSync(null)} aria-label="Fechar aviso">×</button>
+        </div>
+      )}
       <header className="top"><h1>Zona Liminal</h1></header>
       <div className="identbar">
         <div>Logado como <b>{identidade.nome}</b> <span className="pill">{identidade.papel === "mestre" ? "Mestre" : "Jogador"}</span> <span style={{ opacity: 0.6 }}>({usuario.email})</span></div>
@@ -2990,20 +3089,41 @@ function RichTextEditor({ value, onChange, placeholder }) {
   );
 }
 
-/* ---------- habilidade (form) ---------- */
-function PassivoEditor({ passivo, onMudar }) {
+/* ---------- habilidade (form) ----------
+   Uma habilidade passiva pode ter vários efeitos passivos ao mesmo tempo (ex:
+   "Forma de Combate" pode dar Característica Aumentada + Proteção + Deflexão
+   juntos) — igual uma habilidade ativa pode ter vários efeitos. PassivoEditor
+   gerencia a LISTA (adicionar/remover), e PassivoInstanceEditor edita UM efeito
+   passivo dentro dela. */
+function PassivoEditor({ passivos, onMudar }) {
+  const lista = passivos || [];
+  const updInst = (idx, novo) => { const arr = [...lista]; arr[idx] = novo; onMudar(arr); };
+  const addInst = () => onMudar([...lista, { id: uid(), tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {} }]);
+  const rmInst = (idx) => onMudar(lista.filter((_, i) => i !== idx));
+  return (
+    <>
+      {lista.map((inst, i) => (
+        <PassivoInstanceEditor key={inst.id || i} passivo={inst} onMudar={(novo) => updInst(i, novo)} onRemover={() => rmInst(i)} />
+      ))}
+      <button className="btn btn-ghost btn-sm" onClick={addInst} style={{ marginBottom: 12 }}>+ Efeito passivo</button>
+    </>
+  );
+}
+function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
   const def = PODERES_PASSIVOS.find((p) => p.id === passivo?.tipoId);
   const upd = (campo, valor) => onMudar({ ...passivo, [campo]: valor });
   const updCampo = (chave, valor) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), [chave]: valor } });
   const toggleExtra = (chave) => onMudar({ ...passivo, extrasAtivos: { ...(passivo.extrasAtivos || {}), [chave]: !passivo.extrasAtivos?.[chave] } });
-  const mudarTipo = (novoId) => onMudar({ tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, ativo: passivo?.ativo || false });
+  const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {} });
   return (
     <div className="subcard2" style={{ marginBottom: 10 }}>
-      <label className="label">Tipo de efeito passivo</label>
-      <select value={passivo?.tipoId || ""} onChange={(e) => mudarTipo(e.target.value)} style={{ marginBottom: 8 }}>
-        <option value="">Escolha um efeito…</option>
-        {PODERES_PASSIVOS.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-      </select>
+      <div className="row-inline">
+        <select value={passivo?.tipoId || ""} onChange={(e) => mudarTipo(e.target.value)}>
+          <option value="">Escolha um efeito…</option>
+          {PODERES_PASSIVOS.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+        </select>
+        <button className="small-btn" onClick={onRemover}>×</button>
+      </div>
       {def && (
         <>
           <div className="field-note" style={{ marginBottom: 8 }}>{def.desc}</div>
@@ -3067,7 +3187,6 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
   const addEfeito = () => upd("efeitos", [...ataque.efeitos, { id: uid(), ...efeitoPadrao("Dano") }]);
   const rmEfeito = (idx) => upd("efeitos", ataque.efeitos.filter((_, i) => i !== idx));
   const ehPassiva = ataque.tipo === "passiva";
-  const alternarTipo = () => upd("tipo", ehPassiva ? "ativa" : "passiva");
   return (
     <div className="subcard">
       <div className="row-inline"><input type="text" placeholder="Nome da habilidade" value={ataque.nome} onChange={(e) => upd("nome", e.target.value)} /><button className="small-btn" onClick={onRemover}>×</button></div>
@@ -3121,8 +3240,11 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
         </div>
       </div>
 
-      <div className="row-inline" style={{ marginBottom: 10, alignItems: "center" }}>
-        <button className="small-btn" onClick={alternarTipo}>{ehPassiva ? "Passiva ↺" : "Ativa ↺"}</button>
+      <div className="row-inline" style={{ marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <div className="tipo-toggle" role="tablist" aria-label="Tipo de habilidade">
+          <button type="button" role="tab" aria-selected={!ehPassiva} className={!ehPassiva ? "sel" : ""} onClick={() => upd("tipo", "ativa")}><span className="dot" />Ativa</button>
+          <button type="button" role="tab" aria-selected={ehPassiva} className={ehPassiva ? "sel" : ""} onClick={() => upd("tipo", "passiva")}><span className="dot" />Passiva</button>
+        </div>
         <label className="checkbox-row" style={{ marginBottom: 0 }}>
           <input type="checkbox" checked={!!ataque.sustentado} onChange={(e) => upd("sustentado", e.target.checked)} />
           Sustentado
@@ -3164,8 +3286,8 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
 
       {ehPassiva && (
         <>
-          <div className="section-title">Efeito passivo</div>
-          <PassivoEditor passivo={ataque.passivo || { tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {}, ativo: false }} onMudar={(novo) => upd("passivo", novo)} />
+          <div className="section-title">Efeitos passivos</div>
+          <PassivoEditor passivos={passivosDe(ataque)} onMudar={(nova) => upd("passivos", nova)} />
         </>
       )}
 
@@ -3194,7 +3316,20 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   const [f, setF] = useState(() => {
     const base = fichaPadrao(rotulos);
     if (!inicial) return base;
-    return { ...base, ...inicial, atributos: { ...ATRIBUTOS_VAZIOS, ...(inicial.atributos || {}) }, periciaPontos: { ...PERICIA_PONTOS_VAZIO, ...(inicial.periciaPontos || {}) }, vantagens: inicial.vantagens || [] };
+    return {
+      ...base, ...inicial,
+      atributos: { ...ATRIBUTOS_VAZIOS, ...(inicial.atributos || {}) },
+      periciaPontos: { ...PERICIA_PONTOS_VAZIO, ...(inicial.periciaPontos || {}) },
+      vantagens: inicial.vantagens || [],
+      // migra habilidades do formato antigo de efeito passivo (um objeto único) pro novo
+      // (lista, permitindo vários efeitos passivos na mesma habilidade) — silenciosamente,
+      // sem exigir nenhuma ação manual; ao salvar a ficha já grava no formato novo.
+      ataques: (inicial.ataques || []).map((a) => {
+        if (!a || (!a.passivo && !a.passivos)) return a;
+        const { passivo, ...resto } = a;
+        return { ...resto, ativo: passivaEstaAtiva(a), passivos: passivosDe(a) };
+      }),
+    };
   });
   const [erro, setErro] = useState("");
   const [complicOpen, setComplicOpen] = useState(false);
@@ -3206,7 +3341,11 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   const updPericia = (nome, v) => setF((s) => ({ ...s, periciaPontos: { ...s.periciaPontos, [nome]: Math.max(0, Math.min(periciaPontosMax(s.nivel), v)) } }));
 
   const updAtaque = (idx, novo) => { const arr = [...f.ataques]; arr[idx] = novo; upd("ataques", arr); };
-  const addAtaque = () => upd("ataques", [...f.ataques, { id: uid(), nome: "", tipo: "ativa", tipoAcerto: "corpo", custoVida: 0, custoNen: 0, extras: {}, efeitos: [{ id: uid(), ...efeitoPadrao("Dano") }], passivo: { tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {}, ativo: false } }]);
+  const addAtaque = () => upd("ataques", [...f.ataques, {
+    id: uid(), nome: "", tipo: "ativa", tipoAcerto: "corpo", custoVida: 0, custoNen: 0, extras: {}, ativo: false,
+    efeitos: [{ id: uid(), ...efeitoPadrao("Dano") }],
+    passivos: [{ id: uid(), tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {} }],
+  }]);
   const rmAtaque = (idx) => upd("ataques", f.ataques.filter((_, i) => i !== idx));
 
   const updVantagem = (idx, campo, valor) => { const arr = [...f.vantagens]; arr[idx] = { ...arr[idx], [campo]: valor }; upd("vantagens", arr); };
@@ -3215,7 +3354,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
     const n = info?.mecanica?.escolhePericias || 0;
     const max = info?.graduacaoMax || 5;
     const arr = [...f.vantagens];
-    arr[idx] = { ...arr[idx], nome: novoNome, graduacoes: Math.min(arr[idx].graduacoes || 1, max), periciasEscolhidas: Array(n).fill(""), textoExtra: info?.mecanica?.pedeTexto ? "" : undefined, defesaEscolhida: info?.mecanica?.escolheDefesa ? "" : undefined };
+    arr[idx] = { ...arr[idx], nome: novoNome, graduacoes: Math.min(arr[idx].graduacoes || 1, max), periciasEscolhidas: Array(n).fill(""), textoExtra: info?.mecanica?.pedeTexto ? "" : null, defesaEscolhida: info?.mecanica?.escolheDefesa ? "" : null };
     upd("vantagens", arr);
   };
   const addVantagem = () => upd("vantagens", [...(f.vantagens || []), { id: uid(), nome: VANTAGENS[0].nome, graduacoes: 1, ativo: false, periciasEscolhidas: [] }]);
@@ -3446,6 +3585,8 @@ function StatChip({ label, value, onClick }) {
 
 function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar }) {
   const [aberto, setAberto] = useState(false);
+  const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
+  const confirmarExclusao = () => { setConfirmandoExclusao(false); onExcluir(); };
   const [secoes, setSecoes] = useState({ acoes: false, manobras: false, ataques: false, defesas: false, atributos: false, pericias: false, condicoes: false });
   const toggleSecao = (k) => setSecoes((s) => ({ ...s, [k]: !s[k] }));
   const abrirStat = (tipo, chave, label) => onAbrirRolagem({ origem: e, tipo, chave, label: `${e.nome} · ${label}` });
@@ -3455,7 +3596,12 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
   };
   const alternarPassiva = (ataque) => {
     if (!onAtualizarCampo) return;
-    const novos = (e.ataques || []).map((x) => (x.id === ataque.id ? { ...x, passivo: { ...x.passivo, ativo: !x.passivo?.ativo } } : x));
+    const novoAtivo = !passivaEstaAtiva(ataque);
+    const novos = (e.ataques || []).map((x) => {
+      if (x.id !== ataque.id) return x;
+      const { passivo, ...resto } = x; // remove o formato antigo (já migrado pra "passivos" abaixo)
+      return { ...resto, ativo: novoAtivo, passivos: passivosDe(x) };
+    });
     onAtualizarCampo(e.id, "ataques", novos);
     if (ataque.sustentado) onAtualizarCampo(e.id, "sustentado", true);
   };
@@ -3514,10 +3660,15 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
           {editavel && (
             <div className="actions" onClick={(ev) => ev.stopPropagation()}>
               <button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button>
-              <button className="btn btn-danger btn-sm" onClick={onExcluir}>Excluir</button>
+              <button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button>
             </div>
           )}
         </div>
+        {confirmandoExclusao && (
+          <ConfirmModal titulo="Excluir ficha" textoConfirmar="Excluir"
+            mensagem={`Tem certeza que quer excluir "${e.nome}"? Essa ação não pode ser desfeita.`}
+            onConfirmar={confirmarExclusao} onCancelar={() => setConfirmandoExclusao(false)} />
+        )}
       </div>
     );
   }
@@ -3532,7 +3683,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
             <div className="rotulo">{e.rotulo} · Nv.{e.nivel} · {e.tipoNen} · {e.dono}</div>
           </div>
         </div>
-        {editavel && <div className="actions"><button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button><button className="btn btn-danger btn-sm" onClick={onExcluir}>Excluir</button></div>}
+        {editavel && <div className="actions"><button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button><button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button></div>}
       </div>
 
       <div className="status-toggle-row">
@@ -3740,8 +3891,9 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
             <div className="chip-row">
               {e.ataques.map((a) => (
                 a.tipo === "passiva" ? (
-                  <button key={a.id} className={"stat-chip vantagem-chip" + (a.passivo?.ativo ? " ativo" : "")} onClick={() => (editavel ? alternarPassiva(a) : null)} disabled={!editavel}>
-                    {a.nome || "(sem nome)"} <b>{PODERES_PASSIVOS.find((p) => p.id === a.passivo?.tipoId)?.nome || "passiva"}</b>
+                  <button key={a.id} className={"stat-chip passiva-chip" + (passivaEstaAtiva(a) ? " ativo" : "")} onClick={() => (editavel ? alternarPassiva(a) : null)} disabled={!editavel} title={editavel ? (passivaEstaAtiva(a) ? "Clique pra desativar" : "Clique pra ativar") : undefined}>
+                    <span className="passiva-chip-dot" />
+                    {a.nome || "(sem nome)"} <b>{rotuloPassivos(a)}</b>
                   </button>
                 ) : (
                   <button key={a.id} className={"stat-chip ataque-chip" + (itemQuebrado(a) ? " item-quebrado" : "")} onClick={() => abrirAtaque(a)}>
@@ -3827,19 +3979,19 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
               </span>
             </div>
           )}
-          {habilidadesPassivasAtivas(e).map((a) => {
-            const def = PODERES_PASSIVOS.find((p) => p.id === a.passivo.tipoId);
+          {instanciasPassivasAtivas(e).map(({ ataque: a, inst, idx }) => {
+            const def = PODERES_PASSIVOS.find((p) => p.id === inst.tipoId);
             if (!def) return null;
-            const cd = def.cdInfo ? def.cdInfo(a.passivo) : null;
-            const mostraExplosao = def.temBotaoExplosao && a.passivo.extrasAtivos?.explosao;
+            const cd = def.cdInfo ? def.cdInfo(inst) : null;
+            const mostraExplosao = def.temBotaoExplosao && inst.extrasAtivos?.explosao;
             if (!cd && !mostraExplosao) return null;
             return (
-              <div key={a.id} className="ro-row" style={{ marginTop: 6 }}>
+              <div key={`${a.id}-${inst.id || idx}`} className="ro-row" style={{ marginTop: 6 }}>
                 <span title={cd ? `CD ${cd.cd} — ${cd.teste}` : undefined}>{a.nome || def.nome}{cd ? ` (CD ${cd.cd})` : ""}</span>
                 {mostraExplosao && editavel && (
-                  <button className={"small-btn" + (a.passivo.explosaoLigada ? " ativo" : "")}
-                    onClick={() => onAtualizarCampo(e.id, "ataques", (e.ataques || []).map((x) => (x.id === a.id ? { ...x, passivo: { ...x.passivo, explosaoLigada: !x.passivo.explosaoLigada } } : x)))}>
-                    {a.passivo.explosaoLigada ? "Explosão ligada (−)" : "Ativar Explosão (+3)"}
+                  <button className={"small-btn" + (inst.explosaoLigada ? " ativo" : "")}
+                    onClick={() => onAtualizarCampo(e.id, "ataques", (e.ataques || []).map((x) => (x.id === a.id ? { ...x, passivos: passivosDe(x).map((p, i) => (i === idx ? { ...p, explosaoLigada: !p.explosaoLigada } : p)) } : x)))}>
+                    {inst.explosaoLigada ? "Explosão ligada (−)" : "Ativar Explosão (+3)"}
                   </button>
                 )}
               </div>
@@ -3872,6 +4024,11 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
             </div>
           )}
         </div>
+      )}
+      {confirmandoExclusao && (
+        <ConfirmModal titulo="Excluir ficha" textoConfirmar="Excluir"
+          mensagem={`Tem certeza que quer excluir "${e.nome}"? Essa ação não pode ser desfeita.`}
+          onConfirmar={confirmarExclusao} onCancelar={() => setConfirmandoExclusao(false)} />
       )}
     </div>
   );
