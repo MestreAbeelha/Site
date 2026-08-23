@@ -7,7 +7,7 @@ import {
   onAuthStateChanged,
 } from "firebase/auth";
 import {
-  getFirestore,
+  initializeFirestore,
   doc,
   getDoc,
   getDocs,
@@ -34,7 +34,40 @@ const firebaseConfig = {
 
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app);
+
+/* ignoreUndefinedProperties: true — ESSA LINHA CONSERTA O BUG DAS FICHAS SUMINDO.
+   Por padrão, o Firestore RECUSA salvar (lança erro) qualquer objeto que tenha
+   um campo com valor `undefined` em algum lugar, mesmo bem aninhado — por
+   exemplo, uma vantagem sem "texto extra" definido (isso existia de propósito
+   no código, pra vantagens que não pedem esse campo). Como as funções de
+   salvar abaixo pegavam esse erro e não faziam NADA com ele (catch vazio), o
+   problema era 100% invisível: a tela já tinha atualizado otimisticamente
+   (parecia salvo), mas nada ia pro banco de verdade. Na próxima vez que a
+   página recarregasse — ou o Firestore ressincronizasse — a ficha voltava pro
+   último estado que TINHA sido salvo de verdade, ou seja: "sumia" ou perdia as
+   últimas mudanças, sem nenhum aviso. Com essa opção, o Firestore ignora os
+   campos "undefined" em vez de rejeitar o documento inteiro. */
+export const db = initializeFirestore(app, { ignoreUndefinedProperties: true });
+
+/* ---------- aviso de falha ao salvar ----------
+   Além do bug do "undefined" acima, qualquer outra falha (sem internet,
+   permissão negada, etc.) também ficava muda: os catches abaixo simplesmente
+   engoliam o erro, pra mesa não travar por causa de 1 escrita. Isso ainda é
+   verdade — a mesa continua não travando — mas agora toda falha de ESCRITA
+   (que é o que causa perda de dado) também chama os "ouvintes" cadastrados
+   aqui, e a tela usa isso pra mostrar um aviso "não foi possível salvar" no
+   topo, em vez de falhar em silêncio. */
+const ouvintesErro = new Set();
+export function ouvirErrosSalvamento(callback) {
+  ouvintesErro.add(callback);
+  return () => ouvintesErro.delete(callback);
+}
+function avisarErro(mensagem, erro) {
+  console.error(`[mesa-mm3] ${mensagem}`, erro);
+  ouvintesErro.forEach((cb) => {
+    try { cb(mensagem); } catch { /* noop */ }
+  });
+}
 
 /* ---------- autenticação (login individual por e-mail/senha) ---------- */
 export function cadastrar(email, senha) {
@@ -62,7 +95,7 @@ export function ouvirEntidades(callback) {
   return onSnapshot(
     collection(db, "entidades"),
     (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-    () => {}
+    (e) => avisarErro("Perdemos a conexão em tempo real com as fichas. Recarregue a página.", e)
   );
 }
 export async function salvarEntidade(entidade) {
@@ -70,14 +103,14 @@ export async function salvarEntidade(entidade) {
     const { id, ...dados } = entidade;
     await setDoc(doc(db, "entidades", id), dados);
   } catch (e) {
-    /* noop */
+    avisarErro(`Não foi possível salvar a ficha "${entidade?.nome || ""}". Suas últimas mudanças podem não ter sido gravadas — tente de novo.`, e);
   }
 }
 export async function removerEntidadeDoc(id) {
   try {
     await deleteDoc(doc(db, "entidades", id));
   } catch (e) {
-    /* noop */
+    avisarErro("Não foi possível excluir a ficha. Tente de novo.", e);
   }
 }
 
@@ -90,14 +123,14 @@ export function ouvirHistorico(callback) {
   return onSnapshot(
     q,
     (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-    () => {}
+    (e) => avisarErro("Perdemos a conexão em tempo real com o histórico. Recarregue a página.", e)
   );
 }
 export async function adicionarHistorico(entry) {
   try {
     await addDoc(collection(db, "historico"), { ...entry, criadoEm: Date.now() });
   } catch (e) {
-    /* noop */
+    avisarErro("Não foi possível registrar essa ação no histórico.", e);
   }
 }
 
@@ -110,6 +143,7 @@ export async function getShared(chave) {
     const snap = await getDoc(doc(db, "mesa", chave));
     return snap.exists() ? snap.data().value : [];
   } catch (e) {
+    console.error(`[mesa-mm3] Não foi possível ler "${chave}".`, e);
     return [];
   }
 }
@@ -117,14 +151,14 @@ export async function setShared(chave, valor) {
   try {
     await setDoc(doc(db, "mesa", chave), { value: valor, atualizadoEm: Date.now() });
   } catch (e) {
-    /* noop */
+    avisarErro("Não foi possível salvar a iniciativa/animação.", e);
   }
 }
 export function ouvirShared(chave, callback) {
   return onSnapshot(
     doc(db, "mesa", chave),
     (snap) => callback(snap.exists() ? snap.data().value : []),
-    () => {}
+    (e) => avisarErro(`Perdemos a conexão em tempo real com "${chave}". Recarregue a página.`, e)
   );
 }
 
@@ -134,6 +168,7 @@ export async function getPersonal(uid) {
     const snap = await getDoc(doc(db, "usuarios", uid));
     return snap.exists() ? snap.data() : null;
   } catch (e) {
+    console.error("[mesa-mm3] Não foi possível ler o perfil.", e);
     return null;
   }
 }
@@ -141,7 +176,7 @@ export async function setPersonal(uid, valor) {
   try {
     await setDoc(doc(db, "usuarios", uid), valor, { merge: true });
   } catch (e) {
-    /* noop */
+    avisarErro("Não foi possível salvar seu perfil.", e);
   }
 }
 
@@ -163,7 +198,7 @@ export async function migrarDadosAntigos() {
       }
     }
   } catch (e) {
-    /* noop */
+    console.error("[mesa-mm3] Falha na migração automática de fichas.", e);
   }
   try {
     const jaTemHistorico = await getDocs(collection(db, "historico"));
@@ -178,6 +213,6 @@ export async function migrarDadosAntigos() {
       }
     }
   } catch (e) {
-    /* noop */
+    console.error("[mesa-mm3] Falha na migração automática de histórico.", e);
   }
 }
