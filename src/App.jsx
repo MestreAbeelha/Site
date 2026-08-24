@@ -405,7 +405,7 @@ const TIPOS_ACERTO = [
   { v: "corpo", l: "Corpo-a-corpo" }, { v: "distancia", l: "À distância" },
   { v: "area", l: "Área" }, { v: "percepcao", l: "Percepção" },
 ];
-const NEN_TIPOS = ["Intensificação", "Emissão", "Transformação", "Manipulação", "Materialização", "Especialização", "Modelador", "Nenhum"];
+const NEN_TIPOS = ["Fortificador", "Emissor", "Transmutador", "Manipulador", "Conjurador", "Especialista", "Alterações", "Nenhum"];
 
 const ATRIBUTOS = [
   { k: "forca", l: "Força" }, { k: "agilidade", l: "Agilidade" }, { k: "vigor", l: "Vigor" }, { k: "inteligencia", l: "Inteligência" },
@@ -492,7 +492,7 @@ const VANTAGENS = [
   { nome: "Desarmar Aprimorado", desc: "Você não sofre penalidades em seu teste de ataque para desarmar um oponente e ao segurar a arma, pode dar um ataque com ela como uma ação livre no oponente desarmado.", graduacaoMax: 1 },
   { nome: "Destemido", desc: "Você é imune a todos os efeitos de medo. Na prática, isto é o efeito Imunidade a Medo.", graduacaoMax: 1 },
   { nome: "Empatia com Animais", desc: "Você recebe um bônus de +5 em perícias de interação para falar com animais, bestas ou criaturas não verbais. Você pode usar Prontidão no lugar de Presença em perícias de interação contra elas.", graduacaoMax: 1 },
-  { nome: "Equipamento", desc: "Você tem 5 pontos por graduação nesta vantagem para gastar em equipamento. Isso inclui veículos e quartel-general." },
+  { nome: "Equipamento", desc: "Você tem 5 pontos por graduação nesta vantagem para gastar em equipamento. Isso inclui veículos e quartel-general.", graduacaoMax: 999 },
   { nome: "Esconder-se à Plena Vista", desc: "Você pode se esconder sem necessidade de um teste de Enganação ou de Intimidação e sem qualquer tipo de distração, e sem penalidade no seu teste de Furtividade. Você ainda precisa ter algum tipo de cobertura ou camuflagem ao alcance de sua velocidade normal para se esconder.", graduacaoMax: 1 },
   { nome: "Esquiva Fabulosa", desc: "Você não fica vulnerável quando surpreso ou de outra maneira pego desatento. Você ainda fica vulnerável devido a efeitos que limitam sua mobilidade.", graduacaoMax: 1 },
   { nome: "Estrangular", desc: "Se você for bem-sucedido em agarrar e imobilizar um oponente, você pode estrangulá-lo, fazendo seu oponente começar a sufocar enquanto você o imobiliza.", graduacaoMax: 1 },
@@ -669,10 +669,16 @@ function attr(ent, key) { return attrBase(ent, key) + bonusAtributoPassivo(ent, 
 const SENTIDOS_BASE = ["Visão", "Audição", "Olfato", "Paladar"];
 const SENTIDOS_ESPECIAIS = ["Infravisão", "Percepção às Cegas", "Rastrear", "Sentido de Perigo", "Sentido Sísmico", "Ver Nen", "Visão no Escuro"];
 
+/* Lista de variantes do efeito passivo "Característica" (mudanças sob medida pra ficha).
+   Pra adicionar uma nova no futuro: (1) acrescente o nome aqui, e (2) se ela alterar alguma
+   regra do sistema (como a Fejonetto faz com Enganação/Persuasão), adicione a checagem
+   correspondente usando o helper temCaracteristica(ent, "NomeAqui") no lugar certo do código. */
+const CARACTERISTICAS_ESPECIAIS = ["Fejonetto", "Diogo"];
+
 const PODERES_PASSIVOS = [
   { id: "camuflagem", nome: "Camuflagem (pessoal)", categoria: "Coringa", custoBase: 2,
     desc: "Escolha um sentido: você fica camuflado contra ele (CD 15 + graduação para ser detectado por outro sentido ou por Percepção). O sentido Tato não pode ser camuflado.",
-    campoEscolha: { chave: "sentido", label: "Sentido camuflado", opcoes: SENTIDOS_BASE },
+    campoEscolha: { chave: "sentido", label: "Sentido camuflado", opcoes: [...SENTIDOS_BASE, ...SENTIDOS_ESPECIAIS] },
     extras: [], falhas: [],
     cdInfo: (inst) => ({ cd: 15 + (inst.graduacao || 0), teste: `Percepção (ou teste do sentido) para detectar apesar da camuflagem contra ${inst.campos?.sentido || "o sentido escolhido"}` }),
     aplicar1() {}, aplicar2(ent, inst, acc) { if (inst.campos?.sentido) acc.notas.push(`Camuflado contra ${inst.campos.sentido}`); } },
@@ -694,7 +700,7 @@ const PODERES_PASSIVOS = [
       acc.atributos[chave] = (acc.atributos[chave] || 0) + bonus + explosao;
     }, aplicar2() {} },
 
-  { id: "comunicacao", nome: "Comunicação", categoria: "Emissão", custoBase: 2,
+  { id: "comunicacao", nome: "Comunicação", categoria: "Emissor", custoBase: 2,
     desc: "Comunicação por um meio diferente da voz normal. Alcance base 10m, dobrando a cada graduação adicional.",
     campoEscolha: { chave: "meio", label: "Meio de comunicação", opcoes: ["Telepatia", "Rádio (Nen)", "Vibração", "Outro"] },
     extras: [], falhas: [],
@@ -713,7 +719,7 @@ const PODERES_PASSIVOS = [
     ],
     aplicar1(ent, inst, acc) { acc.pontosSorteMax = Math.max(acc.pontosSorteMax, inst.graduacao || 0); }, aplicar2() {} },
 
-  { id: "crescimento", nome: "Crescimento", categoria: "Modelador", custoBase: 6,
+  { id: "crescimento", nome: "Crescimento", categoria: "Alterações", custoBase: 6,
     desc: "Para cada graduação, Tamanho, Força, Vigor e Alcance de Ataque aumentam 1, mas Esquiva, Aparar e Furtividade diminuem 1.",
     extras: [
       { chave: "musculosDensos", label: "Músculos Densos (controla o quanto cresce, sem precisar do tamanho máximo)", custoPorGrad: 1 },
@@ -739,7 +745,7 @@ const PODERES_PASSIVOS = [
     ], falhas: [],
     aplicar1(ent, inst, acc) { acc.aparar += (inst.graduacao || 0); acc.temDeflexao = true; }, aplicar2() {} },
 
-  { id: "encolhimento", nome: "Encolhimento", categoria: "Modelador", custoBase: 2,
+  { id: "encolhimento", nome: "Encolhimento", categoria: "Alterações", custoBase: 2,
     desc: "Para cada graduação, Tamanho, Força e Agilidade diminuem 1, mas Esquiva, Aparar e Furtividade aumentam 1.",
     extras: [
       { chave: "forcaNormal", label: "Força Normal (não reduz mais Força e Agilidade)", custoPorGrad: 2 },
@@ -752,12 +758,12 @@ const PODERES_PASSIVOS = [
       acc.esquiva += g; acc.aparar += g; acc.furtividade += g;
     }, aplicar2() {} },
 
-  { id: "escavacao", nome: "Escavação", categoria: "Modelador", custoBase: 1,
+  { id: "escavacao", nome: "Escavação", categoria: "Alterações", custoBase: 1,
     desc: "Move-se através da terra e areia a uma graduação de velocidade igual à sua graduação de Escavação -3.",
     extras: [], falhas: [],
     aplicar1() {}, aplicar2(ent, inst, acc) { acc.deslocamentos.escavacao = Math.max(acc.deslocamentos.escavacao, (inst.graduacao || 0) - 3); acc.deslocamentos.temEscavacao = true; } },
 
-  { id: "membrosExtras", nome: "Membros Extras", categoria: "Modelador", custoBase: 4,
+  { id: "membrosExtras", nome: "Membros Extras", categoria: "Alterações", custoBase: 4,
     desc: "Cada graduação concede um membro manipulador extra (considerado inábil). +1 em Aparar e Fintar por graduação.",
     extras: [], falhas: [],
     aplicar1(ent, inst, acc) { acc.membrosExtras += (inst.graduacao || 0); acc.aparar += (inst.graduacao || 0); }, aplicar2() {} },
@@ -789,7 +795,7 @@ const PODERES_PASSIVOS = [
       if (excedente > 0) acc.notas.push(`Proteção: ${excedente} graduação(ões) excedente(s) reduzem a CD do teste de Resistência em vez de reduzir dano (aplique manualmente)`);
     }, aplicar2() {} },
 
-  { id: "regeneracao", nome: "Regeneração", categoria: "Modelador", custoBase: 3,
+  { id: "regeneracao", nome: "Regeneração", categoria: "Alterações", custoBase: 3,
     desc: "Recupera em PV a graduação neste efeito por turno. Com 10 graduações, recupera membros perdidos em 1 minuto.",
     extras: [], falhas: [],
     aplicar1(ent, inst, acc) { acc.regenPorTurno += (inst.graduacao || 0); }, aplicar2() {} },
@@ -800,7 +806,7 @@ const PODERES_PASSIVOS = [
     extras: [], falhas: [],
     aplicar1() {}, aplicar2(ent, inst, acc) { if (inst.campos?.sentido) acc.notas.push(`${inst.campos.sentido} (graduação ${inst.graduacao || 0})`); } },
 
-  { id: "sentidoRemoto", nome: "Sentido Remoto", categoria: "Emissão", custoBase: 4,
+  { id: "sentidoRemoto", nome: "Sentido Remoto", categoria: "Emissor", custoBase: 4,
     desc: "Desloca um ou mais sentidos para longe. Custa 4 pontos por graduação para um tipo, 5 para dois tipos, 6 para todos os tipos.",
     campoEscolha: { chave: "abrangencia", label: "Abrangência", opcoes: ["Um tipo de sentido", "Dois tipos", "Todos os tipos"] },
     extras: [
@@ -834,7 +840,91 @@ const PODERES_PASSIVOS = [
       acc.deslocamentos.temVoo = true;
       if (inst.extrasAtivos?.aquatico) { acc.deslocamentos.natacao = Math.max(acc.deslocamentos.natacao, g); acc.deslocamentos.temNatacao = true; }
     } },
+
+  { id: "bonusPericiaPassivo", nome: "Bônus de Perícia", categoria: "Coringa", custoBase: 1,
+    desc: "Concede um bônus fixo, igual à graduação, numa perícia escolhida.",
+    campoEscolha: { chave: "pericia", label: "Perícia", opcoes: PERICIAS.map((p) => p.nome) },
+    extras: [], falhas: [],
+    aplicar1(ent, inst, acc) {
+      const nome = inst.campos?.pericia; if (!nome) return;
+      const g = inst.graduacao || 0;
+      if (nome === "Furtividade") acc.furtividade += g;
+      else acc.periciasBonus[nome] = (acc.periciasBonus[nome] || 0) + g;
+    }, aplicar2() {} },
+
+  { id: "caracteristicaEspecial", nome: "Característica", categoria: "Coringa", custoBase: 1,
+    desc: "Efeito sob medida: escolha uma característica da lista. Cada uma altera uma regra específica da ficha de um jeito próprio (veja a descrição de cada uma ao escolher).",
+    campoEscolha: { chave: "nome", label: "Qual?", opcoes: CARACTERISTICAS_ESPECIAIS,
+      descricoes: {
+        Fejonetto: "Tudo na ficha que usaria o bônus de Enganação passa a usar o bônus de Persuasão no lugar.",
+        Diogo: "Inimigo Favorito funciona diferente: em vez de um alvo fixo, ao ter sucesso em um teste de Leitura Mental contra alguém, enquanto você sustentar esse efeito, esse alvo conta como seu Inimigo Favorito. Na prática: quando rolar ataque/Enganação/Intimidação/Intuição/Percepção contra quem você estiver lendo a mente, marque a caixinha de Inimigo Favorito que aparece na rolagem (ela já é manual — o site não trava num alvo fixo pra nenhum jogador). No campo de texto do Inimigo Favorito, pode escrever algo como \"quem eu estiver lendo a mente\".",
+      } },
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { if (inst.campos?.nome) acc.notas.push(`Característica: ${inst.campos.nome}`); } },
+
+  { id: "shuNota", nome: "Shu (absorver dano de item)", categoria: "Coringa", custoBase: 1,
+    desc: "Enquanto ativo: quando um item seu sofrer dano, em vez de perder Pontos de Vida do item, esse tanto é descontado dos seus Pontos de Nen. (Aplicado automaticamente ao usar a ação Quebrar contra um item seu.)",
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { acc.notas.push("Shu: dano em itens é absorvido pelos seus Pontos de Nen"); } },
+
+  { id: "vulneravelSustentado", nome: "Vulnerável ao sustentar", categoria: "Coringa", custoBase: 0,
+    desc: "Enquanto esta habilidade estiver sustentada, você fica Vulnerável (marque a condição manualmente na ficha enquanto estiver sustentando).",
+    extras: [], falhas: [],
+    aplicar1() {}, aplicar2(ent, inst, acc) { acc.notas.push("Enquanto sustentado: você fica Vulnerável"); } },
 ];
+
+/* ---------- Fundamentos (Ren/Zetsu/Shu/Ken/Gyo/Em) ----------
+   São habilidades passivas pré-montadas e gratuitas (não custam Pontos de Poder).
+   Marcar o checkbox na aba "Fundamentos" adiciona a habilidade correspondente à lista
+   de Habilidades da ficha (desativada, igual qualquer habilidade nova); desmarcar remove
+   essa habilidade. Uma vez adquirida, ela funciona e é editada exatamente como qualquer
+   outra habilidade passiva — inclusive o liga/desliga fica no chip normal de Habilidades.
+   O campo "fundamento" (id estável) é só uma marcação interna pra saber qual checkbox
+   corresponde a qual habilidade — pode renomear a habilidade livremente que continua
+   funcionando.
+   custoNen aqui é o custo por turno enquanto sustentada — o app não tem (ainda) um
+   sistema automático de "gasto por turno" pra nenhuma habilidade (nem Regeneração tem,
+   por exemplo), então esse valor fica visível no campo "Custo de Nen" da habilidade só
+   como referência, pra descontar manualmente cada turno. */
+const FUNDAMENTOS = [
+  { id: "ren", nome: "Ren", custoNen: 2, sustentado: true,
+    desc: "Característica Aumentada em Força, Agilidade e Vigor (graduação 1 cada). Ação livre pra ativar; sustentado; custa 2 de Nen por turno enquanto ativo.",
+    passivos: () => [
+      { id: uid(), tipoId: "caracteristica", graduacao: 1, campos: { atributo: "forca" }, extrasAtivos: {} },
+      { id: uid(), tipoId: "caracteristica", graduacao: 1, campos: { atributo: "agilidade" }, extrasAtivos: {} },
+      { id: uid(), tipoId: "caracteristica", graduacao: 1, campos: { atributo: "vigor" }, extrasAtivos: {} },
+    ] },
+  { id: "zetsu", nome: "Zetsu", custoNen: 0, sustentado: true,
+    desc: "Camuflagem contra Ver Nen (graduação 4) + 1 de Furtividade. Ação livre pra ativar; sustentado; sem custo de Nen por turno.",
+    passivos: () => [
+      { id: uid(), tipoId: "camuflagem", graduacao: 4, campos: { sentido: "Ver Nen" }, extrasAtivos: {} },
+      { id: uid(), tipoId: "bonusPericiaPassivo", graduacao: 1, campos: { pericia: "Furtividade" }, extrasAtivos: {} },
+    ] },
+  { id: "shu", nome: "Shu", custoNen: 0, sustentado: false,
+    desc: "Quando um item seu sofrer dano com o Shu ativo, esse dano é descontado dos seus Pontos de Nen em vez dos Pontos de Vida do item (aplicado automaticamente na ação Quebrar).",
+    passivos: () => [{ id: uid(), tipoId: "shuNota", graduacao: 1, campos: {}, extrasAtivos: {} }] },
+  { id: "ken", nome: "Ken", custoNen: 1, sustentado: true,
+    desc: "Proteção (graduação 1). Ação livre pra ativar; sustentado; custa 1 de Nen por turno enquanto ativo.",
+    passivos: () => [{ id: uid(), tipoId: "protecao", graduacao: 1, campos: {}, extrasAtivos: {} }] },
+  { id: "gyo", nome: "Gyo", custoNen: 1, sustentado: true,
+    desc: "Sentido Ver Nen (graduação 1) + 1 de Percepção. Ação livre pra ativar; sustentado; custa 1 de Nen por turno; enquanto sustentado, você fica Vulnerável.",
+    passivos: () => [
+      { id: uid(), tipoId: "sentidos", graduacao: 1, campos: { sentido: "Ver Nen" }, extrasAtivos: {} },
+      { id: uid(), tipoId: "bonusPericiaPassivo", graduacao: 1, campos: { pericia: "Percepção" }, extrasAtivos: {} },
+      { id: uid(), tipoId: "vulneravelSustentado", graduacao: 1, campos: {}, extrasAtivos: {} },
+    ] },
+  { id: "em", nome: "Em", custoNen: 2, sustentado: true,
+    desc: "Sentido Percepção às Cegas (graduação 1). Ação livre pra ativar; sustentado; custa 2 de Nen por turno enquanto ativo.",
+    passivos: () => [{ id: uid(), tipoId: "sentidos", graduacao: 1, campos: { sentido: "Percepção às Cegas" }, extrasAtivos: {} }] },
+];
+function construirFundamento(def) {
+  return {
+    id: uid(), nome: def.nome, tipo: "passiva", tipoAcerto: "corpo", custoVida: 0, custoNen: def.custoNen,
+    extras: {}, equipamento: false, ativo: false, sustentado: !!def.sustentado, fundamento: def.id,
+    efeitos: [{ id: uid(), ...efeitoPadrao("Dano") }],
+    passivos: def.passivos(),
+  };
+}
 
 function custoPassivo(inst, def) {
   if (!def) return 0;
@@ -860,7 +950,7 @@ function acumuladorPassivoVazio() {
     atributos: {}, tamanho: 0, aparar: 0, esquiva: 0, furtividade: 0, temDeflexao: false,
     reducaoDano: 0, regenPorTurno: 0, pontosSorteMax: 0, membrosExtras: 0,
     comunicacaoAlcance: 0, deslocamentos: { base: 0, voo: 0, natacao: 0, escavacao: 0, temVoo: false, temNatacao: false, temEscavacao: false },
-    notas: [],
+    periciasBonus: {}, notas: [],
   };
 }
 /* ---------- suporte a múltiplos efeitos passivos por habilidade ----------
@@ -900,6 +990,16 @@ function rotuloPassivos(ataque) {
   const nomes = passivosDe(ataque).map((p) => PODERES_PASSIVOS.find((x) => x.id === p.tipoId)?.nome).filter(Boolean);
   if (!nomes.length) return "passiva";
   return nomes.length === 1 ? nomes[0] : `${nomes[0]} +${nomes.length - 1}`;
+}
+/* Checa se a entidade tem uma variante específica do efeito passivo "Característica" ativa
+   (ex: temCaracteristica(ent, "Fejonetto")). Usado pra ligar regras especiais no lugar certo do código. */
+function temCaracteristica(ent, nomeCaracteristica) {
+  return instanciasPassivasAtivas(ent).some(({ inst }) => inst.tipoId === "caracteristicaEspecial" && inst.campos?.nome === nomeCaracteristica);
+}
+/* Checa se a entidade adquiriu (e tem ativado) um Fundamento específico pelo id estável
+   (ex: temFundamento(ent, "shu")) — independe do nome de exibição da habilidade. */
+function temFundamento(ent, idFundamento) {
+  return (ent?.ataques || []).some((a) => a.fundamento === idFundamento && a.tipo === "passiva" && passivaEstaAtiva(a));
 }
 function modificadoresPassivos(ent) {
   const acc = acumuladorPassivoVazio();
@@ -963,10 +1063,13 @@ function temVantagem(ent, nome) { return (ent?.vantagens || []).some((v) => v.no
 
 function bonusPericia(ent, nomePericia) {
   if (!ent) return 0;
-  const p = PERICIAS.find((x) => x.nome === nomePericia);
+  // Fejonetto: tudo que usaria o bônus de Enganação passa a usar o de Persuasão no lugar.
+  const nomeReal = nomePericia === "Enganação" && temCaracteristica(ent, "Fejonetto") ? "Persuasão" : nomePericia;
+  const p = PERICIAS.find((x) => x.nome === nomeReal);
   if (!p) return 0;
-  const passivo = nomePericia === "Furtividade" ? modificadoresPassivos(ent).furtividade : 0;
-  return attr(ent, p.atributo) + ((ent.periciaPontos && ent.periciaPontos[nomePericia]) || 0) + bonusVantagemToggle(ent, nomePericia) + calcModCondicoes(ent).testesGerais + passivo;
+  const passivos = modificadoresPassivos(ent);
+  const bonusPassivo = (nomeReal === "Furtividade" ? passivos.furtividade : 0) + (passivos.periciasBonus?.[nomeReal] || 0);
+  return attr(ent, p.atributo) + ((ent.periciaPontos && ent.periciaPontos[nomeReal]) || 0) + bonusVantagemToggle(ent, nomeReal) + calcModCondicoes(ent).testesGerais + bonusPassivo;
 }
 function melhorDe(ent, nomesPericias) {
   return Math.max(...nomesPericias.map((n) => bonusPericia(ent, n)));
@@ -1059,7 +1162,7 @@ function valorAlvoComoCD(ent, key) {
   return 10 + bonusPericia(ent, key);
 }
 
-const EFEITO_CATEGORIAS = ["Dano", "Cura", "Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Outros"];
+const EFEITO_CATEGORIAS = ["Dano", "Cura", "Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Leitura Mental"];
 const SALVAMENTOS_ESCOLHA = ["Fortitude", "Vontade"];
 const AFLICOES_G1 = ["Adoecido", "Caído", "Impedido", "Machucado", "Tonto", "Vulnerável"];
 const AFLICOES_G2 = ["Atordoado", "Compelido", "Em chamas", "Envenenado", "Imóvel", "Indefeso", "Sangrando", "Em transe"];
@@ -1072,6 +1175,7 @@ function efeitoPadrao(categoria) {
   if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 5, caracteristica: "" };
   if (categoria === "Camuflagem") return { categoria, salvamento: "Fortitude", graduacao: 5, sentidos: [] };
   if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5 };
+  if (categoria === "Leitura Mental") return { categoria, graduacao: 5 };
   if (categoria === "Outros") return { categoria, texto: "" };
   return { categoria };
 }
@@ -1082,6 +1186,7 @@ function dadosEfeito(efeito, oponente) {
   if (efeito.categoria === "Enfraquecer") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0), salvLabel: efeito.salvamento };
   if (efeito.categoria === "Camuflagem") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 15 + (efeito.graduacao || 0), salvLabel: efeito.salvamento };
   if (efeito.categoria === "Nulificar") return { bonus: efeito.graduacaoNulificar || 0, cd: 10 + statDefesa(oponente, "vontade"), salvLabel: "Vontade do alvo", quemRolaAtacante: true };
+  if (efeito.categoria === "Leitura Mental") return { bonus: salvBonus(oponente, "Vontade"), cd: 10 + (efeito.graduacao || 0), salvLabel: "Vontade" };
   return { bonus: 0, cd: 10 };
 }
 
@@ -1122,6 +1227,17 @@ function textoAflicao(efeito, graus) {
   if (nivel === 1) return `1 grau — ${par(efeito.grau1, efeito.grau1b)}`;
   if (nivel === 2) return `2 graus — ${par(efeito.grau2, efeito.grau2b)}`;
   return `3 graus — ${par(efeito.grau3, efeito.grau3b)}`;
+}
+const LEITURA_MENTAL_GRAUS = [
+  "1º grau — Pensamentos superficiais: lê o que o alvo está pensando agora (transcende idiomas)",
+  "2º grau — Pensamentos pessoais: pode fazer uma pergunta e recebe a resposta da mente do alvo (ou descobre que ele não sabe)",
+  "3º grau — Memória: lê as lembranças do alvo com a exatidão de como ele se recorda delas, uma lembrança por rodada",
+  "4º grau — Subconsciente: lê memórias que nem o alvo sabe conscientemente — reprimidas, traumas ou outras personalidades",
+];
+function textoLeituraMental(graus) {
+  const nivel = Math.min(Math.abs(graus), 4);
+  if (nivel === 0) return "Sem contato — o alvo resistiu";
+  return LEITURA_MENTAL_GRAUS[nivel - 1];
 }
 function textoNulificar(graus) {
   if (graus <= 0) return "Sem efeito — não superou a Vontade do alvo";
@@ -1566,6 +1682,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       }
     }
     if (efeito.categoria === "Aflição") extra.texto = r.sucesso ? "Resistiu" : textoAflicao(efeito, r.graus);
+    if (efeito.categoria === "Leitura Mental") extra.texto = r.sucesso ? "Resistiu" : textoLeituraMental(r.graus);
     if (efeito.categoria === "Enfraquecer") extra.perda = r.sucesso ? 0 : Math.min(Math.abs(r.diff), efeito.graduacao || 0);
     if (efeito.categoria === "Camuflagem") extra.sentidos = r.sucesso ? [] : (efeito.sentidos || []);
     registrar({
@@ -1644,7 +1761,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [usarDividido, setUsarDividido] = useState(false);
   const [dividAlvo2Id, setDividAlvo2Id] = useState("");
   const [dividGrad, setDividGrad] = useState({});
-  const efeitosResistiveisDividido = efeitosDoAtaque.filter((ef) => ef.categoria !== "Nulificar" && ef.categoria !== "Cura");
+  const efeitosResistiveisDividido = efeitosDoAtaque.filter((ef) => ef.categoria !== "Nulificar" && ef.categoria !== "Cura" && ef.categoria !== "Leitura Mental");
   const alvo2Dividido = entidades.find((e2) => e2.id === dividAlvo2Id);
 
   const montarEfeitoCard = (efeito, res) => {
@@ -1653,6 +1770,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     if (efeito.categoria === "Cura") return { classe: res.cura > 0 ? "ok" : "dano", titulo: res.cura > 0 ? "Vida curada (já somada à Vida)" : "Sem efeito", valor: res.cura };
     if (efeito.categoria === "Nulificar") return { classe: res.r.sucesso ? "dano" : "ok", titulo: res.texto };
     if (efeito.categoria === "Aflição") return { classe: res.r.sucesso ? "ok" : "dano", titulo: res.texto };
+    if (efeito.categoria === "Leitura Mental") return { classe: res.r.sucesso ? "ok" : "dano", titulo: res.texto };
     if (efeito.categoria === "Enfraquecer") return { classe: res.perda > 0 ? "dano" : "ok", titulo: res.perda > 0 ? `-${res.perda} em ${efeito.caracteristica || "característica"}` : "Sem efeito" };
     if (efeito.categoria === "Camuflagem") return { classe: res.sentidos.length ? "dano" : "ok", titulo: res.sentidos.length ? `Perde: ${res.sentidos.filter(Boolean).join(", ")}` : "Sem efeito" };
     return null;
@@ -2166,13 +2284,21 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
     const dano = res.sucesso ? Math.max(1, res.graus) : 0;
     setR3({ ...res, dano });
     if (dano > 0) {
-      const max = itemAlvo.pvItemMax || 0;
-      const atualPv = itemAlvo.pvItemAtual ?? max;
-      const novoPv = Math.max(0, atualPv - dano);
-      const novosAtaques = (oponente.ataques || []).map((a) => a.id === itemAlvo.id ? { ...a, pvItemAtual: novoPv } : a);
-      atualizarCampo(oponente.id, "ataques", novosAtaques);
-      registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome})`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: novoPv <= 0 ? `-${dano} PV — QUEBRADO` : `-${dano} PV (${novoPv}/${max})`, tipoClasse: novoPv <= 0 ? "hs" : "hw" });
-      if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: `${itemAlvo.nome} (${oponente.nome})`, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdItem, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: novoPv <= 0 ? "Item quebrado!" : `-${dano} PV do item` });
+      if (temFundamento(oponente, "shu")) {
+        const nenAtual = oponente.nenAtual || 0;
+        const novoNen = Math.max(0, nenAtual - dano);
+        atualizarCampo(oponente.id, "nenAtual", novoNen);
+        registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome}) — absorvido pelo Shu`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: `-${dano} Nen (${novoNen}/${nenMaxCalc(oponente)})`, tipoClasse: "hw" });
+        if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: `${itemAlvo.nome} (${oponente.nome})`, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdItem, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: `Shu absorve: -${dano} Nen` });
+      } else {
+        const max = itemAlvo.pvItemMax || 0;
+        const atualPv = itemAlvo.pvItemAtual ?? max;
+        const novoPv = Math.max(0, atualPv - dano);
+        const novosAtaques = (oponente.ataques || []).map((a) => a.id === itemAlvo.id ? { ...a, pvItemAtual: novoPv } : a);
+        atualizarCampo(oponente.id, "ataques", novosAtaques);
+        registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome})`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: novoPv <= 0 ? `-${dano} PV — QUEBRADO` : `-${dano} PV (${novoPv}/${max})`, tipoClasse: novoPv <= 0 ? "hs" : "hw" });
+        if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: `${itemAlvo.nome} (${oponente.nome})`, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdItem, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: novoPv <= 0 ? "Item quebrado!" : `-${dano} PV do item` });
+      }
     } else {
       registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome})`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: "Sem efeito", tipoClasse: "hw" });
       if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: `${itemAlvo.nome} (${oponente.nome})`, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdItem, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: "Sem efeito" });
@@ -3042,6 +3168,18 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
           <input type="number" value={efeito.graduacaoNulificar} onChange={(e) => upd("graduacaoNulificar", Number(e.target.value))} />
         </>
       )}
+      {efeito.categoria === "Leitura Mental" && (
+        <>
+          <label className="label">Graduação de Leitura Mental</label>
+          <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
+          <div className="field-note">
+            Manipulador · Ação padrão · Alcance Percepção (defina em "Tipo de acerto" da habilidade) · Sustentado · custa 2 de Nen por graduação.<br />
+            Teste oposto contra a Vontade do alvo (CD 10 + graduação). O grau de sucesso determina o grau de contato: 1º Pensamentos superficiais, 2º Pensamentos pessoais, 3º Memória, 4º Subconsciente. Pra ganhar mais contato, use outra ação padrão e role de novo.<br />
+            O alvo pode repetir o teste de Vontade (mesma CD) no fim de cada turno pra te expulsar da mente dele — isso é manual, não é feito automaticamente pelo site.<br />
+            Regra extra (também manual): se você puder interagir com o alvo, um Enganação seu vs a Intuição dele faz ele pensar conscientemente numa informação específica, pescável pelo 1º grau.
+          </div>
+        </>
+      )}
       {efeito.categoria === "Outros" && (
         <>
           <div className="field-note">Sem rolagem — aplicado automaticamente ao usar a habilidade.</div>
@@ -3135,6 +3273,9 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
                 <option value="">Escolha…</option>
                 {def.campoEscolha.opcoes.map((o) => <option key={o} value={o}>{def.campoEscolha.rotulos ? def.campoEscolha.rotulos.find((r) => r.k === o)?.l || o : o}</option>)}
               </select>
+              {def.campoEscolha.descricoes?.[passivo.campos?.[def.campoEscolha.chave]] && (
+                <div className="field-note" style={{ marginTop: 6 }}>{def.campoEscolha.descricoes[passivo.campos[def.campoEscolha.chave]]}</div>
+              )}
             </div>
           )}
           {def.campoEscolha && def.campoEscolha.multi && (
@@ -3333,6 +3474,11 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   });
   const [erro, setErro] = useState("");
   const [complicOpen, setComplicOpen] = useState(false);
+  const [fundamentosOpen, setFundamentosOpen] = useState(false);
+  const toggleFundamento = (fund) => {
+    const jaTem = f.ataques.some((a) => a.fundamento === fund.id);
+    upd("ataques", jaTem ? f.ataques.filter((a) => a.fundamento !== fund.id) : [...f.ataques, construirFundamento(fund)]);
+  };
 
   const upd = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const maxAtr = atributoMax(f.nivel);
@@ -3454,14 +3600,15 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       {(f.vantagens || []).map((v, i) => {
         const info = VANTAGENS.find((x) => x.nome === v.nome);
         const max = info?.graduacaoMax || 5;
+        const semLimite = max >= 999;
         return (
           <div key={v.id}>
             <div className="vantagem-row">
               <select value={v.nome} onChange={(e) => mudarVantagemNome(i, e.target.value)}>{VANTAGENS.map((opt) => <option key={opt.nome} value={opt.nome}>{opt.nome}</option>)}</select>
-              {max > 1 && <input type="number" min={1} max={max} value={v.graduacoes} onChange={(e) => updVantagem(i, "graduacoes", Math.max(1, Math.min(max, Number(e.target.value))))} />}
+              {max > 1 && <input type="number" min={1} max={semLimite ? undefined : max} value={v.graduacoes} onChange={(e) => updVantagem(i, "graduacoes", Math.max(1, semLimite ? Number(e.target.value) : Math.min(max, Number(e.target.value))))} />}
               <button className="small-btn" onClick={() => rmVantagem(i)}>×</button>
             </div>
-            {info && <div className="field-note">{info.desc}{max > 1 ? ` (máx. ${max} graduações)` : ""}</div>}
+            {info && <div className="field-note">{info.desc}{max > 1 ? (semLimite ? " (sem limite de graduações)" : ` (máx. ${max} graduações)`) : ""}</div>}
             {info?.mecanica?.escolhePericias > 0 && (
               <div className="grid2" style={{ marginBottom: 8 }}>
                 {Array.from({ length: info.mecanica.escolhePericias }).map((_, pi) => (
@@ -3518,6 +3665,30 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       <div className="section-title">Habilidades</div>
       {f.ataques.map((a, i) => <AtaqueForm key={a.id} ataque={a} onMudar={(novo) => updAtaque(i, novo)} onRemover={() => rmAtaque(i)} />)}
       <button className="btn btn-ghost btn-sm" onClick={addAtaque}>+ Habilidade</button>
+
+      <div className="divider" />
+      <div className="section-title colapsavel" onClick={() => setFundamentosOpen((s) => !s)} style={{ cursor: "pointer" }}>
+        Fundamentos {fundamentosOpen ? "▾" : "▸"}
+      </div>
+      {fundamentosOpen && (
+        <div className="subcard2" style={{ marginBottom: 10 }}>
+          <div className="field-note" style={{ marginBottom: 10 }}>
+            Fundamentos são habilidades passivas gratuitas (não gastam Pontos de Poder). Marcar um deles adiciona a habilidade pronta lá embaixo, em Habilidades — dá pra editar, e ligar/desligar como qualquer outra passiva.
+          </div>
+          {FUNDAMENTOS.map((fund) => {
+            const adquirido = f.ataques.some((a) => a.fundamento === fund.id);
+            return (
+              <label key={fund.id} className="checkbox-row" style={{ alignItems: "flex-start", marginBottom: 10 }}>
+                <input type="checkbox" checked={adquirido} onChange={() => toggleFundamento(fund)} style={{ marginTop: 3 }} />
+                <span>
+                  <b>{fund.nome}</b>
+                  <div className="field-note" style={{ marginTop: 2 }}>{fund.desc}</div>
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      )}
 
       <div style={{ height: 70 }} />
       <div className="ficha-footer-fixa">
