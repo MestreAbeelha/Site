@@ -52,6 +52,17 @@ const GlobalStyle = () => (
     .mm3 textarea.outros-textarea:focus { border-color: var(--accent); }
     .mm3 input:focus, .mm3 select:focus { border-color: var(--accent); }
     .mm3 input:disabled { opacity:0.6; }
+
+    .mm3 .ssel { position:relative; }
+    .mm3 .ssel input[type="text"] { cursor:pointer; }
+    .mm3 .ssel-lista {
+      position:absolute; z-index:400; top:calc(100% + 4px); left:0; right:0; max-height:220px; overflow-y:auto;
+      background:var(--surface3); border:1px solid var(--accent); border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,0.45);
+      padding:4px;
+    }
+    .mm3 .ssel-opt { padding:9px 10px; border-radius:7px; cursor:pointer; font-size:0.9rem; color:var(--text); }
+    .mm3 .ssel-opt.destacado { background:var(--accent-soft); color:var(--accent); }
+    .mm3 .ssel-vazio { padding:9px 10px; font-size:0.85rem; color:var(--muted); }
     .mm3 input.in-vida { background: rgba(76,186,122,0.2); border-color: rgba(76,186,122,0.45); color:#e3f8ea; }
     .mm3 input.in-nen { background: rgba(255,255,255,0.14); border-color: rgba(255,255,255,0.28); color:#f5f5f5; }
     .mm3 input.in-vida-temp { background: rgba(56,189,248,0.2); border-color: rgba(56,189,248,0.45); color:#e1f5fe; }
@@ -132,7 +143,7 @@ const GlobalStyle = () => (
     .mm3 .ent-collapsed .meta { font-size:0.72rem; color:var(--muted); }
     .mm3 .nome-clicavel { cursor:pointer; }
     .mm3 .vantagem-row { display:grid; grid-template-columns:1fr 70px auto; gap:8px; align-items:center; margin-bottom:6px; }
-    .mm3 .vantagem-row select { font-size:0.85rem; }
+    .mm3 .vantagem-row select, .mm3 .vantagem-row .ssel input[type="text"] { font-size:0.85rem; }
     .mm3 .foto-thumb { border-radius:8px; object-fit:cover; flex-shrink:0; }
     .mm3 .foto-upload-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
     .mm3 .foto-preview { width:72px; height:72px; border-radius:12px; object-fit:cover; background:var(--surface3); border:1px solid var(--border); flex-shrink:0; }
@@ -405,7 +416,7 @@ const TIPOS_ACERTO = [
   { v: "corpo", l: "Corpo-a-corpo" }, { v: "distancia", l: "À distância" },
   { v: "area", l: "Área" }, { v: "percepcao", l: "Percepção" },
 ];
-const NEN_TIPOS = ["Fortificador", "Emissor", "Transmutador", "Manipulador", "Conjurador", "Especialista", "Alterações", "Nenhum"];
+const NEN_TIPOS = ["Fortificador", "Emissor", "Transmutador", "Manipulador", "Conjurador", "Especialista", "Modelador", "Nenhum"];
 
 const ATRIBUTOS = [
   { k: "forca", l: "Força" }, { k: "agilidade", l: "Agilidade" }, { k: "vigor", l: "Vigor" }, { k: "inteligencia", l: "Inteligência" },
@@ -719,7 +730,7 @@ const PODERES_PASSIVOS = [
     ],
     aplicar1(ent, inst, acc) { acc.pontosSorteMax = Math.max(acc.pontosSorteMax, inst.graduacao || 0); }, aplicar2() {} },
 
-  { id: "crescimento", nome: "Crescimento", categoria: "Alterações", custoBase: 6,
+  { id: "crescimento", nome: "Crescimento", categoria: "Modelador", custoBase: 6,
     desc: "Para cada graduação, Tamanho, Força, Vigor e Alcance de Ataque aumentam 1, mas Esquiva, Aparar e Furtividade diminuem 1.",
     extras: [
       { chave: "musculosDensos", label: "Músculos Densos (controla o quanto cresce, sem precisar do tamanho máximo)", custoPorGrad: 1 },
@@ -745,7 +756,7 @@ const PODERES_PASSIVOS = [
     ], falhas: [],
     aplicar1(ent, inst, acc) { acc.aparar += (inst.graduacao || 0); acc.temDeflexao = true; }, aplicar2() {} },
 
-  { id: "encolhimento", nome: "Encolhimento", categoria: "Alterações", custoBase: 2,
+  { id: "encolhimento", nome: "Encolhimento", categoria: "Modelador", custoBase: 2,
     desc: "Para cada graduação, Tamanho, Força e Agilidade diminuem 1, mas Esquiva, Aparar e Furtividade aumentam 1.",
     extras: [
       { chave: "forcaNormal", label: "Força Normal (não reduz mais Força e Agilidade)", custoPorGrad: 2 },
@@ -758,12 +769,12 @@ const PODERES_PASSIVOS = [
       acc.esquiva += g; acc.aparar += g; acc.furtividade += g;
     }, aplicar2() {} },
 
-  { id: "escavacao", nome: "Escavação", categoria: "Alterações", custoBase: 1,
+  { id: "escavacao", nome: "Escavação", categoria: "Modelador", custoBase: 1,
     desc: "Move-se através da terra e areia a uma graduação de velocidade igual à sua graduação de Escavação -3.",
     extras: [], falhas: [],
     aplicar1() {}, aplicar2(ent, inst, acc) { acc.deslocamentos.escavacao = Math.max(acc.deslocamentos.escavacao, (inst.graduacao || 0) - 3); acc.deslocamentos.temEscavacao = true; } },
 
-  { id: "membrosExtras", nome: "Membros Extras", categoria: "Alterações", custoBase: 4,
+  { id: "membrosExtras", nome: "Membros Extras", categoria: "Modelador", custoBase: 4,
     desc: "Cada graduação concede um membro manipulador extra (considerado inábil). +1 em Aparar e Fintar por graduação.",
     extras: [], falhas: [],
     aplicar1(ent, inst, acc) { acc.membrosExtras += (inst.graduacao || 0); acc.aparar += (inst.graduacao || 0); }, aplicar2() {} },
@@ -795,7 +806,7 @@ const PODERES_PASSIVOS = [
       if (excedente > 0) acc.notas.push(`Proteção: ${excedente} graduação(ões) excedente(s) reduzem a CD do teste de Resistência em vez de reduzir dano (aplique manualmente)`);
     }, aplicar2() {} },
 
-  { id: "regeneracao", nome: "Regeneração", categoria: "Alterações", custoBase: 3,
+  { id: "regeneracao", nome: "Regeneração", categoria: "Modelador", custoBase: 3,
     desc: "Recupera em PV a graduação neste efeito por turno. Com 10 graduações, recupera membros perdidos em 1 minuto.",
     extras: [], falhas: [],
     aplicar1(ent, inst, acc) { acc.regenPorTurno += (inst.graduacao || 0); }, aplicar2() {} },
@@ -841,7 +852,7 @@ const PODERES_PASSIVOS = [
       if (inst.extrasAtivos?.aquatico) { acc.deslocamentos.natacao = Math.max(acc.deslocamentos.natacao, g); acc.deslocamentos.temNatacao = true; }
     } },
 
-  { id: "bonusPericiaPassivo", nome: "Bônus de Perícia", categoria: "Coringa", custoBase: 1,
+  { id: "bonusPericiaPassivo", nome: "Característica Aumentada (Bônus de Perícia)", categoria: "Coringa", custoBase: 1,
     desc: "Concede um bônus fixo, igual à graduação, numa perícia escolhida.",
     campoEscolha: { chave: "pericia", label: "Perícia", opcoes: PERICIAS.map((p) => p.nome) },
     extras: [], falhas: [],
@@ -862,15 +873,10 @@ const PODERES_PASSIVOS = [
     extras: [], falhas: [],
     aplicar1() {}, aplicar2(ent, inst, acc) { if (inst.campos?.nome) acc.notas.push(`Característica: ${inst.campos.nome}`); } },
 
-  { id: "shuNota", nome: "Shu (absorver dano de item)", categoria: "Coringa", custoBase: 1,
+  { id: "shuNota", nome: "Shu (absorver dano de item)", categoria: "Coringa", custoBase: 1, oculto: true,
     desc: "Enquanto ativo: quando um item seu sofrer dano, em vez de perder Pontos de Vida do item, esse tanto é descontado dos seus Pontos de Nen. (Aplicado automaticamente ao usar a ação Quebrar contra um item seu.)",
     extras: [], falhas: [],
     aplicar1() {}, aplicar2(ent, inst, acc) { acc.notas.push("Shu: dano em itens é absorvido pelos seus Pontos de Nen"); } },
-
-  { id: "vulneravelSustentado", nome: "Vulnerável ao sustentar", categoria: "Coringa", custoBase: 0,
-    desc: "Enquanto esta habilidade estiver sustentada, você fica Vulnerável (marque a condição manualmente na ficha enquanto estiver sustentando).",
-    extras: [], falhas: [],
-    aplicar1() {}, aplicar2(ent, inst, acc) { acc.notas.push("Enquanto sustentado: você fica Vulnerável"); } },
 ];
 
 /* ---------- Fundamentos (Ren/Zetsu/Shu/Ken/Gyo/Em) ----------
@@ -909,9 +915,8 @@ const FUNDAMENTOS = [
   { id: "gyo", nome: "Gyo", custoNen: 1, sustentado: true,
     desc: "Sentido Ver Nen (graduação 1) + 1 de Percepção. Ação livre pra ativar; sustentado; custa 1 de Nen por turno; enquanto sustentado, você fica Vulnerável.",
     passivos: () => [
-      { id: uid(), tipoId: "sentidos", graduacao: 1, campos: { sentido: "Ver Nen" }, extrasAtivos: {} },
+      { id: uid(), tipoId: "sentidos", graduacao: 1, campos: { sentido: "Ver Nen" }, extrasAtivos: {}, colateral: { ativo: true, condicao: "Vulnerável", comTeste: false } },
       { id: uid(), tipoId: "bonusPericiaPassivo", graduacao: 1, campos: { pericia: "Percepção" }, extrasAtivos: {} },
-      { id: uid(), tipoId: "vulneravelSustentado", graduacao: 1, campos: {}, extrasAtivos: {} },
     ] },
   { id: "em", nome: "Em", custoNen: 2, sustentado: true,
     desc: "Sentido Percepção às Cegas (graduação 1). Ação livre pra ativar; sustentado; custa 2 de Nen por turno enquanto ativo.",
@@ -1000,6 +1005,44 @@ function temCaracteristica(ent, nomeCaracteristica) {
    (ex: temFundamento(ent, "shu")) — independe do nome de exibição da habilidade. */
 function temFundamento(ent, idFundamento) {
   return (ent?.ataques || []).some((a) => a.fundamento === idFundamento && a.tipo === "passiva" && passivaEstaAtiva(a));
+}
+/* Lista efeitos colaterais atualmente "em jogo": efeitos passivos ativos, e efeitos de
+   habilidades ativas que estejam sendo sustentadas (a.sustentado). Cada item retornado
+   é { ataque, item } onde "item" é o efeito/instância que carrega o .colateral. */
+function efeitosColateraisAtivos(ent) {
+  const out = [];
+  (ent?.ataques || []).forEach((a) => {
+    if (a.tipo === "passiva" && passivaEstaAtiva(a)) {
+      passivosDe(a).forEach((inst) => { if (inst?.colateral?.ativo) out.push({ ataque: a, item: inst }); });
+    } else if (a.tipo !== "passiva" && a.sustentado) {
+      (a.efeitos || []).forEach((ef) => { if (ef?.colateral?.ativo) out.push({ ataque: a, item: ef }); });
+    }
+  });
+  return out;
+}
+/* Rola o teste de resistência do Efeito Colateral ("Colateral com Teste") pra quem está
+   sustentando a habilidade — falhar aplica a condição escolhida automaticamente. */
+function rolarTesteColateral(entidade, item, atualizarCampo, registrar) {
+  const col = item?.colateral;
+  if (!col?.ativo || !col?.comTeste || !col?.salvamento || !col?.condicao) return;
+  const cd = 10 + (item.graduacao || item.graduacaoNulificar || 0);
+  const dado = rolarD20();
+  const bonus = salvBonus(entidade, col.salvamento);
+  const r = montarTeste(dado, bonus, cd);
+  if (registrar) {
+    registrar({
+      tipo: "rolagem",
+      desc: `${entidade.nome} testa Efeito Colateral (${col.salvamento})`,
+      detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`,
+      total: r.sucesso ? "Resistiu" : `Falhou — fica ${col.condicao}`,
+      tipoClasse: r.sucesso ? "hs" : "hw",
+    });
+  }
+  if (!r.sucesso && atualizarCampo) {
+    const atuais = { ...(entidade.condicoes || {}) };
+    if (!atuais[col.condicao]) atuais[col.condicao] = 1;
+    atualizarCampo(entidade.id, "condicoes", atuais);
+  }
 }
 function modificadoresPassivos(ent) {
   const acc = acumuladorPassivoVazio();
@@ -1474,6 +1517,75 @@ function AnimacaoOverlay({ eventos, onTerminar }) {
 
 /* ---------- modal de descrição / ativação de vantagem ---------- */
 /* ---------- modal de confirmação (ex: excluir ficha) ---------- */
+/* ---------- select com busca ----------
+   Substituto de <SearchableSelect> que funciona igual (mesmo value, mesmo onChange recebendo um
+   evento com .target.value) — então dá pra trocar <SearchableSelect>...</SearchableSelect> por
+   <SearchableSelect>...</SearchableSelect> sem mexer no resto do código. Ao clicar,
+   abre uma lista; digitar filtra pelas opções que COMEÇAM com o texto digitado. */
+function normalizarBusca(txt) {
+  return (txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+}
+function SearchableSelect({ value, onChange, children, style, disabled, placeholder }) {
+  const [aberto, setAberto] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [destacado, setDestacado] = useState(0);
+  const ref = useRef(null);
+
+  const opcoes = React.Children.toArray(children)
+    .filter((c) => c && c.props && c.props.value !== undefined)
+    .map((c) => ({ value: c.props.value, label: typeof c.props.children === "string" ? c.props.children : String(c.props.children ?? c.props.value) }));
+
+  const atual = opcoes.find((o) => o.value === value);
+  const filtradas = busca ? opcoes.filter((o) => normalizarBusca(o.label).startsWith(normalizarBusca(busca))) : opcoes;
+
+  useEffect(() => {
+    if (!aberto) return;
+    const aoClicar = (ev) => { if (ref.current && !ref.current.contains(ev.target)) { setAberto(false); setBusca(""); } };
+    document.addEventListener("mousedown", aoClicar);
+    return () => document.removeEventListener("mousedown", aoClicar);
+  }, [aberto]);
+
+  const escolher = (opt) => {
+    onChange({ target: { value: opt.value } });
+    setAberto(false);
+    setBusca("");
+  };
+  const aoTeclar = (ev) => {
+    if (ev.key === "ArrowDown") { ev.preventDefault(); setAberto(true); setDestacado((d) => Math.min(d + 1, filtradas.length - 1)); }
+    else if (ev.key === "ArrowUp") { ev.preventDefault(); setDestacado((d) => Math.max(d - 1, 0)); }
+    else if (ev.key === "Enter") { ev.preventDefault(); if (aberto && filtradas[destacado]) escolher(filtradas[destacado]); }
+    else if (ev.key === "Escape") { setAberto(false); setBusca(""); }
+  };
+
+  return (
+    <div className="ssel" ref={ref} style={style}>
+      <input
+        type="text"
+        disabled={disabled}
+        value={aberto ? busca : (atual?.label ?? "")}
+        placeholder={placeholder || atual?.label || ""}
+        onFocus={() => { setAberto(true); setBusca(""); setDestacado(0); }}
+        onClick={() => { setAberto(true); setBusca(""); setDestacado(0); }}
+        onChange={(e) => { setBusca(e.target.value); setDestacado(0); setAberto(true); }}
+        onKeyDown={aoTeclar}
+        readOnly={disabled}
+      />
+      {aberto && !disabled && (
+        <div className="ssel-lista">
+          {filtradas.length === 0 && <div className="ssel-vazio">Nada encontrado…</div>}
+          {filtradas.map((o, i) => (
+            <div key={String(o.value)} className={"ssel-opt" + (i === destacado ? " destacado" : "")}
+              onMouseEnter={() => setDestacado(i)}
+              onMouseDown={(ev) => { ev.preventDefault(); escolher(o); }}>
+              {o.label || <>&nbsp;</>}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function ConfirmModal({ titulo, mensagem, textoConfirmar = "Confirmar", textoCancelar = "Cancelar", perigo = true, onConfirmar, onCancelar }) {
   return (
     <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) onCancelar(); }}>
@@ -1900,10 +2012,10 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         {ehAtaque && !isArea && (
           <>
             <label className="label">Oponente</label>
-            <select value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-            </select>
+            </SearchableSelect>
 
             {oponente && podeAgarrarRapido && !ataqueAcertoR && (
               <label className="checkbox-row" style={{ marginBottom: 12 }}>
@@ -1955,10 +2067,10 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                   <div className="subcard2" style={{ marginBottom: 12 }}>
                     <div className="section-title">Divisão do efeito</div>
                     <label className="label">Segundo alvo (diferente do primeiro)</label>
-                    <select value={dividAlvo2Id} onChange={(e) => { setDividAlvo2Id(e.target.value); setDividGrad({}); }} style={{ marginBottom: 10 }}>
+                    <SearchableSelect value={dividAlvo2Id} onChange={(e) => { setDividAlvo2Id(e.target.value); setDividGrad({}); }} style={{ marginBottom: 10 }}>
                       <option value="">Selecione…</option>
                       {alvosEngajados.filter((e2) => e2.id !== oponente.id).map((e2) => <option key={e2.id} value={e2.id}>{e2.nome}</option>)}
-                    </select>
+                    </SearchableSelect>
 
                     {!dividAlvo2Id && <div className="field-note">Escolha um segundo alvo, diferente de {oponente.nome}, entre os oponentes engajados no combate. Não é permitido dividir o efeito duas vezes no mesmo alvo.</div>}
 
@@ -2047,10 +2159,10 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                     {multiAtaques.length === 0 ? (
                       <>
                         <label className="label">Alvo do ataque extra (mesmo alvo ou outro engajado)</label>
-                        <select value={multiAlvoEscolha} onChange={(e) => setMultiAlvoEscolha(e.target.value)} style={{ marginBottom: 10 }}>
+                        <SearchableSelect value={multiAlvoEscolha} onChange={(e) => setMultiAlvoEscolha(e.target.value)} style={{ marginBottom: 10 }}>
                           <option value="">Selecione…</option>
                           {alvosEngajados.map((e2) => <option key={e2.id} value={e2.id}>{e2.nome}{e2.id === oponente.id ? " (mesmo alvo)" : ""}</option>)}
-                        </select>
+                        </SearchableSelect>
                         <button className="btn btn-accent btn-block" disabled={!multiAlvoEscolha} onClick={() => rolarMultiataque(multiAlvoEscolha)}>
                           ⚄ Atacar ({multiAlvoEscolha && oponente && multiAlvoEscolha === oponente.id ? "-10, mesmo alvo" : "-5, outro alvo"})
                         </button>
@@ -2090,18 +2202,18 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         {!ehAtaque && escolha === "oponente" && !resultado && (
           <>
             <label className="label">Oponente</label>
-            <select value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setStatOponente(""); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setStatOponente(""); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
-            </select>
+            </SearchableSelect>
             {oponente && (
               <>
                 <label className="label">Perícia ou defesa do oponente</label>
-                <select value={statOponente} onChange={(e) => setStatOponente(e.target.value)} style={{ marginBottom: 12 }}>
+                <SearchableSelect value={statOponente} onChange={(e) => setStatOponente(e.target.value)} style={{ marginBottom: 12 }}>
                   <option value="">Selecione…</option>
                   <optgroup label="Defesas">{DEFESAS_OPCOES.map((d) => <option key={d.key} value={d.key}>{d.label}</option>)}</optgroup>
                   <optgroup label="Perícias">{PERICIAS.map((p) => <option key={p.nome} value={p.nome}>{p.nome}</option>)}</optgroup>
-                </select>
+                </SearchableSelect>
                 <button className="btn btn-accent btn-block" disabled={!statOponente}
                   onClick={() => { rolarSimples(computeBonusBase(origemAtual, contexto.tipo, contexto.chave) + bonusCondicionalTotal + bonusDescansoValor, valorAlvoComoCD(oponente, statOponente), oponente); consumirBonusDescanso(); }}>⚄ Rolar d20</button>
               </>
@@ -2479,22 +2591,22 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
         {(acao.resolvedor === "oposto" || acao.resolvedor === "desarmar" || acao.resolvedor === "ataqueObjeto") && (
           <>
             <label className="label">Oponente</label>
-            <select value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); setR2(null); setR3(null); setItemAlvoId(""); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); setR2(null); setR3(null); setItemAlvoId(""); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-            </select>
+            </SearchableSelect>
 
             {acao.resolvedor === "ataqueObjeto" && oponente && (
               <>
                 <label className="label">Equipamento do alvo</label>
-                <select value={itemAlvoId} onChange={(e) => { setItemAlvoId(e.target.value); setR1(null); setR3(null); }} style={{ marginBottom: 12 }}>
+                <SearchableSelect value={itemAlvoId} onChange={(e) => { setItemAlvoId(e.target.value); setR1(null); setR3(null); }} style={{ marginBottom: 12 }}>
                   <option value="">Selecione…</option>
                   {equipamentosAlvo.map((a) => (
                     <option key={a.id} value={a.id}>
                       {a.nome || "(sem nome)"}{(a.pvItemMax || 0) > 0 ? ` — PV ${a.pvItemAtual ?? a.pvItemMax}/${a.pvItemMax}${itemQuebrado(a) ? " (quebrado)" : ""}` : ""}
                     </option>
                   ))}
-                </select>
+                </SearchableSelect>
                 {equipamentosAlvo.length === 0 && <div className="field-note">{oponente.nome} não tem equipamentos cadastrados.</div>}
                 <label className="checkbox-row"><input type="checkbox" checked={itemSegurado} onChange={(e) => setItemSegurado(e.target.checked)} />Item está sendo segurado (-2 no ataque)</label>
               </>
@@ -2576,9 +2688,9 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
           <>
             {acao.periciaEscolha && (
               <><label className="label">Perícia</label>
-              <select value={periciaEscolhida} onChange={(e) => setPericiaEscolhida(e.target.value)} style={{ marginBottom: 12 }}>
+              <SearchableSelect value={periciaEscolhida} onChange={(e) => setPericiaEscolhida(e.target.value)} style={{ marginBottom: 12 }}>
                 {acao.periciaEscolha.map((p) => <option key={p} value={p}>{p}</option>)}
-              </select></>
+              </SearchableSelect></>
             )}
             <label className="label">CD</label>
             <input type="number" value={cd} onChange={(e) => setCd(e.target.value)} style={{ marginBottom: 12 }} />
@@ -2634,17 +2746,17 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
         {acao.resolvedor === "ajudar" && (
           <>
             <label className="label">Aliado a ajudar</label>
-            <select value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
+            <SearchableSelect value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {outros.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-            </select>
+            </SearchableSelect>
             {aliado && (
               <>
                 <label className="label">Teste que deseja ajudar</label>
-                <select value={chaveAjuda} onChange={(e) => setChaveAjuda(e.target.value)} style={{ marginBottom: 12 }}>
+                <SearchableSelect value={chaveAjuda} onChange={(e) => setChaveAjuda(e.target.value)} style={{ marginBottom: 12 }}>
                   <option value="">Selecione…</option>
                   {AJUDA_CHAVES.map((c) => <option key={c.v} value={c.v}>{c.l}</option>)}
-                </select>
+                </SearchableSelect>
                 {chaveAjuda && !r1 && <button className="btn btn-accent btn-block" onClick={rolarAjuda}>⚄ Rolar (CD 10)</button>}
                 {r1 && <div className="subcard"><ResultadoCard r={r1} efeito={r1.sucesso ? { classe: "ok", titulo: `+${Math.max(1, r1.graus) * 2} concedido a ${aliado.nome}` } : { classe: "dano", titulo: "Não conseguiu ajudar" }} /></div>}
               </>
@@ -2655,10 +2767,10 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
         {acao.resolvedor === "oposicaoCondicao" && (
           <>
             <label className="label">Alvo</label>
-            <select value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR2(null); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR2(null); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-            </select>
+            </SearchableSelect>
             {oponente && !r2 && <button className="btn btn-accent btn-block" onClick={rolarOposicaoCondicao}>⚄ Rolar {acao.pericia}</button>}
             {r2 && (
               <div className="subcard">
@@ -2679,10 +2791,10 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
         {acao.resolvedor === "encontrao" && (
           <>
             <label className="label">Oponente</label>
-            <select value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-            </select>
+            </SearchableSelect>
             <label className="label">Graduações de deslocamento antes do ataque</label>
             <input type="number" value={graduacoesMovidas} onChange={(e) => setGraduacoesMovidas(e.target.value)} style={{ marginBottom: 12 }} />
             {oponente && !r1 && <button className="btn btn-accent btn-block" onClick={rolarEncontrao}>⚄ Rolar Ataque (+{Number(graduacoesMovidas) || 0})</button>}
@@ -2724,28 +2836,28 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
                 {(acao.subtipo === "agora" || acao.subtipo === "nossoAlvo") && (
                   <>
                     <label className="label">Inimigo</label>
-                    <select value={oponenteId} onChange={(e) => setOponenteId(e.target.value)} style={{ marginBottom: 12 }}>
+                    <SearchableSelect value={oponenteId} onChange={(e) => setOponenteId(e.target.value)} style={{ marginBottom: 12 }}>
                       <option value="">Selecione…</option>
                       {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-                    </select>
+                    </SearchableSelect>
                   </>
                 )}
                 {(acao.subtipo === "cuidado" || acao.subtipo === "reposicionar") && (
                   <>
                     <label className="label">Aliado</label>
-                    <select value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
+                    <SearchableSelect value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
                       <option value="">Selecione…</option>
                       {outros.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
-                    </select>
+                    </SearchableSelect>
                   </>
                 )}
                 {acao.subtipo === "cuidado" && (
                   <>
                     <label className="label">Defesa</label>
-                    <select value={defesaCuidado} onChange={(e) => setDefesaCuidado(e.target.value)} style={{ marginBottom: 12 }}>
+                    <SearchableSelect value={defesaCuidado} onChange={(e) => setDefesaCuidado(e.target.value)} style={{ marginBottom: 12 }}>
                       <option value="esquiva">Esquiva</option>
                       <option value="aparar">Aparar</option>
-                    </select>
+                    </SearchableSelect>
                   </>
                 )}
                 {r1 !== "feito" && <button className="btn btn-accent btn-block" onClick={usarAcaoPlano}>Usar Ação de Planejamento</button>}
@@ -3088,7 +3200,7 @@ function TelaIdentidade({ onEscolher }) {
 /* ---------- efeito (form) ---------- */
 function EfeitoForm({ efeito, onMudar, onRemover }) {
   const upd = (campo, valor) => onMudar({ ...efeito, [campo]: valor });
-  const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat) });
+  const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat), colateral: efeito.colateral });
   const addSentido = () => upd("sentidos", [...(efeito.sentidos || []), ""]);
   const updSentido = (i, v) => { const arr = [...efeito.sentidos]; arr[i] = v; upd("sentidos", arr); };
   const rmSentido = (i) => upd("sentidos", efeito.sentidos.filter((_, idx) => idx !== i));
@@ -3096,7 +3208,7 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
   return (
     <div className="subcard2">
       <div className="row-inline">
-        <select value={efeito.categoria} onChange={(e) => mudarCategoria(e.target.value)}>{EFEITO_CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}</select>
+        <SearchableSelect value={efeito.categoria} onChange={(e) => mudarCategoria(e.target.value)}>{EFEITO_CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}</SearchableSelect>
         <button className="small-btn" onClick={onRemover}>×</button>
       </div>
 
@@ -3104,44 +3216,42 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
         <>
           <label className="label">Graduação de Dano</label>
           <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
-          <div className="field-note">CD: 15 + graduação. Se a graduação for maior que o nível do personagem, o dano por grau de falha fica limitado ao nível — mas o CD continua contando a graduação cheia (o excedente vira CD, não dano).</div>
         </>
       )}
       {efeito.categoria === "Cura" && (
         <>
           <label className="label">Graduação de Cura</label>
           <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
-          <div className="field-note">Ao usar, faz um teste de Cura (d20 + graduação) vs CD 10 fixo. Sucesso cura a graduação em PV no alvo (dobro por 2 graus de sucesso, triplo por 3, e assim vai) — já soma direto na Vida do alvo.</div>
         </>
       )}
       {efeito.categoria === "Aflição" && (
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
-            <div><label className="label">Salvamento</label><select value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{SALVAMENTOS_ESCOLHA.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{SALVAMENTOS_ESCOLHA.map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
             <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
           </div>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.condicaoExtra} onChange={(e) => upd("condicaoExtra", e.target.checked)} />Condição extra</label>
           <label className="label">Falha (um grau)</label>
           <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
-            <select value={efeito.grau1} onChange={(e) => upd("grau1", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G1.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            {efeito.condicaoExtra && <select value={efeito.grau1b} onChange={(e) => upd("grau1b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G1.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
+            <SearchableSelect value={efeito.grau1} onChange={(e) => upd("grau1", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G1.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>
+            {efeito.condicaoExtra && <SearchableSelect value={efeito.grau1b} onChange={(e) => upd("grau1b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G1.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>}
           </div>
           <label className="label">Falha (dois graus)</label>
           <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
-            <select value={efeito.grau2} onChange={(e) => upd("grau2", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            {efeito.condicaoExtra && <select value={efeito.grau2b} onChange={(e) => upd("grau2b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
+            <SearchableSelect value={efeito.grau2} onChange={(e) => upd("grau2", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>
+            {efeito.condicaoExtra && <SearchableSelect value={efeito.grau2b} onChange={(e) => upd("grau2b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>}
           </div>
           <label className="label">Falha (três graus)</label>
           <div className={efeito.condicaoExtra ? "grid2" : ""}>
-            <select value={efeito.grau3} onChange={(e) => upd("grau3", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</select>
-            {efeito.condicaoExtra && <select value={efeito.grau3b} onChange={(e) => upd("grau3b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</select>}
+            <SearchableSelect value={efeito.grau3} onChange={(e) => upd("grau3", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>
+            {efeito.condicaoExtra && <SearchableSelect value={efeito.grau3b} onChange={(e) => upd("grau3b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>}
           </div>
         </>
       )}
       {efeito.categoria === "Enfraquecer" && (
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
-            <div><label className="label">Salvamento</label><select value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{SALVAMENTOS_ESCOLHA.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{SALVAMENTOS_ESCOLHA.map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
             <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
           </div>
           <label className="label">Característica afetada</label>
@@ -3151,7 +3261,7 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
       {efeito.categoria === "Camuflagem" && (
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
-            <div><label className="label">Salvamento</label><select value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{SALVAMENTOS_ESCOLHA.map((s) => <option key={s} value={s}>{s}</option>)}</select></div>
+            <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{SALVAMENTOS_ESCOLHA.map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
             <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
           </div>
           <label className="label">Sentidos afetados</label>
@@ -3172,12 +3282,6 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
         <>
           <label className="label">Graduação de Leitura Mental</label>
           <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
-          <div className="field-note">
-            Manipulador · Ação padrão · Alcance Percepção (defina em "Tipo de acerto" da habilidade) · Sustentado · custa 2 de Nen por graduação.<br />
-            Teste oposto contra a Vontade do alvo (CD 10 + graduação). O grau de sucesso determina o grau de contato: 1º Pensamentos superficiais, 2º Pensamentos pessoais, 3º Memória, 4º Subconsciente. Pra ganhar mais contato, use outra ação padrão e role de novo.<br />
-            O alvo pode repetir o teste de Vontade (mesma CD) no fim de cada turno pra te expulsar da mente dele — isso é manual, não é feito automaticamente pelo site.<br />
-            Regra extra (também manual): se você puder interagir com o alvo, um Enganação seu vs a Intuição dele faz ele pensar conscientemente numa informação específica, pescável pelo 1º grau.
-          </div>
         </>
       )}
       {efeito.categoria === "Outros" && (
@@ -3187,7 +3291,49 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
           <textarea className="outros-textarea" value={efeito.texto || ""} onChange={(e) => upd("texto", e.target.value)} placeholder="Descreva o que esse efeito faz…" rows={3} />
         </>
       )}
+      <div className="divider" />
+      <ColateralEditor colateral={efeito.colateral} onMudar={(c) => upd("colateral", c)} graduacao={efeito.graduacao ?? efeito.graduacaoNulificar} />
     </div>
+  );
+}
+
+/* ---------- Efeito Colateral (usado tanto em efeitos ativos quanto em efeitos passivos) ----------
+   Sem "Colateral com Teste": vira uma nota — enquanto sustentar, o personagem fica com a condição
+   (aplicação é manual, igual todo o resto que depende de "por turno" nesse site).
+   Com "Colateral com Teste": vira um teste de verdade, com um botão de rolar (perto da habilidade,
+   na ficha) — falhar aplica a condição automaticamente. */
+function ColateralEditor({ colateral, onMudar, graduacao }) {
+  const col = colateral || {};
+  const upd = (campo, valor) => onMudar({ ...col, [campo]: valor });
+  return (
+    <>
+      <label className="checkbox-row"><input type="checkbox" checked={!!col.ativo} onChange={(e) => upd("ativo", e.target.checked)} />Efeito Colateral</label>
+      {col.ativo && (
+        <>
+          <label className="label">Condição</label>
+          <SearchableSelect value={col.condicao || ""} onChange={(e) => upd("condicao", e.target.value)}>
+            <option value="">Escolha…</option>
+            {CONDICOES_LISTA.map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
+          </SearchableSelect>
+          <label className="checkbox-row"><input type="checkbox" checked={!!col.comTeste} onChange={(e) => upd("comTeste", e.target.checked)} />Colateral com Teste</label>
+          {col.comTeste && (
+            <>
+              <label className="label">Teste de resistência</label>
+              <SearchableSelect value={col.salvamento || ""} onChange={(e) => upd("salvamento", e.target.value)}>
+                <option value="">Escolha…</option>
+                <option value="Fortitude">Fortitude</option>
+                <option value="Vontade">Vontade</option>
+              </SearchableSelect>
+            </>
+          )}
+          <div className="field-note">
+            {col.comTeste
+              ? `Ao usar (ou a cada turno, se sustentado), teste ${col.salvamento || "—"} CD ${10 + (graduacao || 0)}. Falhou: fica com "${col.condicao || "—"}". Aparece um botão pra rolar isso perto da habilidade, na ficha.`
+              : `Enquanto sustentar esse efeito, o personagem fica com a condição "${col.condicao || "—"}" (marque manualmente na ficha).`}
+          </div>
+        </>
+      )}
+    </>
   );
 }
 
@@ -3252,14 +3398,14 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
   const upd = (campo, valor) => onMudar({ ...passivo, [campo]: valor });
   const updCampo = (chave, valor) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), [chave]: valor } });
   const toggleExtra = (chave) => onMudar({ ...passivo, extrasAtivos: { ...(passivo.extrasAtivos || {}), [chave]: !passivo.extrasAtivos?.[chave] } });
-  const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {} });
+  const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, colateral: passivo?.colateral });
   return (
     <div className="subcard2" style={{ marginBottom: 10 }}>
       <div className="row-inline">
-        <select value={passivo?.tipoId || ""} onChange={(e) => mudarTipo(e.target.value)}>
+        <SearchableSelect value={passivo?.tipoId || ""} onChange={(e) => mudarTipo(e.target.value)}>
           <option value="">Escolha um efeito…</option>
-          {PODERES_PASSIVOS.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-        </select>
+          {[...PODERES_PASSIVOS].filter((p) => !p.oculto || p.id === passivo?.tipoId).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+        </SearchableSelect>
         <button className="small-btn" onClick={onRemover}>×</button>
       </div>
       {def && (
@@ -3269,10 +3415,10 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
           {def.campoEscolha && !def.campoEscolha.multi && (
             <div style={{ marginBottom: 8 }}>
               <label className="label">{def.campoEscolha.label}</label>
-              <select value={passivo.campos?.[def.campoEscolha.chave] || ""} onChange={(e) => updCampo(def.campoEscolha.chave, e.target.value)}>
+              <SearchableSelect value={passivo.campos?.[def.campoEscolha.chave] || ""} onChange={(e) => updCampo(def.campoEscolha.chave, e.target.value)}>
                 <option value="">Escolha…</option>
                 {def.campoEscolha.opcoes.map((o) => <option key={o} value={o}>{def.campoEscolha.rotulos ? def.campoEscolha.rotulos.find((r) => r.k === o)?.l || o : o}</option>)}
-              </select>
+              </SearchableSelect>
               {def.campoEscolha.descricoes?.[passivo.campos?.[def.campoEscolha.chave]] && (
                 <div className="field-note" style={{ marginTop: 6 }}>{def.campoEscolha.descricoes[passivo.campos[def.campoEscolha.chave]]}</div>
               )}
@@ -3315,6 +3461,8 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
               ))}
             </div>
           )}
+          <div className="divider" />
+          <ColateralEditor colateral={passivo.colateral} onMudar={(c) => upd("colateral", c)} graduacao={passivo.graduacao} />
         </>
       )}
     </div>
@@ -3334,7 +3482,7 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
       {!ehPassiva && (
         <div style={{ marginBottom: 10 }}>
           <label className="label">Tipo de acerto</label>
-          <select value={ataque.tipoAcerto} onChange={(e) => upd("tipoAcerto", e.target.value)}>{TIPOS_ACERTO.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}</select>
+          <SearchableSelect value={ataque.tipoAcerto} onChange={(e) => upd("tipoAcerto", e.target.value)}>{TIPOS_ACERTO.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}</SearchableSelect>
         </div>
       )}
       <div className="grid2" style={{ marginBottom: 10 }}>
@@ -3542,8 +3690,8 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
 
       <div style={{ marginBottom: 10 }}><label className="label">Nome</label><input type="text" value={f.nome} onChange={(e) => upd("nome", e.target.value)} /></div>
       <div className="grid3" style={{ marginBottom: 10 }}>
-        <div><label className="label">Tipo</label><select value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</select></div>
-        <div><label className="label">Tipo de Nen</label><select value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</select></div>
+        <div><label className="label">Tipo</label><SearchableSelect value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>
+        <div><label className="label">Tipo de Nen</label><SearchableSelect value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>
         <div><label className="label">Nível</label><input type="number" min="1" value={f.nivel} onChange={(e) => upd("nivel", Math.max(1, Number(e.target.value)))} /></div>
       </div>
 
@@ -3604,7 +3752,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         return (
           <div key={v.id}>
             <div className="vantagem-row">
-              <select value={v.nome} onChange={(e) => mudarVantagemNome(i, e.target.value)}>{VANTAGENS.map((opt) => <option key={opt.nome} value={opt.nome}>{opt.nome}</option>)}</select>
+              <SearchableSelect value={v.nome} onChange={(e) => mudarVantagemNome(i, e.target.value)}>{VANTAGENS.map((opt) => <option key={opt.nome} value={opt.nome}>{opt.nome}</option>)}</SearchableSelect>
               {max > 1 && <input type="number" min={1} max={semLimite ? undefined : max} value={v.graduacoes} onChange={(e) => updVantagem(i, "graduacoes", Math.max(1, semLimite ? Number(e.target.value) : Math.min(max, Number(e.target.value))))} />}
               <button className="small-btn" onClick={() => rmVantagem(i)}>×</button>
             </div>
@@ -3612,30 +3760,30 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
             {info?.mecanica?.escolhePericias > 0 && (
               <div className="grid2" style={{ marginBottom: 8 }}>
                 {Array.from({ length: info.mecanica.escolhePericias }).map((_, pi) => (
-                  <select key={pi} value={(v.periciasEscolhidas || [])[pi] || ""} onChange={(e) => {
+                  <SearchableSelect key={pi} value={(v.periciasEscolhidas || [])[pi] || ""} onChange={(e) => {
                     const arr = [...(v.periciasEscolhidas || [])]; arr[pi] = e.target.value; updVantagem(i, "periciasEscolhidas", arr);
                   }}>
                     <option value="">Perícia {pi + 1}…</option>
                     {PERICIAS.map((p) => <option key={p.nome} value={p.nome}>{p.nome}</option>)}
-                  </select>
+                  </SearchableSelect>
                 ))}
               </div>
             )}
             {info?.mecanica?.escolheDefesa && (
-              <select value={v.defesaEscolhida || ""} onChange={(e) => updVantagem(i, "defesaEscolhida", e.target.value)} style={{ marginBottom: 8 }}>
+              <SearchableSelect value={v.defesaEscolhida || ""} onChange={(e) => updVantagem(i, "defesaEscolhida", e.target.value)} style={{ marginBottom: 8 }}>
                 <option value="">Defesa favorita…</option>
                 <option value="esquiva">Esquiva</option>
                 <option value="aparar">Aparar</option>
-              </select>
+              </SearchableSelect>
             )}
             {info?.mecanica?.pedeTexto && (
               <input type="text" placeholder="Inimigo escolhido" value={v.textoExtra || ""} onChange={(e) => updVantagem(i, "textoExtra", e.target.value)} style={{ marginBottom: 8 }} />
             )}
             {info?.pedeHabilidade && (
-              <select value={v.alvoId || ""} onChange={(e) => updVantagem(i, "alvoId", e.target.value)} style={{ marginBottom: 8 }}>
+              <SearchableSelect value={v.alvoId || ""} onChange={(e) => updVantagem(i, "alvoId", e.target.value)} style={{ marginBottom: 8 }}>
                 <option value="">Habilidade afetada…</option>
                 {(f.ataques || []).filter((a) => a.nome.trim()).map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
-              </select>
+              </SearchableSelect>
             )}
           </div>
         );
@@ -3944,19 +4092,19 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
 
           <div className="subcard" style={{ marginBottom: 8 }}>
             <div style={{ marginBottom: 8 }}><b>Tratamento</b><div className="field-note">Cura Vida de outro personagem = sua Inteligência + Nível ({attr(e, "inteligencia") + (e.nivel || 1)}).</div></div>
-            <select value={tratamentoAlvoId} onChange={(ev) => setTratamentoAlvoId(ev.target.value)} style={{ marginBottom: 8 }}>
+            <SearchableSelect value={tratamentoAlvoId} onChange={(ev) => setTratamentoAlvoId(ev.target.value)} style={{ marginBottom: 8 }}>
               <option value="">Selecione um jogador…</option>
               {jogadoresDisponiveis.map((j) => <option key={j.id} value={j.id}>{j.nome}</option>)}
-            </select>
+            </SearchableSelect>
             <button className="btn btn-accent btn-sm btn-block" disabled={!tratamentoAlvoId} onClick={tratarJogador}>Tratar</button>
           </div>
 
           <div className="subcard">
             <div style={{ marginBottom: 8 }}><b>Treinamento</b><div className="field-note">Você e o jogador escolhido ganham um checkbox de +2 no próximo teste de ataque, até o próximo descanso.</div></div>
-            <select value={treinoAlvoId} onChange={(ev) => setTreinoAlvoId(ev.target.value)} style={{ marginBottom: 8 }}>
+            <SearchableSelect value={treinoAlvoId} onChange={(ev) => setTreinoAlvoId(ev.target.value)} style={{ marginBottom: 8 }}>
               <option value="">Selecione um jogador…</option>
               {jogadoresDisponiveis.map((j) => <option key={j.id} value={j.id}>{j.nome}</option>)}
-            </select>
+            </SearchableSelect>
             <button className="btn btn-accent btn-sm btn-block" disabled={!treinoAlvoId} onClick={treinarComJogador}>Treinar</button>
           </div>
         </div>
@@ -4127,7 +4275,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
         </div>
       )}
 
-      {(passivos.notas.length > 0 || passivos.reducaoDano > 0 || passivos.regenPorTurno > 0 || passivos.comunicacaoAlcance > 0 || passivos.pontosSorteMax > 0 || passivos.deslocamentos.temVoo || passivos.deslocamentos.temNatacao || passivos.deslocamentos.temEscavacao || passivos.membrosExtras > 0 || passivos.tamanho !== 0) && (
+      {(passivos.notas.length > 0 || passivos.reducaoDano > 0 || passivos.regenPorTurno > 0 || passivos.comunicacaoAlcance > 0 || passivos.pontosSorteMax > 0 || passivos.deslocamentos.temVoo || passivos.deslocamentos.temNatacao || passivos.deslocamentos.temEscavacao || passivos.membrosExtras > 0 || passivos.tamanho !== 0 || efeitosColateraisAtivos(e).length > 0) && (
         <div className="stat-group">
           <div className="stat-group-label">Efeitos Passivos Ativos</div>
           <div className="readonly-grid">
@@ -4168,6 +4316,20 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
               </div>
             );
           })}
+          {efeitosColateraisAtivos(e).map(({ ataque: a, item }, i) => (
+            <div key={`col-${a.id}-${i}`} className="ro-row" style={{ marginTop: 6 }}>
+              <span>{a.nome || "Habilidade"} — Efeito Colateral: {item.colateral.condicao || "—"}</span>
+              {item.colateral.comTeste ? (
+                editavel && (
+                  <button className="small-btn" onClick={() => rolarTesteColateral(e, item, onAtualizarCampo, registrar)}>
+                    Testar {item.colateral.salvamento || ""} (CD {10 + (item.graduacao || item.graduacaoNulificar || 0)})
+                  </button>
+                )
+              ) : (
+                <span className="field-note" style={{ margin: 0 }}>enquanto sustentado</span>
+              )}
+            </div>
+          ))}
           {passivos.notas.length > 0 && <div className="field-note" style={{ marginTop: 6 }}>{passivos.notas.join(" · ")}</div>}
         </div>
       )}
