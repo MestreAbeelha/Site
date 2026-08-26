@@ -173,6 +173,12 @@ const GlobalStyle = () => (
     .mm3 .row-inline { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
     .mm3 .small-btn { background:var(--surface3); border:1px solid var(--border); color:var(--muted); border-radius:8px; width:30px; height:30px;
       cursor:pointer; font-size:1rem; line-height:1; flex-shrink:0; }
+    .mm3 .item-pv-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
+    .mm3 .item-pv-head { display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--muted); margin-bottom:6px; }
+    .mm3 .item-pv-track { height:8px; border-radius:6px; background:var(--surface3); overflow:hidden; margin-bottom:8px; }
+    .mm3 .item-pv-fill { height:100%; border-radius:6px; transition:width 0.25s ease; }
+    .mm3 .item-pv-restaurar { width:100%; }
+    .mm3 .item-pv-restaurar:disabled { opacity:0.45; cursor:default; }
     .mm3 .checkbox-row { display:flex; align-items:center; gap:8px; font-size:0.82rem; color:var(--text); margin:8px 0; user-select:none; cursor:pointer; }
     .mm3 .checkbox-row input[type="checkbox"] {
       appearance:none; -webkit-appearance:none; width:18px; height:18px; border:1px solid rgba(255,255,255,0.25);
@@ -479,6 +485,16 @@ function graduacaoParaDistancia(g) {
   const gi = Math.round(g || 0);
   if (gi > 20) return 150 + (gi - 20) * 25;
   return linhaMedida(gi).distancia;
+}
+/* Busca reversa na Tabela de Medidas: dada uma massa em kg, acha a menor graduação cuja
+   capacidade (massa) já é suficiente pra carregar/mover esse peso. Usada em Mover Objetos
+   pra sugerir a graduação de dano de um objeto arremessado a partir do peso dele. */
+function massaParaGraduacao(kg) {
+  const peso = Math.max(0, Number(kg) || 0);
+  for (let g = -2; g <= 20; g++) {
+    if (graduacaoParaMassa(g) >= peso) return g;
+  }
+  return 20 + Math.ceil((peso - 800) / 100);
 }
 
 const VANTAGENS = [
@@ -801,12 +817,15 @@ const PODERES_PASSIVOS = [
   { id: "protecao", nome: "Proteção", categoria: "Fortificador", custoBase: 4,
     desc: "Reduz qualquer dano em uma quantidade igual à graduação. Se a graduação for maior que o nível, o excedente reduz a CD do teste de Resistência em vez de reduzir dano.",
     extras: [], falhas: [{ chave: "limitado", label: "Limitado (a redução só se aplica se marcar o checkbox \"Proteção\" ao rolar o teste de Resistência)" }],
-    aplicar1(ent, inst, acc) {
+    aplicar1(ent, inst, acc, ataque) {
       const g = inst.graduacao || 0; const nivel = ent?.nivel || 1;
       const reducao = Math.min(g, nivel);
       if (inst.extrasAtivos?.limitado) {
         acc.reducaoDanoLimitado += reducao;
         acc.notas.push(`Proteção (Limitado): ${reducao} de redução de dano só se aplica se marcar o checkbox "Proteção" ao rolar o teste de Resistência`);
+      } else if (ataque?.equipamento) {
+        acc.reducaoDanoItens.push({ ataqueId: ataque.id, nome: ataque.nome || "Equipamento", valor: reducao });
+        acc.notas.push(`Proteção (${ataque.nome || "Equipamento"}): ${reducao} de redução de dano — o item perde PV igual ao dano que absorver`);
       } else {
         acc.reducaoDano += reducao;
       }
@@ -961,7 +980,7 @@ function custoPassivo(inst, def) {
 function acumuladorPassivoVazio() {
   return {
     atributos: {}, tamanho: 0, aparar: 0, esquiva: 0, furtividade: 0, temDeflexao: false,
-    reducaoDano: 0, reducaoDanoLimitado: 0, regenPorTurno: 0, pontosSorteMax: 0, membrosExtras: 0,
+    reducaoDano: 0, reducaoDanoLimitado: 0, reducaoDanoItens: [], regenPorTurno: 0, pontosSorteMax: 0, membrosExtras: 0,
     comunicacaoAlcance: 0, deslocamentos: { base: 0, voo: 0, natacao: 0, escavacao: 0, temVoo: false, temNatacao: false, temEscavacao: false },
     periciasBonus: {}, notas: [],
   };
@@ -1055,13 +1074,15 @@ function rolarTesteColateral(entidade, item, atualizarCampo, registrar) {
 function modificadoresPassivos(ent) {
   const acc = acumuladorPassivoVazio();
   const instancias = instanciasPassivasAtivas(ent);
-  instancias.forEach(({ inst }) => {
+  instancias.forEach(({ ataque, inst }) => {
+    if (ataque?.equipamento && itemQuebrado(ataque)) return; // item quebrado não concede mais seus bônus
     const def = PODERES_PASSIVOS.find((p) => p.id === inst.tipoId);
-    if (def) def.aplicar1(ent, inst, acc);
+    if (def) def.aplicar1(ent, inst, acc, ataque);
   });
-  instancias.forEach(({ inst }) => {
+  instancias.forEach(({ ataque, inst }) => {
+    if (ataque?.equipamento && itemQuebrado(ataque)) return;
     const def = PODERES_PASSIVOS.find((p) => p.id === inst.tipoId);
-    if (def) def.aplicar2(ent, inst, acc);
+    if (def) def.aplicar2(ent, inst, acc, ataque);
   });
   return acc;
 }
@@ -1825,9 +1846,24 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     if (efeito.categoria === "Dano") {
       const nivelAtacante = Math.max(1, origemAtual.nivel || 1);
       const graduacaoDano = Math.min(efeito.graduacao || 0, nivelAtacante);
-      extra.dano = r.sucesso ? 0 : graduacaoDano * Math.abs(r.graus);
-      const reducaoTotal = (modificadoresPassivos(alvo).reducaoDano || 0) + (aplicarProtecaoLimitada ? (modificadoresPassivos(alvo).reducaoDanoLimitado || 0) : 0);
-      extra.dano = Math.max(0, extra.dano - reducaoTotal);
+      const danoPreReducao = r.sucesso ? 0 : graduacaoDano * Math.abs(r.graus);
+      const passivosAlvo = modificadoresPassivos(alvo);
+      const reducaoNormal = passivosAlvo.reducaoDano || 0;
+      const reducaoLimitada = aplicarProtecaoLimitada ? (passivosAlvo.reducaoDanoLimitado || 0) : 0;
+      const reducaoItens = passivosAlvo.reducaoDanoItens || [];
+      // A proteção de itens só perde PV pelo tanto que de fato absorver (nunca mais que o dano recebido),
+      // e é consumida só depois da proteção "normal"/limitada (ordem: inata > limitada > itens).
+      let restante = danoPreReducao;
+      restante = Math.max(0, restante - reducaoNormal);
+      restante = Math.max(0, restante - reducaoLimitada);
+      const absorcoesItens = [];
+      for (const it of reducaoItens) {
+        const absorvido = Math.min(it.valor, restante);
+        if (absorvido > 0) absorcoesItens.push({ ataqueId: it.ataqueId, valor: absorvido });
+        restante -= absorvido;
+      }
+      extra.dano = Math.max(0, restante);
+      extra.absorcoesItens = absorcoesItens;
       if (!r.sucesso && Math.abs(r.graus) >= 2) {
         const graduacaoArremesso = Math.floor((efeito.graduacao || 0) / 2);
         let distancia = graduacaoParaDistancia(graduacaoArremesso);
@@ -1847,6 +1883,15 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu efeito" });
     if (efeito.categoria === "Dano" && extra.dano > 0) aplicarDano(alvo.id, extra.dano);
+    if (efeito.categoria === "Dano" && extra.absorcoesItens?.length && atualizarCampo) {
+      const novosAtaques = (alvo.ataques || []).map((a) => {
+        const abs = extra.absorcoesItens.find((x) => x.ataqueId === a.id);
+        if (!abs) return a;
+        const atual = a.pvItemAtual ?? a.pvItemMax ?? 0;
+        return { ...a, pvItemAtual: Math.max(0, atual - abs.valor) };
+      });
+      atualizarCampo(alvo.id, "ataques", novosAtaques);
+    }
     if (efeito.categoria === "Aflição" && !r.sucesso && atualizarCampo) {
       const nivel = Math.min(Math.abs(r.graus), 3);
       const condNome = nivel === 1 ? efeito.grau1 : nivel === 2 ? efeito.grau2 : nivel === 3 ? efeito.grau3 : null;
@@ -1984,21 +2029,51 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
 
   const custoVida = Number(ehAtaque ? contexto.ataque?.custoVida : 0) || 0;
   const custoNen = Number(ehAtaque ? contexto.ataque?.custoNen : 0) || 0;
+  // Se a habilidade é um Equipamento com PV próprio, o custo de vida sai do item, não da ficha.
+  const itemComPv = ehAtaque && contexto.ataque?.equipamento && (contexto.ataque?.pvItemMax || 0) > 0;
   const custoAplicadoRef = useRef(false);
   useEffect(() => {
     if (!ehAtaque || custoAplicadoRef.current || !atualizarCampo) return;
     if (custoVida <= 0 && custoNen <= 0) return;
     custoAplicadoRef.current = true;
-    if (custoVida > 0) atualizarCampo(origemAtual.id, "pvAtual", (origemAtual.pvAtual || 0) - custoVida);
+    if (custoVida > 0) {
+      if (itemComPv) {
+        const atualItem = contexto.ataque.pvItemAtual ?? contexto.ataque.pvItemMax;
+        const novosAtaques = (origemAtual.ataques || []).map((a) => (a.id === contexto.ataque.id ? { ...a, pvItemAtual: Math.max(0, atualItem - custoVida) } : a));
+        atualizarCampo(origemAtual.id, "ataques", novosAtaques);
+      } else {
+        atualizarCampo(origemAtual.id, "pvAtual", (origemAtual.pvAtual || 0) - custoVida);
+      }
+    }
     if (custoNen > 0) atualizarCampo(origemAtual.id, "nenAtual", (origemAtual.nenAtual || 0) - custoNen);
     registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} paga o custo de "${contexto.ataque.nome}"`,
-      detalhe: `${custoVida > 0 ? `-${custoVida} Vida` : ""}${custoVida > 0 && custoNen > 0 ? " · " : ""}${custoNen > 0 ? `-${custoNen} Nen` : ""}`,
+      detalhe: `${custoVida > 0 ? `-${custoVida} ${itemComPv ? "PV do item" : "Vida"}` : ""}${custoVida > 0 && custoNen > 0 ? " · " : ""}${custoNen > 0 ? `-${custoNen} Nen` : ""}`,
       total: "Custo pago", tipoClasse: "hw",
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const atualizarMoverObjetos = (novoMO) => {
+    if (!atualizarCampo || !ehAtaque || !contexto.ataque) return;
+    const novosAtaques = (origemAtual.ataques || []).map((a) => (a.id === contexto.ataque.id ? { ...a, moverObjetos: novoMO } : a));
+    atualizarCampo(origemAtual.id, "ataques", novosAtaques);
+  };
+  // Usa a versão mais atual do ataque (vinda de origemAtual/entidades, que é reativo) em vez do
+  // "contexto.ataque" capturado na abertura do modal — assim os campos de Mover Objetos refletem
+  // a digitação/edição em tempo real, e não uma foto congelada de quando o modal abriu.
+  const ataqueAtual = ehAtaque ? ((origemAtual.ataques || []).find((a) => a.id === contexto.ataque?.id) || contexto.ataque) : null;
+  const criarAtaqueArremesso = (nomeObjeto, graduacaoDano) => {
+    if (!atualizarCampo) return;
+    const novo = {
+      id: uid(), nome: `Arremesso: ${nomeObjeto || "Objeto"}`, tipo: "ativa", tipoAcerto: "distancia", custoVida: 0, custoNen: 0, extras: {}, ativo: false,
+      efeitos: [{ id: uid(), categoria: "Dano", graduacao: Math.max(0, graduacaoDano || 0) }],
+      passivos: [],
+    };
+    atualizarCampo(origemAtual.id, "ataques", [...(origemAtual.ataques || []), novo]);
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} monta um ataque de arremesso com "${nomeObjeto || "objeto"}"`, detalhe: `Novo ataque à distância criado (Dano graduação ${graduacaoDano})`, total: "Criado", tipoClasse: "hs" });
+  };
 
   return (
     <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}>
@@ -2006,6 +2081,13 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         <div className="modal-head"><span className="mt">{contexto.label}</span><button className="modal-close" onClick={fechar}>×</button></div>
         {ehAtaque && contexto.ataque?.textoFormatado && (
           <div className="rich-display" style={{ marginBottom: 12 }} dangerouslySetInnerHTML={{ __html: contexto.ataque.textoFormatado }} />
+        )}
+
+        {ehAtaque && ataqueAtual?.moverObjetos?.ativo && (
+          <div className="subcard2" style={{ marginBottom: 12 }}>
+            <div className="section-title">Mover Objetos</div>
+            <MoverObjetosCampos mo={ataqueAtual.moverObjetos} onMudar={atualizarMoverObjetos} onCriarArremesso={criarAtaqueArremesso} />
+          </div>
         )}
 
         {(temMultiataque || temDividido) && (
@@ -3559,10 +3641,77 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
   );
 }
 
-function AtaqueForm({ ataque, onMudar, onRemover }) {
+/* Campos de configuração/uso do efeito "Mover Objetos": graduação, Concentração e a lista de
+   objetos marcados (com peso e graduação de dano sugerida pro arremesso). Reaproveitado tanto
+   no editor da habilidade (ficha) quanto no modal de uso em combate (marcar objetos ao vivo). */
+function MoverObjetosCampos({ mo, onMudar, onCriarArremesso }) {
+  const updMO = (campo, valor) => onMudar({ ...mo, [campo]: valor });
+  const graduacaoEfetiva = (mo.graduacao || 0) + (mo.concentracao ? 1 : 0);
+  const capacidadeKg = graduacaoParaMassa(graduacaoEfetiva);
+  const objetos = mo.objetos || [];
+  const pesoTotal = objetos.reduce((s, o) => s + (Number(o.peso) || 0), 0);
+  const sobrecarregado = pesoTotal > capacidadeKg;
+  const updObjeto = (idx, campo, valor) => { const arr = [...objetos]; arr[idx] = { ...arr[idx], [campo]: valor }; updMO("objetos", arr); };
+  const addObjeto = () => updMO("objetos", [...objetos, { id: uid(), nome: "", peso: 0 }]);
+  const rmObjeto = (idx) => updMO("objetos", objetos.filter((_, i) => i !== idx));
+  return (
+    <>
+      <div className="grid2" style={{ marginBottom: 8 }}>
+        <div>
+          <label className="label">Graduação (Força efetiva)</label>
+          <input type="number" min={0} value={mo.graduacao || 0} onChange={(e) => updMO("graduacao", Math.max(0, Number(e.target.value)))} />
+        </div>
+        <div>
+          <label className="label">Capacidade de carga</label>
+          <input type="text" disabled value={`${capacidadeKg} kg${mo.concentracao ? " (com Concentração)" : ""}`} />
+        </div>
+      </div>
+      <label className="checkbox-row" style={{ marginBottom: 10 }}>
+        <input type="checkbox" checked={!!mo.concentracao} onChange={(e) => updMO("concentracao", e.target.checked)} />
+        Concentrando (ação de movimento, +1 na Força efetiva, dura enquanto Concentração)
+      </label>
+
+      <label className="label">Objetos marcados</label>
+      {objetos.map((o, idx) => {
+        const graduacaoDano = massaParaGraduacao(o.peso);
+        return (
+          <div key={o.id} className="row-inline" style={{ alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div style={{ flex: 2, minWidth: 100 }}>
+              <input type="text" placeholder="Nome do objeto" value={o.nome} onChange={(e) => updObjeto(idx, "nome", e.target.value)} />
+            </div>
+            <div style={{ flex: 1, minWidth: 80 }}>
+              <input type="number" min={0} placeholder="Peso (kg)" value={o.peso || 0} onChange={(e) => updObjeto(idx, "peso", Math.max(0, Number(e.target.value)))} />
+            </div>
+            <button type="button" className="small-btn" onClick={() => rmObjeto(idx)}>×</button>
+            <div className="field-note" style={{ width: "100%", margin: "2px 0 6px" }}>
+              Dano sugerido se arremessado: graduação {graduacaoDano}
+              {onCriarArremesso && (
+                <button type="button" className="btn btn-ghost btn-sm" style={{ marginLeft: 8 }}
+                  onClick={() => onCriarArremesso(o.nome, graduacaoDano)}>
+                  + Criar ataque de arremesso
+                </button>
+              )}
+            </div>
+          </div>
+        );
+      })}
+      <button type="button" className="btn btn-ghost btn-sm" onClick={addObjeto} style={{ marginBottom: 8 }}>+ Marcar objeto</button>
+      <div className="field-note" style={{ color: sobrecarregado ? "var(--danger)" : undefined }}>
+        Peso total marcado: {pesoTotal} kg / {capacidadeKg} kg{sobrecarregado ? " — SOBRECARREGADO" : ""}
+      </div>
+    </>
+  );
+}
+
+function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso }) {
   const [extrasAberto, setExtrasAberto] = useState(false);
   const [exigirTesteAberto, setExigirTesteAberto] = useState(false);
-  const [colapsado, setColapsado] = useState(false);
+  const [moverObjetosAberto, setMoverObjetosAberto] = useState(false);
+  const colapsado = !!ataque.colapsado;
+  const setColapsado = (fnOuValor) => {
+    const novo = typeof fnOuValor === "function" ? fnOuValor(colapsado) : fnOuValor;
+    upd("colapsado", novo);
+  };
   const upd = (campo, valor) => onMudar({ ...ataque, [campo]: valor });
   const updEfeito = (idx, novo) => { const arr = [...ataque.efeitos]; arr[idx] = novo; upd("efeitos", arr); };
   const addEfeito = () => upd("efeitos", [...ataque.efeitos, { id: uid(), ...efeitoPadrao("Dano") }]);
@@ -3612,13 +3761,26 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
           </div>
         </div>
       )}
-      {ataque.equipamento && (ataque.pvItemMax || 0) > 0 && (
-        <div className="field-note" style={{ marginBottom: 10 }}>
-          PV atual do item: {ataque.pvItemAtual ?? ataque.pvItemMax}/{ataque.pvItemMax}
-          {itemQuebrado(ataque) && <b style={{ color: "var(--danger, #e05a5a)" }}> — QUEBRADO</b>}
-          {" "}<button className="small-btn" style={{ marginLeft: 6 }} onClick={() => upd("pvItemAtual", ataque.pvItemMax)}>Restaurar PV</button>
-        </div>
-      )}
+      {ataque.equipamento && (ataque.pvItemMax || 0) > 0 && (() => {
+        const max = ataque.pvItemMax || 0;
+        const atual = Math.max(0, Math.min(max, ataque.pvItemAtual ?? max));
+        const pct = max > 0 ? Math.round((atual / max) * 100) : 0;
+        const quebrado = itemQuebrado(ataque);
+        const cor = quebrado ? "var(--danger)" : pct <= 33 ? "var(--warn)" : "var(--success)";
+        const cheio = atual >= max;
+        return (
+          <div className="item-pv-box" style={{ marginBottom: 10 }}>
+            <div className="item-pv-head">
+              <span>PV do item {quebrado && <b style={{ color: "var(--danger)" }}>— QUEBRADO</b>}</span>
+              <b style={{ color: cor }}>{atual}/{max}</b>
+            </div>
+            <div className="item-pv-track"><div className="item-pv-fill" style={{ width: `${pct}%`, background: cor }} /></div>
+            <button type="button" className="btn btn-ghost btn-sm item-pv-restaurar" disabled={cheio} onClick={() => upd("pvItemAtual", max)}>
+              ♻ Restaurar PV
+            </button>
+          </div>
+        );
+      })()}
       <div className="grid2" style={{ marginBottom: 10 }}>
         <div>
           <label className="label">Custo de Vida</label>
@@ -3679,6 +3841,30 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
           <div className="section-title">Efeitos passivos</div>
           <PassivoEditor passivos={passivosDe(ataque)} onMudar={(nova) => upd("passivos", nova)} />
         </>
+      )}
+
+      {!ehPassiva && (
+      <>
+      <div className="acoes-header" onClick={() => setMoverObjetosAberto((s) => !s)}>
+        <div className="section-title" style={{ marginBottom: 0 }}>Mover Objetos</div>
+        <span className={"arrow" + (moverObjetosAberto ? " open" : "")}>▶</span>
+      </div>
+      {moverObjetosAberto && (
+        <div className="subcard2" style={{ marginBottom: 10 }}>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={!!ataque.moverObjetos?.ativo}
+              onChange={(e) => upd("moverObjetos", { graduacao: 0, concentracao: false, objetos: [], ...ataque.moverObjetos, ativo: e.target.checked })} />
+            Mover Objetos
+          </label>
+          <div className="field-note" style={{ marginBottom: 10 }}>
+            Toque num objeto pra marcá-lo; com uma ação você move todos os marcados a qualquer distância dentro da sua percepção. A Força efetiva pra erguer/mover é igual à graduação. Usando uma ação de movimento pra se concentrar, some +1 (muda a duração pra Concentração). Não serve pra manipulação fina. Objetos arremessados baseiam o dano na graduação do peso deles.
+          </div>
+          {ataque.moverObjetos?.ativo && (
+            <MoverObjetosCampos mo={ataque.moverObjetos} onMudar={(novo) => upd("moverObjetos", novo)} onCriarArremesso={onCriarArremesso} />
+          )}
+        </div>
+      )}
+      </>
       )}
 
       <div className="acoes-header" onClick={() => setExigirTesteAberto((s) => !s)}>
@@ -3775,6 +3961,15 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
     passivos: [{ id: uid(), tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {} }],
   }]);
   const rmAtaque = (idx) => upd("ataques", f.ataques.filter((_, i) => i !== idx));
+  /* Cria automaticamente um novo ataque à distância pronto (Mover Objetos → Arremessar) com
+     um efeito de Dano já na graduação sugerida pelo peso do objeto arremessado. */
+  const addAtaqueArremesso = (nomeObjeto, graduacaoDano) => {
+    upd("ataques", [...f.ataques, {
+      id: uid(), nome: `Arremesso: ${nomeObjeto || "Objeto"}`, tipo: "ativa", tipoAcerto: "distancia", custoVida: 0, custoNen: 0, extras: {}, ativo: false,
+      efeitos: [{ id: uid(), categoria: "Dano", graduacao: Math.max(0, graduacaoDano || 0) }],
+      passivos: [],
+    }]);
+  };
 
   const updVantagem = (idx, campo, valor) => { const arr = [...f.vantagens]; arr[idx] = { ...arr[idx], [campo]: valor }; upd("vantagens", arr); };
   const mudarVantagemNome = (idx, novoNome) => {
@@ -3945,7 +4140,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
 
       <div className="divider" />
       <div className="section-title">Habilidades</div>
-      {f.ataques.map((a, i) => <AtaqueForm key={a.id} ataque={a} onMudar={(novo) => updAtaque(i, novo)} onRemover={() => rmAtaque(i)} />)}
+      {f.ataques.map((a, i) => <AtaqueForm key={a.id} ataque={a} onMudar={(novo) => updAtaque(i, novo)} onRemover={() => rmAtaque(i)} onCriarArremesso={addAtaqueArremesso} />)}
       <button className="btn btn-ghost btn-sm" onClick={addAtaque}>+ Habilidade</button>
 
       <div className="divider" />
@@ -4426,13 +4621,14 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
         </div>
       )}
 
-      {(passivos.notas.length > 0 || passivos.reducaoDano > 0 || passivos.reducaoDanoLimitado > 0 || passivos.regenPorTurno > 0 || passivos.comunicacaoAlcance > 0 || passivos.pontosSorteMax > 0 || passivos.deslocamentos.temVoo || passivos.deslocamentos.temNatacao || passivos.deslocamentos.temEscavacao || passivos.membrosExtras > 0 || passivos.tamanho !== 0 || efeitosColateraisAtivos(e).length > 0) && (
+      {(passivos.notas.length > 0 || passivos.reducaoDano > 0 || passivos.reducaoDanoLimitado > 0 || (passivos.reducaoDanoItens || []).length > 0 || passivos.regenPorTurno > 0 || passivos.comunicacaoAlcance > 0 || passivos.pontosSorteMax > 0 || passivos.deslocamentos.temVoo || passivos.deslocamentos.temNatacao || passivos.deslocamentos.temEscavacao || passivos.membrosExtras > 0 || passivos.tamanho !== 0 || efeitosColateraisAtivos(e).length > 0) && (
         <div className="stat-group">
           <div className="stat-group-label">Efeitos Passivos Ativos</div>
           <div className="readonly-grid">
             {passivos.tamanho !== 0 && <div className="ro-row"><span>Tamanho</span><b>{passivos.tamanho >= 0 ? "+" : ""}{passivos.tamanho}</b></div>}
             {passivos.reducaoDano > 0 && <div className="ro-row"><span>Redução de Dano</span><b>{passivos.reducaoDano}</b></div>}
             {passivos.reducaoDanoLimitado > 0 && <div className="ro-row"><span>Redução de Dano (Limitado)</span><b>{passivos.reducaoDanoLimitado}</b></div>}
+            {(passivos.reducaoDanoItens || []).map((it) => <div className="ro-row" key={it.ataqueId}><span>Redução de Dano ({it.nome})</span><b>{it.valor}</b></div>)}
             {passivos.regenPorTurno > 0 && <div className="ro-row"><span>Regeneração/turno</span><b>{passivos.regenPorTurno} PV</b></div>}
             {passivos.membrosExtras > 0 && <div className="ro-row"><span>Membros Extras</span><b>{passivos.membrosExtras}</b></div>}
             {passivos.comunicacaoAlcance > 0 && <div className="ro-row"><span>Alcance de Comunicação</span><b>{Math.round(passivos.comunicacaoAlcance)}m</b></div>}
