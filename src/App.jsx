@@ -12,6 +12,8 @@ const GlobalStyle = () => (
   <style>{`
     @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap');
 
+    html, body { margin: 0; padding: 0; background: #0e0e12; }
+    #root { min-height: 100vh; }
     .mm3 * { box-sizing: border-box; }
     .mm3 {
       --bg: #0e0e12; --surface: #16161c; --surface2: #1e1e27; --surface3: #24242f;
@@ -483,7 +485,7 @@ const VANTAGENS = [
   { nome: "Agarrar Aprimorado", desc: "Você pode agarrar com apenas um braço, não ficando vulnerável enquanto agarra.", graduacaoMax: 1 },
   { nome: "Agarrar Rápido", desc: "Quando acerta um ataque desarmado, você pode fazer um teste de agarrar imediatamente contra o alvo como uma ação livre. Seu ataque desarmado causa dano normal e conta como o teste de ataque inicial exigido para agarrar seu oponente.", graduacaoMax: 1 },
   { nome: "Agarrar Preciso", desc: "Você pode usar Acrobacia no lugar de Atletismo para agarrar.", graduacaoMax: 1 },
-  { nome: "Ambiente Favorito", desc: "Você é especialmente adaptado para lutar em determinado ambiente. Quando estiver no seu ambiente favorito, você ganha um bônus de circunstância de +2 em testes de ataque, esquiva ou aparar (escolha) e duas perícias a sua escolha.", mecanica: { modo: "toggle", bonus: 2, alvos: ["ataque"], escolheDefesa: true, escolhePericias: 2 } },
+  { nome: "Ambiente Favorito", desc: "Você é especialmente adaptado para lutar em determinado ambiente. Quando estiver no seu ambiente favorito, você ganha um bônus de circunstância de +2 em testes de ataque, esquiva ou aparar (escolha) e duas perícias a sua escolha.", mecanica: { modo: "toggle", bonus: 2, alvos: ["ataque"], escolheDefesa: true, escolhePericias: 2 }, graduacaoMax: 1 },
   { nome: "Armação", desc: "Você pode transferir os benefícios do uso de uma perícia de interação em combate para um ou mais companheiros. Por exemplo, você pode fintar e deixar seu alvo vulnerável contra um ou mais aliados em seu(s) próximo(s) ataque(s), em vez de deixá-lo vulnerável contra você. Cada graduação nesta vantagem permite que você transfira o benefício para mais um aliado." },
   { nome: "Assustar", desc: "Você pode usar Intimidação no lugar de Enganação para fintar em combate. Os alvos resistem com Intuição, Intimidação ou Vontade.", graduacaoMax: 1 },
   { nome: "Ataque Acurado", desc: "Quando faz um ataque acurado, você pode aceitar uma penalidade de até −5 no CD do ataque e somar o mesmo número no bônus de ataque.", graduacaoMax: 1 },
@@ -798,10 +800,16 @@ const PODERES_PASSIVOS = [
 
   { id: "protecao", nome: "Proteção", categoria: "Fortificador", custoBase: 4,
     desc: "Reduz qualquer dano em uma quantidade igual à graduação. Se a graduação for maior que o nível, o excedente reduz a CD do teste de Resistência em vez de reduzir dano.",
-    extras: [], falhas: [],
+    extras: [], falhas: [{ chave: "limitado", label: "Limitado (a redução só se aplica se marcar o checkbox \"Proteção\" ao rolar o teste de Resistência)" }],
     aplicar1(ent, inst, acc) {
       const g = inst.graduacao || 0; const nivel = ent?.nivel || 1;
-      acc.reducaoDano += Math.min(g, nivel);
+      const reducao = Math.min(g, nivel);
+      if (inst.extrasAtivos?.limitado) {
+        acc.reducaoDanoLimitado += reducao;
+        acc.notas.push(`Proteção (Limitado): ${reducao} de redução de dano só se aplica se marcar o checkbox "Proteção" ao rolar o teste de Resistência`);
+      } else {
+        acc.reducaoDano += reducao;
+      }
       const excedente = Math.max(0, g - nivel);
       if (excedente > 0) acc.notas.push(`Proteção: ${excedente} graduação(ões) excedente(s) reduzem a CD do teste de Resistência em vez de reduzir dano (aplique manualmente)`);
     }, aplicar2() {} },
@@ -953,7 +961,7 @@ function custoPassivo(inst, def) {
 function acumuladorPassivoVazio() {
   return {
     atributos: {}, tamanho: 0, aparar: 0, esquiva: 0, furtividade: 0, temDeflexao: false,
-    reducaoDano: 0, regenPorTurno: 0, pontosSorteMax: 0, membrosExtras: 0,
+    reducaoDano: 0, reducaoDanoLimitado: 0, regenPorTurno: 0, pontosSorteMax: 0, membrosExtras: 0,
     comunicacaoAlcance: 0, deslocamentos: { base: 0, voo: 0, natacao: 0, escavacao: 0, temVoo: false, temNatacao: false, temEscavacao: false },
     periciasBonus: {}, notas: [],
   };
@@ -1196,6 +1204,8 @@ const DEFESAS_OPCOES = [
 function salvBonus(ent, salvamento) {
   if (salvamento === "Fortitude") return statDefesa(ent, "fortitude");
   if (salvamento === "Vontade") return statDefesa(ent, "vontade");
+  if (salvamento === "Aparar") return statDefesa(ent, "aparar");
+  if (salvamento === "Esquiva") return statDefesa(ent, "esquiva");
   return statDefesa(ent, "resistencia");
 }
 function valorAlvoComoCD(ent, key) {
@@ -1207,6 +1217,7 @@ function valorAlvoComoCD(ent, key) {
 
 const EFEITO_CATEGORIAS = ["Dano", "Cura", "Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Leitura Mental"];
 const SALVAMENTOS_ESCOLHA = ["Fortitude", "Vontade"];
+const SALVAMENTOS_ESCOLHA_ALT = ["Fortitude", "Vontade", "Aparar", "Esquiva"];
 const AFLICOES_G1 = ["Adoecido", "Caído", "Impedido", "Machucado", "Tonto", "Vulnerável"];
 const AFLICOES_G2 = ["Atordoado", "Compelido", "Em chamas", "Envenenado", "Imóvel", "Indefeso", "Sangrando", "Em transe"];
 const AFLICOES_G3 = ["Controlado", "Incapacitado", "Paralisado"];
@@ -1214,7 +1225,7 @@ const AFLICOES_G3 = ["Controlado", "Incapacitado", "Paralisado"];
 function efeitoPadrao(categoria) {
   if (categoria === "Dano") return { categoria, graduacao: 0 };
   if (categoria === "Cura") return { categoria, graduacao: 5 };
-  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
+  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, resistenciaAlternativa: false, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
   if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 5, caracteristica: "" };
   if (categoria === "Camuflagem") return { categoria, salvamento: "Fortitude", graduacao: 5, sentidos: [] };
   if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5 };
@@ -1243,6 +1254,19 @@ function calcGraus(diff) {
   return -Math.floor((-diff - 1) / 5) - 1;
 }
 function rolarD20() { return Math.floor(Math.random() * 20) + 1; }
+/* Rola o teste exigido pela falha "Exigir Teste": d20 + atributo escolhido vs 10 + graduações
+   em Exigir Teste. Um natural 1 sempre falha. Sucesso libera 1 graduação do efeito por ponto
+   que o total superar a CD (o jogador aplica manualmente ao usar o efeito). */
+function rolarExigirTeste(ent, exigirTeste) {
+  const cd = 10 + (exigirTeste?.graduacoes || 0);
+  const dado = rolarD20();
+  const bonus = attr(ent, exigirTeste?.atributo || "luta");
+  const total = dado + bonus;
+  const falhaAutomatica = dado === 1;
+  const sucesso = !falhaAutomatica && total >= cd;
+  const graduacoesLiberadas = sucesso ? Math.max(0, total - cd) : 0;
+  return { dado, bonus, total, cd, falhaAutomatica, sucesso, graduacoesLiberadas };
+}
 function montarTeste(dado, bonus, cd, limiarCrit = 20) {
   const total = dado + bonus;
   const diff = total - cd;
@@ -1638,6 +1662,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [agarraoR, setAgarraoR] = useState(null);
   const [usarBonusDescanso, setUsarBonusDescanso] = useState(false);
   const [usarBonusTreino, setUsarBonusTreino] = useState(false);
+  const [exigirTesteR, setExigirTesteR] = useState(null);
 
   const origemAtual = entidades.find((e) => e.id === contexto.origem.id) || contexto.origem;
   const oponente = entidades.find((e) => e.id === oponenteId);
@@ -1695,6 +1720,22 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     atualizarCampo(origemAtual.id, "descansoAtivos", { ...(origemAtual.descansoAtivos || {}), treinar: false });
   };
 
+  const rolarExigirTesteAtaque = () => {
+    const exigirTeste = contexto.ataque?.exigirTeste;
+    if (!exigirTeste?.ativo) return;
+    const r = rolarExigirTeste(origemAtual, exigirTeste);
+    setExigirTesteR(r);
+    registrar({
+      tipo: "rolagem",
+      desc: `${origemAtual.nome} testa Exigir Teste (${contexto.ataque.nome || "Habilidade"})`,
+      detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}`,
+      total: r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões)` : "Falhou — efeito não funciona"),
+      tipoClasse: r.sucesso ? "hs" : "hw",
+    });
+    if (animar) {
+      animar({ modo: "simples", nome: `${origemAtual.nome} — Exigir Teste`, foto: origemAtual.foto, dado: r.dado, bonus: r.bonus, total: r.total, cd: r.cd, sucesso: r.sucesso, ehCrit: false, grauTexto: r.falhaAutomatica ? "Falha automática" : (r.sucesso ? `Libera ${r.graduacoesLiberadas} grad.` : "Falhou") });
+    }
+  };
   const rolarAcerto = () => {
     const info = infoAtaque();
     const nossoAlvoBuff = (oponente?.efeitosManobra || []).find((m) => m.tipo === "nossoAlvo");
@@ -1752,7 +1793,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
      os efeitos colaterais (dano na vida, condições, etc). Não mexe em estado de UI — quem chama
      decide onde guardar o resultado. Isso permite reaproveitar a mesma lógica tanto no fluxo normal
      quanto no Multiataque (vários alvos/ataques) e no Dividido (efeito com graduação repartida). */
-  const rolarEfeitoGenerico = (efeito, alvo) => {
+  const rolarEfeitoGenerico = (efeito, alvo, aplicarProtecaoLimitada) => {
     const dados = dadosEfeito(efeito, alvo);
     if (dados.quemRolaAtacante) {
       const dado = rolarD20();
@@ -1785,7 +1826,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       const nivelAtacante = Math.max(1, origemAtual.nivel || 1);
       const graduacaoDano = Math.min(efeito.graduacao || 0, nivelAtacante);
       extra.dano = r.sucesso ? 0 : graduacaoDano * Math.abs(r.graus);
-      extra.dano = Math.max(0, extra.dano - (modificadoresPassivos(alvo).reducaoDano || 0));
+      const reducaoTotal = (modificadoresPassivos(alvo).reducaoDano || 0) + (aplicarProtecaoLimitada ? (modificadoresPassivos(alvo).reducaoDanoLimitado || 0) : 0);
+      extra.dano = Math.max(0, extra.dano - reducaoTotal);
       if (!r.sucesso && Math.abs(r.graus) >= 2) {
         const graduacaoArremesso = Math.floor((efeito.graduacao || 0) / 2);
         let distancia = graduacaoParaDistancia(graduacaoArremesso);
@@ -1818,10 +1860,22 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     return { r, ...extra };
   };
 
+  const [protecaoLimitada, setProtecaoLimitada] = useState({});
+  const renderProtecaoLimitada = (efeito, alvo, key) => {
+    if (efeito.categoria !== "Dano") return null;
+    const reducaoLim = modificadoresPassivos(alvo).reducaoDanoLimitado || 0;
+    if (reducaoLim <= 0) return null;
+    return (
+      <label className="checkbox-row">
+        <input type="checkbox" checked={!!protecaoLimitada[key]} onChange={(e) => setProtecaoLimitada((s) => ({ ...s, [key]: e.target.checked }))} />
+        Proteção (Limitado) — reduz {reducaoLim} de dano se marcado
+      </label>
+    );
+  };
   const rolarEfeito = (efeito, alvoParam, keyOverride) => {
     const alvo = alvoParam || oponente;
     const key = keyOverride || (isArea ? `${alvo.id}:${efeito.id}` : efeito.id);
-    const res = rolarEfeitoGenerico(efeito, alvo);
+    const res = rolarEfeitoGenerico(efeito, alvo, !!protecaoLimitada[key]);
     setEfeitosR((s) => ({ ...s, [key]: res }));
   };
 
@@ -1864,7 +1918,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const rolarEfeitoMulti = (maId, efeito) => {
     const ma = multiAtaques.find((m) => m.id === maId);
     if (!ma) return;
-    const res = rolarEfeitoGenerico(efeito, ma.alvo);
+    const key = `multi:${maId}:${efeito.id}`;
+    const res = rolarEfeitoGenerico(efeito, ma.alvo, !!protecaoLimitada[key]);
     setMultiAtaques((s) => s.map((m) => (m.id === maId ? { ...m, efeitosR: { ...m.efeitosR, [efeito.id]: res } } : m)));
   };
 
@@ -1997,6 +2052,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                         <div className="efeito-card ok"><div className="efeito-f">{efeito.texto || "(sem descrição)"}</div></div>
                       ) : (
                         <>
+                          {!res && renderProtecaoLimitada(efeito, alvo, key)}
                           {!res && <button className="btn btn-ghost btn-block" onClick={() => rolarEfeito(efeito, alvo)}>⚄ Rolar Resistência</button>}
                           {res && <ResultadoCard r={res.r} efeito={montarEfeitoCard(efeito, res)} />}
                         </>
@@ -2006,13 +2062,25 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                 })}
               </div>
             ))}
+            {contexto.ataque?.exigirTeste?.ativo && (
+              <div className="subcard2" style={{ marginBottom: 10 }}>
+                <div className="section-title">Exigir Teste</div>
+                {!exigirTesteR && <button className="btn btn-ghost btn-block" onClick={rolarExigirTesteAtaque}>⚄ Rolar Teste (Exigir Teste)</button>}
+                {exigirTesteR && (
+                  <div className={"grau-card " + (exigirTesteR.sucesso ? "success" : "warn")}>
+                    <div className="gl">d20({exigirTesteR.dado}) {fmtBonus(exigirTesteR.bonus)} = {exigirTesteR.total} vs CD {exigirTesteR.cd}</div>
+                    <div className="gn">{exigirTesteR.falhaAutomatica ? "Falha automática (1 natural)" : (exigirTesteR.sucesso ? `Sucesso — libera até ${exigirTesteR.graduacoesLiberadas} graduação(ões) do efeito` : "Falhou — o efeito não funciona")}</div>
+                  </div>
+                )}
+              </div>
+            )}
           </>
         )}
 
         {ehAtaque && !isArea && (
           <>
             <label className="label">Oponente</label>
-            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); setExigirTesteR(null); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
             </SearchableSelect>
@@ -2055,6 +2123,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                         <div className="efeito-card ok"><div className="efeito-f">{efeito.texto || "(sem descrição)"}</div></div>
                       ) : (
                         <>
+                          {!res && renderProtecaoLimitada(efeito, oponente, efeito.id)}
                           {!res && <button className="btn btn-ghost btn-block" onClick={() => rolarEfeito(efeito)}>⚄ Rolar Resistência</button>}
                           {res && <ResultadoCard r={res.r} efeito={montarEfeitoCard(efeito, res)} />}
                         </>
@@ -2062,6 +2131,19 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                     </div>
                   );
                 })}
+
+                {contexto.ataque?.exigirTeste?.ativo && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (
+                  <div className="subcard2" style={{ marginBottom: 12 }}>
+                    <div className="section-title">Exigir Teste</div>
+                    {!exigirTesteR && <button className="btn btn-ghost btn-block" onClick={rolarExigirTesteAtaque}>⚄ Rolar Teste (Exigir Teste)</button>}
+                    {exigirTesteR && (
+                      <div className={"grau-card " + (exigirTesteR.sucesso ? "success" : "warn")}>
+                        <div className="gl">d20({exigirTesteR.dado}) {fmtBonus(exigirTesteR.bonus)} = {exigirTesteR.total} vs CD {exigirTesteR.cd}</div>
+                        <div className="gn">{exigirTesteR.falhaAutomatica ? "Falha automática (1 natural)" : (exigirTesteR.sucesso ? `Sucesso — libera até ${exigirTesteR.graduacoesLiberadas} graduação(ões) do efeito` : "Falhou — o efeito não funciona")}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {temDividido && usarDividido && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (
                   <div className="subcard2" style={{ marginBottom: 12 }}>
@@ -2095,16 +2177,22 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                             </div>
                           </div>
                           {!res1 ? (
-                            <button className="btn btn-ghost btn-block" style={{ marginBottom: 6 }}
-                              onClick={() => rolarEfeito({ ...efeito, graduacao: g1 }, oponente, `div1:${efeito.id}`)}>
-                              ⚄ Rolar para {oponente.nome} (graduação {g1})
-                            </button>
+                            <>
+                              {renderProtecaoLimitada(efeito, oponente, `div1:${efeito.id}`)}
+                              <button className="btn btn-ghost btn-block" style={{ marginBottom: 6 }}
+                                onClick={() => rolarEfeito({ ...efeito, graduacao: g1 }, oponente, `div1:${efeito.id}`)}>
+                                ⚄ Rolar para {oponente.nome} (graduação {g1})
+                              </button>
+                            </>
                           ) : <div style={{ marginBottom: 6 }}><ResultadoCard r={res1.r} efeito={montarEfeitoCard(efeito, res1)} /></div>}
                           {!res2 ? (
-                            <button className="btn btn-ghost btn-block"
-                              onClick={() => rolarEfeito({ ...efeito, graduacao: g2 }, alvo2Dividido, `div2:${efeito.id}`)}>
-                              ⚄ Rolar para {alvo2Dividido.nome} (graduação {g2})
-                            </button>
+                            <>
+                              {renderProtecaoLimitada(efeito, alvo2Dividido, `div2:${efeito.id}`)}
+                              <button className="btn btn-ghost btn-block"
+                                onClick={() => rolarEfeito({ ...efeito, graduacao: g2 }, alvo2Dividido, `div2:${efeito.id}`)}>
+                                ⚄ Rolar para {alvo2Dividido.nome} (graduação {g2})
+                              </button>
+                            </>
                           ) : <ResultadoCard r={res2.r} efeito={montarEfeitoCard(efeito, res2)} />}
                         </div>
                       );
@@ -2149,6 +2237,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                           const res = ma.efeitosR[efeito.id];
                           return (
                             <div key={efeito.id} style={{ marginBottom: 8 }}>
+                              {!res && renderProtecaoLimitada(efeito, ma.alvo, `multi:${ma.id}:${efeito.id}`)}
                               {!res && <button className="btn btn-ghost btn-block" onClick={() => rolarEfeitoMulti(ma.id, efeito)}>⚄ Rolar Resistência ({efeito.categoria})</button>}
                               {res && <ResultadoCard r={res.r} efeito={montarEfeitoCard(efeito, res)} />}
                             </div>
@@ -3227,9 +3316,10 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
       {efeito.categoria === "Aflição" && (
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
-            <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{SALVAMENTOS_ESCOLHA.map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
+            <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(efeito.resistenciaAlternativa ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
             <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
           </div>
+          <label className="checkbox-row"><input type="checkbox" checked={!!efeito.resistenciaAlternativa} onChange={(e) => { const ativo = e.target.checked; const precisaResetar = !ativo && (efeito.salvamento === "Aparar" || efeito.salvamento === "Esquiva"); onMudar({ ...efeito, resistenciaAlternativa: ativo, ...(precisaResetar ? { salvamento: "Fortitude" } : {}) }); }} />Resistência Alternativa (permite Aparar/Esquiva como salvamento)</label>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.condicaoExtra} onChange={(e) => upd("condicaoExtra", e.target.checked)} />Condição extra</label>
           <label className="label">Falha (um grau)</label>
           <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
@@ -3471,6 +3561,8 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
 
 function AtaqueForm({ ataque, onMudar, onRemover }) {
   const [extrasAberto, setExtrasAberto] = useState(false);
+  const [exigirTesteAberto, setExigirTesteAberto] = useState(false);
+  const [colapsado, setColapsado] = useState(false);
   const upd = (campo, valor) => onMudar({ ...ataque, [campo]: valor });
   const updEfeito = (idx, novo) => { const arr = [...ataque.efeitos]; arr[idx] = novo; upd("efeitos", arr); };
   const addEfeito = () => upd("efeitos", [...ataque.efeitos, { id: uid(), ...efeitoPadrao("Dano") }]);
@@ -3478,7 +3570,16 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
   const ehPassiva = ataque.tipo === "passiva";
   return (
     <div className="subcard">
-      <div className="row-inline"><input type="text" placeholder="Nome da habilidade" value={ataque.nome} onChange={(e) => upd("nome", e.target.value)} /><button className="small-btn" onClick={onRemover}>×</button></div>
+      <div className="row-inline">
+        <button type="button" className="small-btn" onClick={() => setColapsado((s) => !s)} title={colapsado ? "Expandir" : "Recolher"}>{colapsado ? "▶" : "▼"}</button>
+        <input type="text" placeholder="Nome da habilidade" value={ataque.nome} onChange={(e) => upd("nome", e.target.value)} />
+        <button className="small-btn" onClick={onRemover}>×</button>
+      </div>
+      {colapsado && (
+        <div className="field-note" style={{ marginTop: -2, marginBottom: 0 }}>{ehPassiva ? "Passiva" : "Ativa"}{ataque.equipamento ? " · Equipamento" : ""}</div>
+      )}
+      {!colapsado && (
+      <>
       {!ehPassiva && (
         <div style={{ marginBottom: 10 }}>
           <label className="label">Tipo de acerto</label>
@@ -3491,7 +3592,7 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
           <input type="number" min={0} value={ataque.pp || 0} onChange={(e) => upd("pp", Math.max(0, Number(e.target.value)))} />
         </div>
         <label className="checkbox-row" style={{ alignSelf: "end", marginBottom: 11 }}>
-          <input type="checkbox" checked={!!ataque.equipamento} onChange={(e) => upd("equipamento", e.target.checked)} disabled={ehPassiva} />
+          <input type="checkbox" checked={!!ataque.equipamento} onChange={(e) => upd("equipamento", e.target.checked)} />
           Equipamento
         </label>
       </div>
@@ -3580,8 +3681,41 @@ function AtaqueForm({ ataque, onMudar, onRemover }) {
         </>
       )}
 
+      <div className="acoes-header" onClick={() => setExigirTesteAberto((s) => !s)}>
+        <div className="section-title" style={{ marginBottom: 0 }}>Exigir Teste</div>
+        <span className={"arrow" + (exigirTesteAberto ? " open" : "")}>▶</span>
+      </div>
+      {exigirTesteAberto && (
+        <div className="subcard2" style={{ marginBottom: 10 }}>
+          <label className="checkbox-row">
+            <input type="checkbox" checked={!!ataque.exigirTeste?.ativo}
+              onChange={(e) => upd("exigirTeste", { atributo: ataque.exigirTeste?.atributo || "luta", graduacoes: ataque.exigirTeste?.graduacoes || 0, ...ataque.exigirTeste, ativo: e.target.checked })} />
+            Exigir Teste
+          </label>
+          <div className="field-note" style={{ marginBottom: 10 }}>
+            Um efeito com esta falha exige um teste de um atributo à escolha, com CD igual a 10 + graduações em Exigir Teste. Se o teste falhar, o efeito não funciona (mas a ação é gasta). Um 1 natural falha automaticamente. Se for bem-sucedido, o personagem ganha o uso de 1 graduação do efeito por ponto que o teste superar a CD. Reduz -1 ponto por graduação do custo desta habilidade (ajuste o custo manualmente).
+          </div>
+          {ataque.exigirTeste?.ativo && (
+            <div className="grid2">
+              <div>
+                <label className="label">Atributo do teste</label>
+                <SearchableSelect value={ataque.exigirTeste?.atributo || "luta"} onChange={(e) => upd("exigirTeste", { ...ataque.exigirTeste, atributo: e.target.value })}>
+                  {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
+                </SearchableSelect>
+              </div>
+              <div>
+                <label className="label">Graduações em Exigir Teste</label>
+                <input type="number" min={0} value={ataque.exigirTeste?.graduacoes || 0} onChange={(e) => upd("exigirTeste", { ...ataque.exigirTeste, graduacoes: Math.max(0, Number(e.target.value)) })} />
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <label className="label">Descrição / texto da habilidade</label>
       <RichTextEditor value={ataque.textoFormatado || ""} onChange={(html) => upd("textoFormatado", html)} placeholder="Descreva a habilidade…" />
+      </>
+      )}
     </div>
   );
 }
@@ -3913,9 +4047,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
     if (ataque.sustentado && onAtualizarCampo) onAtualizarCampo(e.id, "sustentado", true);
     onAbrirRolagem({ origem: e, tipo: "ataque", ataque, label: `${e.nome} · ${ataque.nome || "Ataque"}` });
   };
-  const alternarPassiva = (ataque) => {
-    if (!onAtualizarCampo) return;
-    const novoAtivo = !passivaEstaAtiva(ataque);
+  const aplicarTogglePassiva = (ataque, novoAtivo) => {
     const novos = (e.ataques || []).map((x) => {
       if (x.id !== ataque.id) return x;
       const { passivo, ...resto } = x; // remove o formato antigo (já migrado pra "passivos" abaixo)
@@ -3923,6 +4055,25 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
     });
     onAtualizarCampo(e.id, "ataques", novos);
     if (ataque.sustentado) onAtualizarCampo(e.id, "sustentado", true);
+  };
+  const alternarPassiva = (ataque) => {
+    if (!onAtualizarCampo) return;
+    const novoAtivo = !passivaEstaAtiva(ataque);
+    // Ativar uma passiva com "Exigir Teste" precisa passar num teste primeiro.
+    if (novoAtivo && ataque.exigirTeste?.ativo) {
+      const r = rolarExigirTeste(e, ataque.exigirTeste);
+      if (registrar) {
+        registrar({
+          tipo: "rolagem",
+          desc: `${e.nome} testa Exigir Teste (${ataque.nome || "Passiva"})`,
+          detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}`,
+          total: r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões)` : "Falhou — não ativou"),
+          tipoClasse: r.sucesso ? "hs" : "hw",
+        });
+      }
+      if (!r.sucesso) return; // efeito não funciona, mas a ação foi gasta (não ativa a passiva)
+    }
+    aplicarTogglePassiva(ataque, novoAtivo);
   };
   const abrirAcao = (acao) => onAbrirAcao({ origem: e, acao });
   const pvMax = pvMaxCalc(e), nenMax = nenMaxCalc(e);
@@ -4275,12 +4426,13 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
         </div>
       )}
 
-      {(passivos.notas.length > 0 || passivos.reducaoDano > 0 || passivos.regenPorTurno > 0 || passivos.comunicacaoAlcance > 0 || passivos.pontosSorteMax > 0 || passivos.deslocamentos.temVoo || passivos.deslocamentos.temNatacao || passivos.deslocamentos.temEscavacao || passivos.membrosExtras > 0 || passivos.tamanho !== 0 || efeitosColateraisAtivos(e).length > 0) && (
+      {(passivos.notas.length > 0 || passivos.reducaoDano > 0 || passivos.reducaoDanoLimitado > 0 || passivos.regenPorTurno > 0 || passivos.comunicacaoAlcance > 0 || passivos.pontosSorteMax > 0 || passivos.deslocamentos.temVoo || passivos.deslocamentos.temNatacao || passivos.deslocamentos.temEscavacao || passivos.membrosExtras > 0 || passivos.tamanho !== 0 || efeitosColateraisAtivos(e).length > 0) && (
         <div className="stat-group">
           <div className="stat-group-label">Efeitos Passivos Ativos</div>
           <div className="readonly-grid">
             {passivos.tamanho !== 0 && <div className="ro-row"><span>Tamanho</span><b>{passivos.tamanho >= 0 ? "+" : ""}{passivos.tamanho}</b></div>}
             {passivos.reducaoDano > 0 && <div className="ro-row"><span>Redução de Dano</span><b>{passivos.reducaoDano}</b></div>}
+            {passivos.reducaoDanoLimitado > 0 && <div className="ro-row"><span>Redução de Dano (Limitado)</span><b>{passivos.reducaoDanoLimitado}</b></div>}
             {passivos.regenPorTurno > 0 && <div className="ro-row"><span>Regeneração/turno</span><b>{passivos.regenPorTurno} PV</b></div>}
             {passivos.membrosExtras > 0 && <div className="ro-row"><span>Membros Extras</span><b>{passivos.membrosExtras}</b></div>}
             {passivos.comunicacaoAlcance > 0 && <div className="ro-row"><span>Alcance de Comunicação</span><b>{Math.round(passivos.comunicacaoAlcance)}m</b></div>}
