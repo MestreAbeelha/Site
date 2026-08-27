@@ -173,6 +173,9 @@ const GlobalStyle = () => (
     .mm3 .row-inline { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
     .mm3 .small-btn { background:var(--surface3); border:1px solid var(--border); color:var(--muted); border-radius:8px; width:30px; height:30px;
       cursor:pointer; font-size:1rem; line-height:1; flex-shrink:0; }
+    .mm3 .small-btn:disabled { opacity:0.3; cursor:default; }
+    .mm3 .reorder-btns { display:flex; flex-direction:column; gap:2px; flex-shrink:0; }
+    .mm3 .reorder-btns .small-btn { width:24px; height:16px; font-size:0.6rem; }
     .mm3 .item-pv-box { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; }
     .mm3 .item-pv-head { display:flex; justify-content:space-between; align-items:center; font-size:0.8rem; color:var(--muted); margin-bottom:6px; }
     .mm3 .item-pv-track { height:8px; border-radius:6px; background:var(--surface3); overflow:hidden; margin-bottom:8px; }
@@ -306,6 +309,9 @@ const GlobalStyle = () => (
     .mm3 .status-toggle-crit.ativo { color:var(--crit); background:var(--crit-bg); border-color:var(--crit-border); }
     .mm3 .status-toggle-crit.ativo .status-toggle-dot { background:var(--crit); box-shadow:0 0 6px var(--crit); }
     .mm3 .rich-toolbar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
+    .mm3 .rich-swatches { display:flex; gap:6px; margin-bottom:6px; }
+    .mm3 .rich-swatch { width:22px; height:22px; border-radius:6px; border:1px solid var(--border); cursor:pointer; padding:0; }
+    .mm3 .rich-swatch:hover { outline:2px solid var(--accent); outline-offset:1px; }
     .mm3 .rich-toolbar button { background:var(--surface3); border:1px solid var(--border); border-radius:6px; color:var(--text); padding:4px 9px; cursor:pointer; font-size:0.82rem; }
     .mm3 .rich-toolbar button.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
     .mm3 .rich-toolbar select, .mm3 .rich-toolbar input[type="color"] { width:auto; padding:4px 6px; font-size:0.8rem; }
@@ -527,7 +533,7 @@ const VANTAGENS = [
   { nome: "Estrangular", desc: "Se você for bem-sucedido em agarrar e imobilizar um oponente, você pode estrangulá-lo, fazendo seu oponente começar a sufocar enquanto você o imobiliza.", graduacaoMax: 1 },
   { nome: "Evasão", desc: "Você tem um bônus de circunstância de +2 em testes de salvamento de Esquiva para evitar efeitos de área. Se tiver 2 graduações nesta vantagem, seu bônus de circunstância aumenta para +5.", graduacaoMax: 2 },
   { nome: "Fascinar", desc: "Uma de suas perícias de interação é tão eficaz que você pode capturar e prender a atenção de outras pessoas com ela. Escolha Enganação, Intimidação ou Persuasão ao adquirir esta vantagem. Use uma ação livre e faça um teste de perícia de interação contra um teste oposto de seu alvo (Intuição ou a defesa Vontade). Caso seja bem-sucedido, o alvo fica em transe. Você pode manter o efeito com uma ação livre por rodada, concedendo ao alvo um novo teste de salvamento. O efeito termina quando você para de atuar, quando o alvo resistir com sucesso, ou caso qualquer outro perigo imediato se apresente. Você pode comprar esta vantagem mais de uma vez; a cada nova compra, ela se aplica a uma perícia diferente.", graduacaoMax: 3 },
-  { nome: "Ferramentas Improvisadas", desc: "Você pode inventar dispositivos temporários. Com uma ação de descanso, você pode criar um dispositivo, os pontos de poder que esse dispositivo pode ter, é igual a quantidade de pontos que você gastou nessa vantagem. Ao montar o seu dispositivo faça um teste de Tecnologia CD 10 + Custo do dispositivo, ao ser bem sucedido você pode usar esse dispositivo como se fosse um efeito de poder seu, mas ao utilizá-lo, ele descarrega, se desfaz ou é destruído." },
+  { nome: "Ferramentas Improvisadas", desc: "Você pode inventar dispositivos temporários. Com uma ação de descanso, você pode criar um dispositivo, os pontos de poder que esse dispositivo pode ter, é igual a quantidade de pontos que você gastou nessa vantagem. Ao montar o seu dispositivo faça um teste de Tecnologia CD 10 + Custo do dispositivo, ao ser bem sucedido você pode usar esse dispositivo como se fosse um efeito de poder seu, mas ao utilizá-lo, ele descarrega, se desfaz ou é destruído.", graduacaoMax: 999 },
   { nome: "Finta Ágil", desc: "Você pode usar seu bônus de Acrobacia ou suas graduações de movimento no lugar de Enganação para fintar e realizar truques em combate como se o seu bônus de Acrobacia ou suas graduações de velocidade fossem o seu bônus de Enganação. Seu adversário se opõe a essa tentativa com Acrobacia ou Intuição (o que for melhor).", graduacaoMax: 1 },
   { nome: "Imobilizar Aprimorado", desc: "Quando você agarra, é difícil escapar. Oponentes agarrados sofrem uma penalidade de −2 em testes para escapar. Com duas graduações nessa vantagem, ela se torna -5.", graduacaoMax: 2 },
   { nome: "Inimigo Favorito", desc: "Você tem um tipo especial de oponente que estudou ou contra o qual é especialmente eficaz. Pode ser um tipo de criatura, uma profissão ou qualquer outra categoria que o mestre aprove. Categorias especialmente amplas como humanos ou vilões não são permitidas. Você ganha um bônus de circunstância de +2 em testes de ataque, Enganação, Intimidação, Intuição e Percepção ao lidar com seu Inimigo Favorito. Você só pode ter 1 inimigo favorito, mas sempre que aumentar o seu nível, você pode mudá-lo.", graduacaoMax: 1, mecanica: { modo: "condicional", bonus: 2, alvos: ["ataque", "Enganação", "Intimidação", "Intuição", "Percepção"], pedeTexto: true } },
@@ -1246,7 +1252,7 @@ const AFLICOES_G3 = ["Controlado", "Incapacitado", "Paralisado"];
 function efeitoPadrao(categoria) {
   if (categoria === "Dano") return { categoria, graduacao: 0 };
   if (categoria === "Cura") return { categoria, graduacao: 5 };
-  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, resistenciaAlternativa: false, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
+  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, resistenciaAlternativa: false, cumulativo: false, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
   if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 5, caracteristica: "" };
   if (categoria === "Camuflagem") return { categoria, salvamento: "Fortitude", graduacao: 5, sentidos: [] };
   if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5 };
@@ -1872,7 +1878,40 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         extra.arremesso = distancia;
       }
     }
-    if (efeito.categoria === "Aflição") extra.texto = r.sucesso ? "Resistiu" : textoAflicao(efeito, r.graus);
+    if (efeito.categoria === "Aflição" && atualizarCampo) {
+      const cumulKey = `afl:${efeito.id}`;
+      if (r.sucesso) {
+        // Resistiu com sucesso: zera o progresso cumulativo desse efeito nesse alvo.
+        if (efeito.cumulativo && alvo.aflicoesCumulativas?.[cumulKey]) {
+          const semEsse = { ...alvo.aflicoesCumulativas };
+          delete semEsse[cumulKey];
+          atualizarCampo(alvo.id, "aflicoesCumulativas", semEsse);
+        }
+      } else {
+        let nivel = Math.min(Math.abs(r.graus), 3);
+        const nivelAnterior = efeito.cumulativo ? (alvo.aflicoesCumulativas?.[cumulKey] || 0) : 0;
+        // Cumulativo: impor de novo o mesmo grau (1 ou 2) que o alvo já está sofrendo
+        // deste efeito faz ele escalar um grau acima, em vez de se repetir.
+        const escalou = efeito.cumulativo && (nivel === 1 || nivel === 2) && nivel === nivelAnterior;
+        if (escalou) nivel = Math.min(nivel + 1, 3);
+        const condNome = nivel === 1 ? efeito.grau1 : nivel === 2 ? efeito.grau2 : nivel === 3 ? efeito.grau3 : null;
+        if (condNome) {
+          const nome = normalizarCondicao(condNome);
+          const atuais = { ...(alvo.condicoes || {}) };
+          if (escalou) {
+            // A condição anterior "vira" a nova, em vez de empilhar as duas.
+            const nomeAnterior = normalizarCondicao(nivelAnterior === 1 ? efeito.grau1 : efeito.grau2);
+            if (nomeAnterior && atuais[nomeAnterior] > 0) atuais[nomeAnterior] -= 1;
+          }
+          atuais[nome] = (atuais[nome] || 0) + 1;
+          atualizarCampo(alvo.id, "condicoes", atuais);
+        }
+        extra.texto = textoAflicao(efeito, nivel);
+        if (efeito.cumulativo) atualizarCampo(alvo.id, "aflicoesCumulativas", { ...(alvo.aflicoesCumulativas || {}), [cumulKey]: nivel });
+      }
+    } else if (efeito.categoria === "Aflição") {
+      extra.texto = r.sucesso ? "Resistiu" : textoAflicao(efeito, r.graus);
+    }
     if (efeito.categoria === "Leitura Mental") extra.texto = r.sucesso ? "Resistiu" : textoLeituraMental(r.graus);
     if (efeito.categoria === "Enfraquecer") extra.perda = r.sucesso ? 0 : Math.min(Math.abs(r.diff), efeito.graduacao || 0);
     if (efeito.categoria === "Camuflagem") extra.sentidos = r.sucesso ? [] : (efeito.sentidos || []);
@@ -1892,16 +1931,6 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         return { ...a, pvItemAtual: Math.max(0, atual - abs.valor) };
       });
       atualizarCampo(alvo.id, "ataques", novosAtaques);
-    }
-    if (efeito.categoria === "Aflição" && !r.sucesso && atualizarCampo) {
-      const nivel = Math.min(Math.abs(r.graus), 3);
-      const condNome = nivel === 1 ? efeito.grau1 : nivel === 2 ? efeito.grau2 : nivel === 3 ? efeito.grau3 : null;
-      if (condNome) {
-        const nome = normalizarCondicao(condNome);
-        const atuais = { ...(alvo.condicoes || {}) };
-        atuais[nome] = (atuais[nome] || 0) + 1;
-        atualizarCampo(alvo.id, "condicoes", atuais);
-      }
     }
     return { r, ...extra };
   };
@@ -3203,6 +3232,18 @@ export default function MesaMM3() {
       return nova;
     });
   };
+  /* Migração automática: fichas antigas foram criadas só com "dono" (nome em texto),
+     sem vínculo com a conta de login. Regras de segurança novas do Firestore precisam
+     de um uid de verdade ("donoUid") pra saber quem pode ver/editar cada ficha. Sempre
+     que o dono de uma ficha antiga (identificado pelo nome ainda bater) entra no site,
+     a gente completa esse campo sozinho, uma vez, sem precisar de nada manual. */
+  useEffect(() => {
+    if (!identidade || !usuario) return;
+    entidades.forEach((e) => {
+      if (!e.donoUid && e.dono === identidade.nome) atualizarCampo(e.id, "donoUid", usuario.uid);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entidades, identidade, usuario]);
   const salvarIniciativa = async (nova) => { setIniciativa(nova); await escreverCompartilhado("iniciativa", nova); };
   const rolarIniciativa = async (entidade) => {
     const dado = rolarD20();
@@ -3266,7 +3307,7 @@ export default function MesaMM3() {
       <div className="wrap">
         <div className="split-wrap">
           <div className="split-col col-fichas">
-            <FichasTab entidades={entidades} salvar={salvarEntidades} identidade={identidade} registrar={registrar}
+            <FichasTab entidades={entidades} salvar={salvarEntidades} identidade={identidade} usuario={usuario} registrar={registrar}
               onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa} />
           </div>
           <div className="split-col col-lateral">
@@ -3405,6 +3446,8 @@ function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
             <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
           </div>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.resistenciaAlternativa} onChange={(e) => { const ativo = e.target.checked; const precisaResetar = !ativo && (efeito.salvamento === "Aparar" || efeito.salvamento === "Esquiva"); onMudar({ ...efeito, resistenciaAlternativa: ativo, ...(precisaResetar ? { salvamento: "Fortitude" } : {}) }); }} />Resistência Alternativa (permite Aparar/Esquiva como salvamento)</label>
+          <label className="checkbox-row"><input type="checkbox" checked={!!efeito.cumulativo} onChange={(e) => upd("cumulativo", e.target.checked)} />Cumulativo</label>
+          <div className="field-note" style={{ marginBottom: 10 }}>Ao impor uma condição de grau 1 em um alvo que já está com uma condição de grau 1 imposta por você (com este efeito), ela se torna uma de grau 2. O mesmo se aplica pro grau 2 (vira grau 3).</div>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.condicaoExtra} onChange={(e) => upd("condicaoExtra", e.target.checked)} />Condição extra</label>
           <label className="label">Falha (um grau)</label>
           <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
@@ -3520,6 +3563,11 @@ function ColateralEditor({ colateral, onMudar, graduacao }) {
   );
 }
 
+const CORES_PREDEFINIDAS = [
+  { nome: "Branco", cor: "#f0eeea" },
+  { nome: "Verde", cor: "#9fd8a8" },
+  { nome: "Vermelho", cor: "#e29a9a" },
+];
 /* ---------- editor de texto rico ---------- */
 function RichTextEditor({ value, onChange, placeholder }) {
   const ref = useRef(null);
@@ -3549,6 +3597,11 @@ function RichTextEditor({ value, onChange, placeholder }) {
         </select>
         <input type="color" title="Cor do texto" defaultValue="#f0eeea" onChange={(e) => exec("foreColor", e.target.value)} />
         <button type="button" onClick={() => exec("removeFormat")}>Limpar</button>
+      </div>
+      <div className="rich-swatches">
+        {CORES_PREDEFINIDAS.map((c) => (
+          <button key={c.cor} type="button" className="rich-swatch" title={c.nome} style={{ background: c.cor }} onClick={() => exec("foreColor", c.cor)} />
+        ))}
       </div>
       <div ref={ref} className="rich-editor" contentEditable suppressContentEditableWarning
         onInput={(e) => onChange(e.currentTarget.innerHTML)} data-placeholder={placeholder || ""} />
@@ -3714,7 +3767,7 @@ function MoverObjetosCampos({ mo, onMudar, onCriarArremesso }) {
   );
 }
 
-function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso }) {
+function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onDescer }) {
   const [extrasAberto, setExtrasAberto] = useState(false);
   const [exigirTesteAberto, setExigirTesteAberto] = useState(false);
   const colapsado = !!ataque.colapsado;
@@ -3731,6 +3784,10 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso }) {
     <div className="subcard">
       <div className="row-inline">
         <button type="button" className="small-btn" onClick={() => setColapsado((s) => !s)} title={colapsado ? "Expandir" : "Recolher"}>{colapsado ? "▶" : "▼"}</button>
+        <div className="reorder-btns">
+          <button type="button" className="small-btn" onClick={onSubir} disabled={!onSubir} title="Mover pra cima">▲</button>
+          <button type="button" className="small-btn" onClick={onDescer} disabled={!onDescer} title="Mover pra baixo">▼</button>
+        </div>
         <input type="text" placeholder="Nome da habilidade" value={ataque.nome} onChange={(e) => upd("nome", e.target.value)} />
         <button className="small-btn" onClick={onRemover}>×</button>
       </div>
@@ -3947,6 +4004,13 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
     passivos: [{ id: uid(), tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {} }],
   }]);
   const rmAtaque = (idx) => upd("ataques", f.ataques.filter((_, i) => i !== idx));
+  const moverAtaque = (idx, direcao) => {
+    const alvo = idx + direcao;
+    if (alvo < 0 || alvo >= f.ataques.length) return;
+    const arr = [...f.ataques];
+    [arr[idx], arr[alvo]] = [arr[alvo], arr[idx]];
+    upd("ataques", arr);
+  };
   /* Cria automaticamente um novo ataque à distância pronto (Mover Objetos → Arremessar) com
      um efeito de Dano já na graduação sugerida pelo peso do objeto arremessado. */
   const addAtaqueArremesso = (nomeObjeto, graduacaoDano) => {
@@ -4126,7 +4190,8 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
 
       <div className="divider" />
       <div className="section-title">Habilidades</div>
-      {f.ataques.map((a, i) => <AtaqueForm key={a.id} ataque={a} onMudar={(novo) => updAtaque(i, novo)} onRemover={() => rmAtaque(i)} onCriarArremesso={addAtaqueArremesso} />)}
+      {f.ataques.map((a, i) => <AtaqueForm key={a.id} ataque={a} onMudar={(novo) => updAtaque(i, novo)} onRemover={() => rmAtaque(i)} onCriarArremesso={addAtaqueArremesso}
+        onSubir={i > 0 ? () => moverAtaque(i, -1) : null} onDescer={i < f.ataques.length - 1 ? () => moverAtaque(i, 1) : null} />)}
       <button className="btn btn-ghost btn-sm" onClick={addAtaque}>+ Habilidade</button>
 
       <div className="divider" />
@@ -4164,18 +4229,22 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   );
 }
 
-function FichasTab({ entidades, salvar, identidade, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa }) {
+function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa }) {
   const [editando, setEditando] = useState(null);
   const [busca, setBusca] = useState("");
   const [vantagemCtx, setVantagemCtx] = useState(null);
-  const rotulosProprio = identidade.papel === "mestre" ? ["Criatura", "NPC"] : ["Personagem", "Invocação"];
-  const meusTodos = entidades.filter((e) => e.dono === identidade.nome);
+  const ehMestre = identidade.papel === "mestre";
+  const rotulosProprio = ehMestre ? ["Criatura", "NPC"] : ["Personagem", "Invocação"];
+  const souDono = (e) => e.donoUid ? e.donoUid === usuario?.uid : e.dono === identidade.nome;
+  const meusTodos = entidades.filter(souDono);
   const meus = busca.trim() ? meusTodos.filter((e) => e.nome.toLowerCase().includes(busca.trim().toLowerCase())) : meusTodos;
-  const outros = entidades.filter((e) => e.dono !== identidade.nome);
+  // Mestre vê (e edita) as fichas de todo mundo. Jogador não vê a ficha de mais ninguém
+  // além da própria — nem as de outros jogadores, nem (principalmente) as do mestre.
+  const outros = ehMestre ? entidades.filter((e) => !souDono(e)) : [];
 
   const salvarFicha = async (f) => {
     const criando = !f.id;
-    const nova = criando ? [...entidades, { ...f, id: uid(), dono: identidade.nome }] : entidades.map((e) => (e.id === f.id ? { ...f } : e));
+    const nova = criando ? [...entidades, { ...f, id: uid(), dono: identidade.nome, donoUid: usuario?.uid }] : entidades.map((e) => (e.id === f.id ? { ...f } : e));
     await salvar(nova);
     registrar({ desc: `${identidade.nome} ${criando ? "criou" : "editou"} a ficha "${f.nome}"`, detalhe: f.rotulo, total: criando ? "Criada" : "Editada", tipoClasse: criando ? "hs" : "hw" });
     setEditando(null);
@@ -4194,19 +4263,23 @@ function FichasTab({ entidades, salvar, identidade, registrar, onAbrirRolagem, o
   if (editando) return <FichaForm inicial={editando === "novo" ? null : editando} rotulos={rotulosProprio} onSalvar={salvarFicha} onCancelar={() => setEditando(null)}
     entidades={entidades} atualizarCampo={atualizarCampo} registrar={registrar} />;
 
-  const podeMarcarOponente = identidade.papel === "mestre";
+  const podeMarcarOponente = ehMestre;
 
   return (
     <div>
-      <div className="section-title">Minhas fichas ({identidade.papel === "mestre" ? "criaturas e NPCs" : "personagens e invocações"})</div>
+      <div className="section-title">Minhas fichas ({ehMestre ? "criaturas e NPCs" : "personagens e invocações"})</div>
       <input type="text" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ marginBottom: 10 }} />
       {meus.length === 0 && <div className="card empty">Nenhuma ficha encontrada.</div>}
       {meus.map((e) => <EntidadeItem key={e.id} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar} />)}
       <button className="btn btn-accent btn-block" onClick={() => setEditando("novo")} style={{ marginBottom: 20 }}>+ Nova ficha</button>
 
-      <div className="section-title">Outras fichas na mesa</div>
-      {outros.length === 0 && <div className="card empty">Ninguém mais cadastrou fichas ainda.</div>}
-      {outros.map((e) => <EntidadeItem key={e.id} e={e} onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} />)}
+      {ehMestre && (
+        <>
+          <div className="section-title">Outras fichas na mesa</div>
+          {outros.length === 0 && <div className="card empty">Ninguém mais cadastrou fichas ainda.</div>}
+          {outros.map((e) => <EntidadeItem key={e.id} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} />)}
+        </>
+      )}
 
       {vantagemCtx && <VantagemModal ctx={vantagemCtx} onFechar={() => setVantagemCtx(null)} onToggle={toggleVantagem} />}
     </div>
