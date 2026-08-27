@@ -1236,7 +1236,7 @@ function valorAlvoComoCD(ent, key) {
   return 10 + bonusPericia(ent, key);
 }
 
-const EFEITO_CATEGORIAS = ["Dano", "Cura", "Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Leitura Mental"];
+const EFEITO_CATEGORIAS = ["Dano", "Cura", "Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Leitura Mental", "Mover Objetos"];
 const SALVAMENTOS_ESCOLHA = ["Fortitude", "Vontade"];
 const SALVAMENTOS_ESCOLHA_ALT = ["Fortitude", "Vontade", "Aparar", "Esquiva"];
 const AFLICOES_G1 = ["Adoecido", "Caído", "Impedido", "Machucado", "Tonto", "Vulnerável"];
@@ -1252,6 +1252,7 @@ function efeitoPadrao(categoria) {
   if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5 };
   if (categoria === "Leitura Mental") return { categoria, graduacao: 5 };
   if (categoria === "Outros") return { categoria, texto: "" };
+  if (categoria === "Mover Objetos") return { categoria, graduacao: 0, concentracao: false, objetos: [] };
   return { categoria };
 }
 function dadosEfeito(efeito, oponente) {
@@ -1930,7 +1931,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [multiAtaques, setMultiAtaques] = useState([]);
   const [multiAlvoEscolha, setMultiAlvoEscolha] = useState("");
   const alvosEngajados = entidades.filter((e2) => e2.id !== origemAtual.id && e2.oponente);
-  const efeitosDoAtaque = (contexto.ataque?.efeitos || []).filter((ef) => ef.categoria !== "Outros");
+  const efeitosDoAtaque = (contexto.ataque?.efeitos || []).filter((ef) => ef.categoria !== "Outros" && ef.categoria !== "Mover Objetos");
 
   const rolarMultiataque = (alvoId) => {
     const alvoMA = entidades.find((e2) => e2.id === alvoId);
@@ -2055,15 +2056,17 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const atualizarMoverObjetos = (novoMO) => {
-    if (!atualizarCampo || !ehAtaque || !contexto.ataque) return;
-    const novosAtaques = (origemAtual.ataques || []).map((a) => (a.id === contexto.ataque.id ? { ...a, moverObjetos: novoMO } : a));
+  const atualizarEfeitoMoverObjetos = (efeitoId, novoMO) => {
+    if (!atualizarCampo || !ehAtaque || !ataqueAtual) return;
+    const novosEfeitos = (ataqueAtual.efeitos || []).map((ef) => (ef.id === efeitoId ? { ...ef, ...novoMO } : ef));
+    const novosAtaques = (origemAtual.ataques || []).map((a) => (a.id === ataqueAtual.id ? { ...a, efeitos: novosEfeitos } : a));
     atualizarCampo(origemAtual.id, "ataques", novosAtaques);
   };
   // Usa a versão mais atual do ataque (vinda de origemAtual/entidades, que é reativo) em vez do
   // "contexto.ataque" capturado na abertura do modal — assim os campos de Mover Objetos refletem
   // a digitação/edição em tempo real, e não uma foto congelada de quando o modal abriu.
   const ataqueAtual = ehAtaque ? ((origemAtual.ataques || []).find((a) => a.id === contexto.ataque?.id) || contexto.ataque) : null;
+  const efeitosMoverObjetos = ehAtaque ? (ataqueAtual?.efeitos || []).filter((ef) => ef.categoria === "Mover Objetos") : [];
   const criarAtaqueArremesso = (nomeObjeto, graduacaoDano) => {
     if (!atualizarCampo) return;
     const novo = {
@@ -2083,12 +2086,12 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           <div className="rich-display" style={{ marginBottom: 12 }} dangerouslySetInnerHTML={{ __html: contexto.ataque.textoFormatado }} />
         )}
 
-        {ehAtaque && ataqueAtual?.moverObjetos?.ativo && (
-          <div className="subcard2" style={{ marginBottom: 12 }}>
+        {efeitosMoverObjetos.map((ef) => (
+          <div className="subcard2" key={ef.id} style={{ marginBottom: 12 }}>
             <div className="section-title">Mover Objetos</div>
-            <MoverObjetosCampos mo={ataqueAtual.moverObjetos} onMudar={atualizarMoverObjetos} onCriarArremesso={criarAtaqueArremesso} />
+            <MoverObjetosCampos mo={ef} onMudar={(novo) => atualizarEfeitoMoverObjetos(ef.id, novo)} onCriarArremesso={criarAtaqueArremesso} />
           </div>
-        )}
+        ))}
 
         {(temMultiataque || temDividido) && (
           <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
@@ -2124,7 +2127,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
             {alvosArea.map((alvo) => (
               <div className="subcard" key={alvo.id}>
                 <div className="section-title">{alvo.nome}</div>
-                {(contexto.ataque.efeitos || []).map((efeito) => {
+                {(contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos").map((efeito) => {
                   const key = `${alvo.id}:${efeito.id}`;
                   const res = efeitosR[key];
                   return (
@@ -2196,7 +2199,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                   </label>
                 )}
 
-                {(!temDividido || !usarDividido) && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (contexto.ataque.efeitos || []).map((efeito) => {
+                {(!temDividido || !usarDividido) && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos").map((efeito) => {
                   const res = efeitosR[efeito.id];
                   return (
                     <div className="subcard" key={efeito.id}>
@@ -3369,7 +3372,7 @@ function TelaIdentidade({ onEscolher }) {
 }
 
 /* ---------- efeito (form) ---------- */
-function EfeitoForm({ efeito, onMudar, onRemover }) {
+function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
   const upd = (campo, valor) => onMudar({ ...efeito, [campo]: valor });
   const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat), colateral: efeito.colateral });
   const addSentido = () => upd("sentidos", [...(efeito.sentidos || []), ""]);
@@ -3461,6 +3464,14 @@ function EfeitoForm({ efeito, onMudar, onRemover }) {
           <div className="field-note">Sem rolagem — aplicado automaticamente ao usar a habilidade.</div>
           <label className="label">Descrição do efeito</label>
           <textarea className="outros-textarea" value={efeito.texto || ""} onChange={(e) => upd("texto", e.target.value)} placeholder="Descreva o que esse efeito faz…" rows={3} />
+        </>
+      )}
+      {efeito.categoria === "Mover Objetos" && (
+        <>
+          <div className="field-note" style={{ marginBottom: 10 }}>
+            Toque num objeto pra marcá-lo; com uma ação você move todos os marcados a qualquer distância dentro da sua percepção. A Força efetiva pra erguer/mover é igual à graduação. Usando uma ação de movimento pra se concentrar, some +1 (muda a duração pra Concentração). Não serve pra manipulação fina. Objetos arremessados baseiam o dano na graduação do peso deles.
+          </div>
+          <MoverObjetosCampos mo={efeito} onMudar={onMudar} onCriarArremesso={onCriarArremesso} />
         </>
       )}
       <div className="divider" />
@@ -3706,7 +3717,6 @@ function MoverObjetosCampos({ mo, onMudar, onCriarArremesso }) {
 function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso }) {
   const [extrasAberto, setExtrasAberto] = useState(false);
   const [exigirTesteAberto, setExigirTesteAberto] = useState(false);
-  const [moverObjetosAberto, setMoverObjetosAberto] = useState(false);
   const colapsado = !!ataque.colapsado;
   const setColapsado = (fnOuValor) => {
     const novo = typeof fnOuValor === "function" ? fnOuValor(colapsado) : fnOuValor;
@@ -3831,7 +3841,7 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso }) {
           )}
 
           <div className="section-title">Efeitos</div>
-          {ataque.efeitos.map((ef, i) => <EfeitoForm key={ef.id} efeito={ef} onMudar={(novo) => updEfeito(i, novo)} onRemover={() => rmEfeito(i)} />)}
+          {ataque.efeitos.map((ef, i) => <EfeitoForm key={ef.id} efeito={ef} onMudar={(novo) => updEfeito(i, novo)} onRemover={() => rmEfeito(i)} onCriarArremesso={onCriarArremesso} />)}
           <button className="btn btn-ghost btn-sm" onClick={addEfeito} style={{ marginBottom: 12 }}>+ Efeito</button>
         </>
       )}
@@ -3841,30 +3851,6 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso }) {
           <div className="section-title">Efeitos passivos</div>
           <PassivoEditor passivos={passivosDe(ataque)} onMudar={(nova) => upd("passivos", nova)} />
         </>
-      )}
-
-      {!ehPassiva && (
-      <>
-      <div className="acoes-header" onClick={() => setMoverObjetosAberto((s) => !s)}>
-        <div className="section-title" style={{ marginBottom: 0 }}>Mover Objetos</div>
-        <span className={"arrow" + (moverObjetosAberto ? " open" : "")}>▶</span>
-      </div>
-      {moverObjetosAberto && (
-        <div className="subcard2" style={{ marginBottom: 10 }}>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!!ataque.moverObjetos?.ativo}
-              onChange={(e) => upd("moverObjetos", { graduacao: 0, concentracao: false, objetos: [], ...ataque.moverObjetos, ativo: e.target.checked })} />
-            Mover Objetos
-          </label>
-          <div className="field-note" style={{ marginBottom: 10 }}>
-            Toque num objeto pra marcá-lo; com uma ação você move todos os marcados a qualquer distância dentro da sua percepção. A Força efetiva pra erguer/mover é igual à graduação. Usando uma ação de movimento pra se concentrar, some +1 (muda a duração pra Concentração). Não serve pra manipulação fina. Objetos arremessados baseiam o dano na graduação do peso deles.
-          </div>
-          {ataque.moverObjetos?.ativo && (
-            <MoverObjetosCampos mo={ataque.moverObjetos} onMudar={(novo) => upd("moverObjetos", novo)} onCriarArremesso={onCriarArremesso} />
-          )}
-        </div>
-      )}
-      </>
       )}
 
       <div className="acoes-header" onClick={() => setExigirTesteAberto((s) => !s)}>
