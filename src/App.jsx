@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   auth, ouvirAuth, cadastrar, entrar, sair, getPersonal, setPersonal,
   getShared, setShared, ouvirShared,
-  ouvirEntidades, salvarEntidade, removerEntidadeDoc,
+  ouvirEntidades, salvarEntidade, removerEntidadeDoc, ouvirRoster, adicionarItemArray,
   ouvirHistorico, adicionarHistorico,
   migrarDadosAntigos, ouvirErrosSalvamento,
 } from "./firebase.js";
@@ -2439,11 +2439,14 @@ const AJUDA_CHAVES = [
 ];
 
 /* ---------- modal de ações padrão ---------- */
-function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo }) {
+function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atualizarCampo }) {
   const { origem, acao } = ctx;
   const origemAtual = entidades.find((e) => e.id === origem.id) || origem;
   const outros = entidades.filter((e) => e.id !== origemAtual.id);
   const oponentesDisponiveis = outros.filter((e) => e.oponente);
+  // O roster é uma lista pública enxuta (só id + nome) que existe justamente pra isso: deixar
+  // qualquer um escolher um aliado pra ajudar sem precisar ter acesso à ficha completa dele.
+  const aliadosDisponiveis = (roster || []).filter((r) => r.id !== origemAtual.id);
 
   const [oponenteId, setOponenteId] = useState("");
   const [oponentesMulti, setOponentesMulti] = useState({});
@@ -2464,7 +2467,10 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
   const [usarBonusDescansoAcao, setUsarBonusDescansoAcao] = useState(false);
 
   const oponente = entidades.find((e) => e.id === oponenteId);
-  const aliado = entidades.find((e) => e.id === aliadoId);
+  // Idem: usa o registro completo se disponível (ex.: já é oponente engajado, ou é o dono da
+  // própria ficha), senão cai pro nome público do roster — o suficiente pra registrar quem foi
+  // ajudado, já que rolarAjuda() usa só os atributos de quem está ajudando, não do aliado.
+  const aliado = entidades.find((e) => e.id === aliadoId) || aliadosDisponiveis.find((r) => r.id === aliadoId);
   const fechar = () => onFechar();
 
   const fintaAgilAtiva = acao.id === "fintar" && temVantagem(origemAtual, "Finta Ágil");
@@ -2686,7 +2692,7 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
     if (res.sucesso) {
       const grau = Math.max(1, res.graus);
       const buff = { id: uid(), chave: chaveAjuda, bonus: grau * 2, deNome: origemAtual.nome };
-      atualizarCampo(aliado.id, "buffsAjuda", [...(aliado.buffsAjuda || []), buff]);
+      adicionarItemArray(aliado.id, "buffsAjuda", buff);
     }
     registrar({ tipo: "rolagem", desc: `${origemAtual.nome} ajuda ${aliado.nome} em ${infoChave.l}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10`, total: res.sucesso ? `+${Math.max(1, res.graus) * 2} para ${aliado.nome}` : "Não ajudou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} ajuda ${aliado.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? `+${Math.max(1, res.graus) * 2} para ${aliado.nome}` : "Não ajudou" });
@@ -2770,7 +2776,10 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
       if (!alvo) return;
       desc = `${origemAtual.nome} usa Reposicionar: ${alvo.nome} pode usar uma ação de movimento fora do turno`;
     }
-    if (entrada && alvo) atualizarCampo(alvo.id, "efeitosManobra", [...(alvo.efeitosManobra || []), entrada]);
+    if (entrada && alvo) {
+      if (alvo === aliado) adicionarItemArray(alvo.id, "efeitosManobra", entrada);
+      else atualizarCampo(alvo.id, "efeitosManobra", [...(alvo.efeitosManobra || []), entrada]);
+    }
     const novasAcoes = plano.acoes - 1;
     atualizarCampo(origemAtual.id, "plano", novasAcoes > 0 ? { ...plano, acoes: novasAcoes } : null);
     setR1("feito");
@@ -2951,7 +2960,7 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
             <label className="label">Aliado a ajudar</label>
             <SearchableSelect value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {outros.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+              {aliadosDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
             </SearchableSelect>
             {aliado && (
               <>
@@ -3050,7 +3059,7 @@ function AcaoModal({ ctx, entidades, onFechar, registrar, animar, atualizarCampo
                     <label className="label">Aliado</label>
                     <SearchableSelect value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
                       <option value="">Selecione…</option>
-                      {outros.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+                      {aliadosDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
                     </SearchableSelect>
                   </>
                 )}
@@ -3083,6 +3092,7 @@ export default function MesaMM3() {
   const [carregando, setCarregando] = useState(true);
   const [identidade, setIdentidade] = useState(null);
   const [entidades, setEntidades] = useState([]);
+  const [roster, setRoster] = useState([]);
   const [historico, setHistorico] = useState([]);
   const [iniciativa, setIniciativa] = useState(INICIATIVA_VAZIA);
   const [modalCtx, setModalCtx] = useState(null);
@@ -3173,6 +3183,7 @@ export default function MesaMM3() {
     if (!identidade) return;
     migrarDadosAntigos();
     const unsubEnt = ouvirEntidades((lista) => setEntidades(Array.isArray(lista) ? lista : []));
+    const unsubRoster = ouvirRoster((lista) => setRoster(Array.isArray(lista) ? lista : []));
     const unsubHist = ouvirHistorico((lista) => setHistorico(Array.isArray(lista) ? lista : []));
     const unsubIni = ouvirShared("iniciativa", (v) => setIniciativa(v && !Array.isArray(v) && v.ordem ? v : INICIATIVA_VAZIA));
     const unsubAnim = ouvirShared("animQueue", (fila) => {
@@ -3184,7 +3195,7 @@ export default function MesaMM3() {
         setEventosAnim((atual) => [...atual, ...novos]);
       }
     });
-    return () => { unsubEnt(); unsubHist(); unsubIni(); unsubAnim(); };
+    return () => { unsubEnt(); unsubRoster(); unsubHist(); unsubIni(); unsubAnim(); };
   }, [identidade]);
 
   const escolherIdentidade = async (papel, nome) => {
@@ -3325,7 +3336,7 @@ export default function MesaMM3() {
         </div>
       </div>
       {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} />}
-      {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} onFechar={() => setAcaoCtx(null)} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} />}
+      {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} />}
       <AnimacaoOverlay eventos={eventosAnim} onTerminar={removerEventoAnim} />
     </div>
   );
