@@ -19,6 +19,8 @@ import {
   orderBy,
   limit,
   onSnapshot,
+  updateDoc,
+  arrayUnion,
 } from "firebase/firestore";
 
 // As chaves abaixo vêm de variáveis de ambiente (arquivo .env local, ou Secrets
@@ -102,6 +104,12 @@ export async function salvarEntidade(entidade) {
   try {
     const { id, ...dados } = entidade;
     await setDoc(doc(db, "entidades", id), dados);
+    // "roster" é uma versão pública e bem enxuta (só nome) da ficha, guardada
+    // à parte, que TODO MUNDO pode ler — mesmo sem ter permissão de ver a
+    // ficha completa. Ela existe só pra alimentar listas de escolha (tipo
+    // "quem eu quero ajudar" na ação Auxílio) sem expor atributos, PV,
+    // habilidades etc. de ninguém.
+    await setDoc(doc(db, "roster", id), { nome: dados.nome || "", donoUid: dados.donoUid || null }).catch(() => {});
   } catch (e) {
     avisarErro(`Não foi possível salvar a ficha "${entidade?.nome || ""}". Suas últimas mudanças podem não ter sido gravadas — tente de novo.`, e);
   }
@@ -109,8 +117,31 @@ export async function salvarEntidade(entidade) {
 export async function removerEntidadeDoc(id) {
   try {
     await deleteDoc(doc(db, "entidades", id));
+    await deleteDoc(doc(db, "roster", id)).catch(() => {});
   } catch (e) {
     avisarErro("Não foi possível excluir a ficha. Tente de novo.", e);
+  }
+}
+/* Lista pública (só id + nome) de todas as fichas, pra popular seletores como
+   o "aliado a ajudar" da ação Auxílio sem precisar de acesso à ficha inteira
+   de ninguém — ver comentário em salvarEntidade() acima. */
+export function ouvirRoster(callback) {
+  return onSnapshot(
+    collection(db, "roster"),
+    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
+    (e) => avisarErro("Perdemos a conexão em tempo real com a lista de personagens. Recarregue a página.", e)
+  );
+}
+/* Adiciona um item a um campo-lista de outra ficha sem precisar ter lido essa
+   ficha antes (usa arrayUnion, resolvido no servidor). Usado por ações que
+   afetam um aliado que talvez não seja visível pra quem está agindo (ex.:
+   ação Auxílio, ou Cuidado/Reposicionar de um Plano) — ver comentário em
+   salvarEntidade() sobre o roster público. */
+export async function adicionarItemArray(entidadeId, campo, item) {
+  try {
+    await updateDoc(doc(db, "entidades", entidadeId), { [campo]: arrayUnion(item) });
+  } catch (e) {
+    avisarErro("Não foi possível aplicar esse efeito no aliado.", e);
   }
 }
 
