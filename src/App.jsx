@@ -36,6 +36,7 @@ const GlobalStyle = () => (
 
     .mm3 .card { background: var(--surface); border:1px solid var(--border); border-radius:16px; padding:1.4rem; margin-bottom: 1rem; }
     .mm3 .ficha-footer-fixa { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; background: var(--surface); border-top: 1px solid var(--border); padding: 0.7rem 1rem calc(0.7rem + env(safe-area-inset-bottom)); box-shadow: 0 -4px 16px rgba(0,0,0,0.25); }
+    .mm3 .aviso-erro-salvar { background: var(--danger-bg); border: 1px solid var(--danger-border); color: var(--danger); border-radius: 8px; padding: 8px 10px; font-size: 0.82rem; margin-bottom: 8px; }
     .mm3 .ficha-footer-fixa .grid2 { max-width: 700px; margin: 0 auto; gap: 10px; }
     .mm3 .subcard { background: var(--surface2); border:1px solid var(--border); border-radius:12px; padding:1rem; margin-bottom:10px; }
     .mm3 .subcard2 { background: var(--surface3); border:1px solid var(--border); border-radius:10px; padding:0.85rem; margin-bottom:8px; }
@@ -1261,14 +1262,15 @@ function efeitoPadrao(categoria) {
   if (categoria === "Mover Objetos") return { categoria, graduacao: 0, concentracao: false, objetos: [] };
   return { categoria };
 }
-function dadosEfeito(efeito, oponente) {
-  if (efeito.categoria === "Dano") return { bonus: statDefesa(oponente, "resistencia"), cd: 15 + (efeito.graduacao || 0), salvLabel: "Resistência" };
+function dadosEfeito(efeito, oponente, critico) {
+  const bonusCrit = critico ? 5 : 0;
+  if (efeito.categoria === "Dano") return { bonus: statDefesa(oponente, "resistencia"), cd: 15 + (efeito.graduacao || 0) + bonusCrit, salvLabel: "Resistência" };
   if (efeito.categoria === "Cura") return { bonus: efeito.graduacao || 0, cd: 10, salvLabel: "Cura (CD 10)", quemRolaAtacante: true };
-  if (efeito.categoria === "Aflição") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0), salvLabel: efeito.salvamento };
-  if (efeito.categoria === "Enfraquecer") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0), salvLabel: efeito.salvamento };
-  if (efeito.categoria === "Camuflagem") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 15 + (efeito.graduacao || 0), salvLabel: efeito.salvamento };
+  if (efeito.categoria === "Aflição") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
+  if (efeito.categoria === "Enfraquecer") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
+  if (efeito.categoria === "Camuflagem") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 15 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
   if (efeito.categoria === "Nulificar") return { bonus: efeito.graduacaoNulificar || 0, cd: 10 + statDefesa(oponente, "vontade"), salvLabel: "Vontade do alvo", quemRolaAtacante: true };
-  if (efeito.categoria === "Leitura Mental") return { bonus: salvBonus(oponente, "Vontade"), cd: 10 + (efeito.graduacao || 0), salvLabel: "Vontade" };
+  if (efeito.categoria === "Leitura Mental") return { bonus: salvBonus(oponente, "Vontade"), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: "Vontade" };
   return { bonus: 0, cd: 10 };
 }
 
@@ -1821,8 +1823,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
      os efeitos colaterais (dano na vida, condições, etc). Não mexe em estado de UI — quem chama
      decide onde guardar o resultado. Isso permite reaproveitar a mesma lógica tanto no fluxo normal
      quanto no Multiataque (vários alvos/ataques) e no Dividido (efeito com graduação repartida). */
-  const rolarEfeitoGenerico = (efeito, alvo, aplicarProtecaoLimitada) => {
-    const dados = dadosEfeito(efeito, alvo);
+  const rolarEfeitoGenerico = (efeito, alvo, aplicarProtecaoLimitada, critico) => {
+    const dados = dadosEfeito(efeito, alvo, critico);
     if (dados.quemRolaAtacante) {
       const dado = rolarD20();
       const r = montarTeste(dado, dados.bonus, dados.cd);
@@ -1950,7 +1952,11 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const rolarEfeito = (efeito, alvoParam, keyOverride) => {
     const alvo = alvoParam || oponente;
     const key = keyOverride || (isArea ? `${alvo.id}:${efeito.id}` : efeito.id);
-    const res = rolarEfeitoGenerico(efeito, alvo, !!protecaoLimitada[key]);
+    // Crítico (natural 20, ou limiar de ameaça reduzido por Crítico Aprimorado) soma +5 na CD
+    // de TODOS os efeitos desse ataque — não só no dano. Área não tem rolagem de acerto, então
+    // não crítica.
+    const critico = !isArea && ataqueAcertoR && ataqueAcertoR !== "auto" && ataqueAcertoR.ehCrit;
+    const res = rolarEfeitoGenerico(efeito, alvo, !!protecaoLimitada[key], critico);
     setEfeitosR((s) => ({ ...s, [key]: res }));
   };
 
@@ -1994,7 +2000,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const ma = multiAtaques.find((m) => m.id === maId);
     if (!ma) return;
     const key = `multi:${maId}:${efeito.id}`;
-    const res = rolarEfeitoGenerico(efeito, ma.alvo, !!protecaoLimitada[key]);
+    const critico = ma.r && ma.r !== "auto" && ma.r.ehCrit;
+    const res = rolarEfeitoGenerico(efeito, ma.alvo, !!protecaoLimitada[key], critico);
     setMultiAtaques((s) => s.map((m) => (m.id === maId ? { ...m, efeitosR: { ...m.efeitosR, [efeito.id]: res } } : m)));
   };
 
@@ -3182,7 +3189,10 @@ export default function MesaMM3() {
   useEffect(() => {
     if (!identidade) return;
     migrarDadosAntigos();
-    const unsubEnt = ouvirEntidades((lista) => setEntidades(Array.isArray(lista) ? lista : []));
+    const unsubEnt = ouvirEntidades(
+      (lista) => setEntidades(Array.isArray(lista) ? lista : []),
+      { papel: identidade.papel, uid: usuario.uid }
+    );
     const unsubRoster = ouvirRoster((lista) => setRoster(Array.isArray(lista) ? lista : []));
     const unsubHist = ouvirHistorico((lista) => setHistorico(Array.isArray(lista) ? lista : []));
     const unsubIni = ouvirShared("iniciativa", (v) => setIniciativa(v && !Array.isArray(v) && v.ordem ? v : INICIATIVA_VAZIA));
@@ -3196,7 +3206,7 @@ export default function MesaMM3() {
       }
     });
     return () => { unsubEnt(); unsubRoster(); unsubHist(); unsubIni(); unsubAnim(); };
-  }, [identidade]);
+  }, [identidade, usuario]);
 
   const escolherIdentidade = async (papel, nome) => {
     const id = { papel, nome: nome.trim() || (papel === "mestre" ? "Mestre" : "Jogador") };
@@ -3222,7 +3232,12 @@ export default function MesaMM3() {
       if (!anterior || JSON.stringify(anterior) !== JSON.stringify(ent)) tarefas.push(salvarEntidade(ent));
     }
     for (const id of idsAntigos) if (!idsNovos.has(id)) tarefas.push(removerEntidadeDoc(id));
-    await Promise.all(tarefas);
+    const resultados = await Promise.all(tarefas);
+    // Se qualquer escrita falhar (ex.: sem permissão, sem internet), avisamos quem chamou —
+    // salvarEntidade()/removerEntidadeDoc() já mostram o aviso vermelho no topo sozinhos, mas
+    // quem chamou (o formulário de ficha) também precisa saber, pra não fechar como se tivesse
+    // dado tudo certo e a pessoa achar que salvou quando na verdade perdeu a edição.
+    return resultados.every(Boolean);
   };
   const registrar = async (entry) => {
     await adicionarHistorico({ tipo: "sistema", ...entry, hora: horaAgora() });
@@ -3975,7 +3990,7 @@ function fichaPadrao(rotulos) {
   };
 }
 
-function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualizarCampo, registrar }) {
+function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualizarCampo, registrar, erroSalvar }) {
   const [f, setF] = useState(() => {
     const base = fichaPadrao(rotulos);
     if (!inicial) return base;
@@ -4231,6 +4246,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
 
       <div style={{ height: 70 }} />
       <div className="ficha-footer-fixa">
+        {erroSalvar && <div className="aviso-erro-salvar">{erroSalvar}</div>}
         <div className="grid2">
           <button className="btn btn-ghost" onClick={onCancelar}>Cancelar</button>
           <button className="btn btn-accent" disabled={!f.nome.trim()} onClick={tentarSalvar}>Salvar ficha</button>
@@ -4253,26 +4269,35 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   // além da própria — nem as de outros jogadores, nem (principalmente) as do mestre.
   const outros = ehMestre ? entidades.filter((e) => !souDono(e)) : [];
 
+  const [erroSalvarFicha, setErroSalvarFicha] = useState(null);
   const salvarFicha = async (f) => {
     const criando = !f.id;
     const nova = criando ? [...entidades, { ...f, id: uid(), dono: identidade.nome, donoUid: usuario?.uid }] : entidades.map((e) => (e.id === f.id ? { ...f } : e));
-    await salvar(nova);
+    const ok = await salvar(nova);
+    if (!ok) {
+      // NÃO fecha o formulário se a gravação falhou (sem permissão, sem internet, etc.) —
+      // antes disso o form fechava do mesmo jeito, dando a falsa impressão de que salvou,
+      // e a edição podia se perder de verdade sem ninguém perceber.
+      setErroSalvarFicha("Não foi possível salvar essa ficha agora (sem conexão ou sem permissão). Suas edições continuam aqui na tela — tente salvar de novo.");
+      return;
+    }
+    setErroSalvarFicha(null);
     registrar({ desc: `${identidade.nome} ${criando ? "criou" : "editou"} a ficha "${f.nome}"`, detalhe: f.rotulo, total: criando ? "Criada" : "Editada", tipoClasse: criando ? "hs" : "hw" });
     setEditando(null);
   };
   const excluir = async (ent) => {
-    await salvar(entidades.filter((e) => e.id !== ent.id));
-    registrar({ desc: `${identidade.nome} excluiu a ficha "${ent.nome}"`, detalhe: ent.rotulo, total: "Excluída", tipoClasse: "hd" });
+    const ok = await salvar(entidades.filter((e) => e.id !== ent.id));
+    if (ok) registrar({ desc: `${identidade.nome} excluiu a ficha "${ent.nome}"`, detalhe: ent.rotulo, total: "Excluída", tipoClasse: "hd" });
   };
   const toggleVantagem = async (entidadeId, vantagemId, novoAtivo) => {
     const nova = entidades.map((e) => (e.id !== entidadeId ? e : { ...e, vantagens: (e.vantagens || []).map((v) => (v.id === vantagemId ? { ...v, ativo: novoAtivo } : v)) }));
-    await salvar(nova);
-    setVantagemCtx((ctx) => (ctx ? { ...ctx, vantagem: { ...ctx.vantagem, ativo: novoAtivo } } : ctx));
+    const ok = await salvar(nova);
+    if (ok) setVantagemCtx((ctx) => (ctx ? { ...ctx, vantagem: { ...ctx.vantagem, ativo: novoAtivo } } : ctx));
   };
   const abrirVantagem = (entidade, vantagem, editavel) => setVantagemCtx({ entidade, vantagem, info: VANTAGENS.find((x) => x.nome === vantagem.nome), editavel });
 
   if (editando) return <FichaForm inicial={editando === "novo" ? null : editando} rotulos={rotulosProprio} onSalvar={salvarFicha} onCancelar={() => setEditando(null)}
-    entidades={entidades} atualizarCampo={atualizarCampo} registrar={registrar} />;
+    entidades={entidades} atualizarCampo={atualizarCampo} registrar={registrar} erroSalvar={erroSalvarFicha} />;
 
   const podeMarcarOponente = ehMestre;
 
