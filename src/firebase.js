@@ -18,6 +18,7 @@ import {
   query,
   orderBy,
   limit,
+  where,
   onSnapshot,
   updateDoc,
   arrayUnion,
@@ -93,12 +94,40 @@ export function ouvirAuth(callback) {
    mesmo tempo, a segunda escrita apagaria a mudança da primeira (a ficha
    "desaparecia"). Com um documento por ficha, editar uma nunca toca nas
    outras, então esse tipo de perda de dado não acontece mais. */
-export function ouvirEntidades(callback) {
-  return onSnapshot(
-    collection(db, "entidades"),
-    (snap) => callback(snap.docs.map((d) => ({ id: d.id, ...d.data() }))),
-    (e) => avisarErro("Perdemos a conexão em tempo real com as fichas. Recarregue a página.", e)
+/* CORREÇÃO (permission-denied para jogadores): as regras do Firestore só
+   deixam o jogador ler (1) as fichas dele (donoUid == uid) e (2) fichas
+   marcadas como "oponente". Uma consulta na coleção inteira é negada por
+   completo, porque poderia devolver fichas que o jogador não pode ler. Por
+   isso o Mestre escuta tudo, e o jogador faz DUAS consultas filtradas e junta
+   os resultados. */
+export function ouvirEntidades(callback, { papel, uid } = {}) {
+  const col = collection(db, "entidades");
+  const mapear = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const onErr = (e) =>
+    avisarErro("Perdemos a conexão em tempo real com as fichas. Recarregue a página.", e);
+
+  if (papel === "mestre") {
+    return onSnapshot(col, (snap) => callback(mapear(snap)), onErr);
+  }
+
+  let minhas = [];
+  let oponentes = [];
+  const emitir = () => {
+    const porId = new Map();
+    [...minhas, ...oponentes].forEach((f) => porId.set(f.id, f));
+    callback([...porId.values()]);
+  };
+  const un1 = onSnapshot(
+    query(col, where("donoUid", "==", uid)),
+    (snap) => { minhas = mapear(snap); emitir(); },
+    onErr
   );
+  const un2 = onSnapshot(
+    query(col, where("oponente", "==", true)),
+    (snap) => { oponentes = mapear(snap); emitir(); },
+    onErr
+  );
+  return () => { un1(); un2(); };
 }
 export async function salvarEntidade(entidade) {
   try {
