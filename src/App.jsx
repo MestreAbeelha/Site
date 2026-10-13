@@ -695,7 +695,10 @@ function limiarCritico(ent, ataqueId) {
 
 /* ---------- helpers de valores derivados ---------- */
 function attrBase(ent, key) { return (ent && ent.atributos && ent.atributos[key]) || 0; }
-function attr(ent, key) { return attrBase(ent, key) + bonusAtributoPassivo(ent, key); }
+function reducaoAtributoTemp(ent, key) {
+  return (ent?.duracoes || []).filter((d) => d.tipo === "atributo" && d.chave === key).reduce((t, d) => t + (d.valor || 0), 0);
+}
+function attr(ent, key) { return attrBase(ent, key) + bonusAtributoPassivo(ent, key) - reducaoAtributoTemp(ent, key); }
 
 /* ---------- efeitos passivos (habilidades que não fazem rolagem: viram bônus fixos na ficha) ----------
    Cada tipo define custoBase (pontos por graduação), extras/falhas (checkboxes que ajustam o custo,
@@ -822,11 +825,11 @@ const PODERES_PASSIVOS = [
     } },
 
   { id: "protecao", nome: "Proteção", categoria: "Fortificador", custoBase: 4,
-    desc: "Reduz qualquer dano em uma quantidade igual à graduação. Se a graduação for maior que o nível, o excedente reduz a CD do teste de Resistência em vez de reduzir dano.",
+    desc: "Reduz qualquer dano em uma quantidade igual à graduação (sem limite de nível).",
     extras: [], falhas: [{ chave: "limitado", label: "Limitado (a redução só se aplica se marcar o checkbox \"Proteção\" ao rolar o teste de Resistência)" }],
     aplicar1(ent, inst, acc, ataque) {
-      const g = inst.graduacao || 0; const nivel = ent?.nivel || 1;
-      const reducao = Math.min(g, nivel);
+      const g = inst.graduacao || 0;
+      const reducao = Math.max(0, g);
       if (inst.extrasAtivos?.limitado) {
         acc.reducaoDanoLimitado += reducao;
         acc.notas.push(`Proteção (Limitado): ${reducao} de redução de dano só se aplica se marcar o checkbox "Proteção" ao rolar o teste de Resistência`);
@@ -836,8 +839,6 @@ const PODERES_PASSIVOS = [
       } else {
         acc.reducaoDano += reducao;
       }
-      const excedente = Math.max(0, g - nivel);
-      if (excedente > 0) acc.notas.push(`Proteção: ${excedente} graduação(ões) excedente(s) reduzem a CD do teste de Resistência em vez de reduzir dano (aplique manualmente)`);
     }, aplicar2() {} },
 
   { id: "regeneracao", nome: "Regeneração", categoria: "Modelador", custoBase: 3,
@@ -1251,9 +1252,9 @@ const AFLICOES_G2 = ["Atordoado", "Compelido", "Em chamas", "Envenenado", "Imóv
 const AFLICOES_G3 = ["Controlado", "Incapacitado", "Paralisado"];
 
 function efeitoPadrao(categoria) {
-  if (categoria === "Dano") return { categoria, graduacao: 0 };
+  if (categoria === "Dano") return { categoria, graduacao: 0, baseadoAtivo: false, atributoBase: "", danoAdicional: 0 };
   if (categoria === "Cura") return { categoria, graduacao: 5 };
-  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, resistenciaAlternativa: false, cumulativo: false, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
+  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, resistenciaAlternativa: false, cumulativo: false, graus: 3, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
   if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 5, caracteristica: "" };
   if (categoria === "Camuflagem") return { categoria, salvamento: "Fortitude", graduacao: 5, sentidos: [] };
   if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5 };
@@ -1317,8 +1318,9 @@ function montarTeste(dado, bonus, cd, limiarCrit = 20) {
   }
   return { dado, bonus, total, cd, diff, graus, tipoClasse, grauLabel, grauTexto, desc, ehCrit, sucesso: graus > 0 };
 }
+function grausAflicao(efeito) { return Math.max(1, Math.min(3, efeito?.graus ?? 3)); }
 function textoAflicao(efeito, graus) {
-  const nivel = Math.min(Math.abs(graus), 3);
+  const nivel = Math.min(Math.abs(graus), grausAflicao(efeito));
   if (nivel === 0) return "Sem efeito";
   const par = (g, gb) => (efeito.condicaoExtra && gb ? `${g || "—"} ou ${gb || "—"}` : (g || "—"));
   if (nivel === 1) return `1 grau — ${par(efeito.grau1, efeito.grau1b)}`;
@@ -1342,6 +1344,90 @@ function textoNulificar(graus) {
   if (graus === 2) return "2 graus: nulifica uma habilidade do alvo";
   if (graus === 3) return "3 graus: nulifica todas as habilidades de um tipo de Nen escolhido";
   return "4+ graus: nulifica tudo e deixa o alvo Indefeso";
+}
+
+/* ---------- helpers: graduação, duração, variáveis, desgastante ---------- */
+/* Dano Baseado Em: graduação = atributo do atacante (ao vivo) + dano adicional. Sem a opção, é o campo normal. */
+function graduacaoEfetiva(efeito, ent) {
+  if (efeito?.categoria === "Dano" && efeito.baseadoAtivo && efeito.atributoBase) {
+    return Math.max(0, attr(ent, efeito.atributoBase) + (efeito.danoAdicional || 0));
+  }
+  return efeito?.graduacao || 0;
+}
+function maiorGraduacaoEfeitos(efeitos, ent) {
+  return Math.max(0, ...(efeitos || [])
+    .filter((ef) => ef.categoria !== "Outros" && ef.categoria !== "Mover Objetos")
+    .map((ef) => (ef.categoria === "Nulificar" ? (ef.graduacaoNulificar || 0) : graduacaoEfetiva(ef, ent))));
+}
+function graduacaoAtaque(ataque, ent) {
+  if (ataque?.tipo === "passiva") return Math.max(0, ...passivosDe(ataque).map((p) => p.graduacao || 0));
+  return maiorGraduacaoEfeitos(ataque?.efeitos, ent);
+}
+
+/* Durações: efeitos que acabam no início/fim do turno de alguém (normalmente de quem aplicou).
+   ent.duracoes = [{ id, tipo: "condicao"|"atributo", nome|chave, valor, quando: "inicio"|"fim", turnoDeId, pular }].
+   "pular": aplicado durante o próprio turno e com "fim" — o 1º fim de turno (o atual) não conta. */
+function ehTurnoDe(iniciativa, id) {
+  const ordem = iniciativa?.ordem || [];
+  return ordem[iniciativa?.turnoAtual || 0]?.entidadeId === id;
+}
+function aplicarCondicaoTemporaria(atualizarCampo, alvo, nome, quando, turnoDeId, iniciativa) {
+  const atuais = { ...(alvo.condicoes || {}) };
+  atuais[nome] = (atuais[nome] || 0) + 1;
+  atualizarCampo(alvo.id, "condicoes", atuais);
+  atualizarCampo(alvo.id, "duracoes", [...(alvo.duracoes || []), {
+    id: uid(), tipo: "condicao", nome, quando, turnoDeId, pular: quando === "fim" && ehTurnoDe(iniciativa, turnoDeId),
+  }]);
+}
+
+/* Variáveis (Munição / Carga) — uma lista por ficha: ent.variaveis = [{ id, nome, tipo, atributo, valor }]. */
+function maxVariavel(ent, v) { return Math.max(0, attr(ent, v?.atributo || "forca")); }
+function valorVariavel(ent, v) {
+  if (v?.tipo === "municao") return Math.max(0, Math.min(v.valor ?? maxVariavel(ent, v), maxVariavel(ent, v)));
+  return Math.max(0, v?.valor ?? 0);
+}
+function valorInicialVariavel(ent, v) { return v?.tipo === "municao" ? maxVariavel(ent, v) : 0; }
+/* Confere se a habilidade pode ser usada e calcula os novos valores (sem gravar nada). */
+function aplicarUsoVariaveis(ent, ataque) {
+  const usos = (ataque?.usoVariaveis || []).filter((u) => u.variavelId && u.delta);
+  if (!usos.length) return { ok: true, variaveis: null };
+  const vars = ent?.variaveis || [];
+  const vals = {};
+  vars.forEach((v) => { vals[v.id] = valorVariavel(ent, v); });
+  for (const u of usos) {
+    const v = vars.find((x) => x.id === u.variavelId);
+    if (!v) continue;
+    const novo = vals[v.id] + u.delta;
+    if (novo < 0) return { ok: false, motivo: `${v.nome || "Variável"} insuficiente: tem ${vals[v.id]} e a habilidade gasta ${-u.delta}.` };
+    vals[v.id] = v.tipo === "municao" ? Math.min(novo, maxVariavel(ent, v)) : novo;
+  }
+  return { ok: true, variaveis: vars.map((v) => ({ ...v, valor: vals[v.id] })) };
+}
+
+/* Falha Desgastante: reduz atributos de quem usa até o início do próximo turno dele.
+   Automático = só reduz. Com teste = Fortitude ou Vontade CD 10 + graduação; passou, não sofre. */
+function usarDesgastante(ent, ataque, atualizarCampo, registrar, animar) {
+  const d = ataque?.desgastante;
+  const reds = (d?.reducoes || []).filter((r) => r.atributo && (r.valor || 0) > 0);
+  if (!d?.ativo || !reds.length || !atualizarCampo) return null;
+  const rotulo = reds.map((r) => `-${r.valor} ${ATRIBUTOS.find((a) => a.k === r.atributo)?.l || r.atributo}`).join(", ");
+  const nomeHab = ataque.nome || "Habilidade";
+  let teste = null;
+  if (d.modo === "teste") {
+    const sal = d.salvamento || "Fortitude";
+    const cd = 10 + graduacaoAtaque(ataque, ent);
+    const dado = rolarD20();
+    const bonus = salvBonus(ent, sal);
+    const r = montarTeste(dado, bonus, cd);
+    teste = { ...r, sal };
+    if (registrar) registrar({ tipo: "rolagem", desc: `${ent.nome} testa Desgastante (${sal}) — "${nomeHab}"`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, total: r.sucesso ? "Resistiu" : `Falhou — ${rotulo}`, tipoClasse: r.sucesso ? "hs" : "hw" });
+    if (animar) animar({ modo: "simples", nome: `${ent.nome} — Desgastante`, foto: ent.foto, dado, bonus, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu a redução" });
+    if (r.sucesso) return { teste, aplicado: false, texto: `Resistiu ao Desgastante (${sal}) — nenhuma redução`, rotulo };
+  }
+  const novas = reds.map((r) => ({ id: uid(), tipo: "atributo", chave: r.atributo, valor: r.valor, quando: "inicio", turnoDeId: ent.id, origem: nomeHab }));
+  atualizarCampo(ent.id, "duracoes", [...(ent.duracoes || []), ...novas]);
+  if (registrar && d.modo !== "teste") registrar({ tipo: "rolagem", desc: `${ent.nome} sofre Desgastante — "${nomeHab}"`, detalhe: `${rotulo} até o início do próximo turno`, total: "Atributos reduzidos", tipoClasse: "hw" });
+  return { teste, aplicado: true, texto: `${rotulo} até o início do seu próximo turno`, rotulo };
 }
 
 /* ---------- resultado visual ---------- */
@@ -1676,8 +1762,77 @@ function VantagemModal({ ctx, onFechar, onToggle }) {
   );
 }
 
+/* ---------- Ponto Fraco: janela do dono da habilidade ---------- */
+function PontoFracoJanela({ origem, entidades, pf, nomeHabilidade, onFechar, registrar, animar, enviarPontoFraco }) {
+  const [sel, setSel] = useState({});
+  const [res, setRes] = useState(null);
+  const alvos = entidades.filter((e) => e.id !== origem.id && e.oponente);
+  const rolar = () => {
+    const marcados = alvos.filter((a) => sel[a.id]);
+    if (!marcados.length || res) return;
+    const bEng = bonusPericia(origem, "Enganação");
+    const dEng = rolarD20();
+    const totEng = dEng + bEng;
+    const resultados = marcados.map((a) => {
+      const b = bonusPericia(a, "Investigação");
+      const d = rolarD20();
+      return { id: a.id, nome: a.nome, dado: d, bonus: b, total: d + b, sucesso: d + b >= totEng };
+    });
+    setRes({ dEng, bEng, totEng, resultados });
+    const passaram = resultados.filter((r) => r.sucesso);
+    if (passaram.length && enviarPontoFraco) {
+      enviarPontoFraco(passaram.map((r) => ({ alvoId: r.id, alvoNome: r.nome, deNome: origem.nome, habilidade: nomeHabilidade, texto: pf.texto || "" })));
+    }
+    registrar({
+      tipo: "rolagem",
+      desc: `${origem.nome} expõe o Ponto Fraco de "${nomeHabilidade}"`,
+      detalhe: `Enganação d20(${dEng}) ${fmtBonus(bEng)} = ${totEng} vs Investigação: ${resultados.map((r) => `${r.nome} ${r.total}`).join(" · ")}`,
+      total: passaram.length ? `${passaram.length} de ${resultados.length} perceberam` : "Ninguém percebeu",
+      tipoClasse: passaram.length ? "hs" : "hw",
+    });
+    if (animar) animar({ modo: "simples", nome: `${origem.nome} — Enganação (Ponto Fraco)`, foto: origem.foto, dado: dEng, bonus: bEng, total: totEng, rotulo: "Enganação" });
+  };
+  return (
+    <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) onFechar(); }}>
+      <div className="modal-box" style={{ maxWidth: 420 }}>
+        <div className="modal-head"><span className="mt">Ponto Fraco — {nomeHabilidade || "Habilidade"}</span><button className="modal-close" onClick={onFechar} title="Fechar sem rolar">×</button></div>
+        {!res && (
+          <>
+            <div className="field-note" style={{ marginBottom: 8 }}>Marque as criaturas engajadas que vão tentar notar o ponto fraco. Cada uma faz Investigação contra um único teste de Enganação seu. Fechar no × não rola nada.</div>
+            <div className="subcard2" style={{ marginBottom: 12 }}>
+              {alvos.length === 0 && <div className="field-note">Nenhuma criatura engajada.</div>}
+              {alvos.map((a) => (
+                <label key={a.id} className="checkbox-row">
+                  <input type="checkbox" checked={!!sel[a.id]} onChange={(ev) => setSel((x) => ({ ...x, [a.id]: ev.target.checked }))} />
+                  {a.nome}
+                </label>
+              ))}
+            </div>
+            <button className="btn btn-accent btn-block" disabled={!alvos.some((a) => sel[a.id])} onClick={rolar}>⚄ Rolar</button>
+          </>
+        )}
+        {res && (
+          <>
+            <div className="grau-card warn" style={{ marginBottom: 10 }}>
+              <div className="gl">Enganação de {origem.nome}</div>
+              <div className="gn">d20({res.dEng}) {fmtBonus(res.bEng)} = {res.totEng}</div>
+            </div>
+            {res.resultados.map((r) => (
+              <div key={r.id} className={"efeito-card " + (r.sucesso ? "dano" : "ok")} style={{ marginBottom: 6 }}>
+                <div className="efeito-t">{r.nome}: Investigação d20({r.dado}) {fmtBonus(r.bonus)} = {r.total}</div>
+                <div className="efeito-f">{r.sucesso ? "Percebeu o ponto fraco (o texto aparece na tela dele)" : "Não percebeu"}</div>
+              </div>
+            ))}
+            <button className="btn btn-ghost btn-block" style={{ marginTop: 8 }} onClick={onFechar}>Fechar</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
 /* ---------- modal de rolagem ---------- */
-function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDano, atualizarCampo }) {
+function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDano, atualizarCampo, enviarPontoFraco }) {
   const [escolha, setEscolha] = useState(null);
   const [cdManual, setCdManual] = useState(15);
   const [oponenteId, setOponenteId] = useState("");
@@ -1693,6 +1848,16 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [usarBonusDescanso, setUsarBonusDescanso] = useState(false);
   const [usarBonusTreino, setUsarBonusTreino] = useState(false);
   const [exigirTesteR, setExigirTesteR] = useState(null);
+  const [esquivaArea, setEsquivaArea] = useState({});
+  const [desgastanteR, setDesgastanteR] = useState(null);
+  const [pfAberto, setPfAberto] = useState(() => contexto.tipo === "ataque" && !!contexto.ataque?.pontoFraco?.ativo);
+  // Se uma variável (Munição/Carga) não aguenta o uso, a habilidade não pode ser usada — checado uma vez, na abertura.
+  const [bloqueioVar] = useState(() => {
+    if (contexto.tipo !== "ataque") return null;
+    const o = entidades.find((e) => e.id === contexto.origem.id) || contexto.origem;
+    const r = aplicarUsoVariaveis(o, contexto.ataque);
+    return r.ok ? null : r.motivo;
+  });
 
   const origemAtual = entidades.find((e) => e.id === contexto.origem.id) || contexto.origem;
   const oponente = entidades.find((e) => e.id === oponenteId);
@@ -1824,6 +1989,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
      decide onde guardar o resultado. Isso permite reaproveitar a mesma lógica tanto no fluxo normal
      quanto no Multiataque (vários alvos/ataques) e no Dividido (efeito com graduação repartida). */
   const rolarEfeitoGenerico = (efeito, alvo, aplicarProtecaoLimitada, critico) => {
+    // Dano Baseado Em: a graduação vem do atributo (+ dano adicional) do atacante, ao vivo.
+    if (efeito.categoria === "Dano") efeito = { ...efeito, graduacao: graduacaoEfetiva(efeito, origemAtual), baseadoAtivo: false };
     const dados = dadosEfeito(efeito, alvo, critico);
     if (dados.quemRolaAtacante) {
       const dado = rolarD20();
@@ -1890,11 +2057,12 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           atualizarCampo(alvo.id, "aflicoesCumulativas", semEsse);
         }
       } else {
-        let nivel = Math.min(Math.abs(r.graus), 3);
+        const grausMax = grausAflicao(efeito);
+        let nivel = Math.min(Math.abs(r.graus), grausMax);
         const nivelAnterior = efeito.cumulativo ? (alvo.aflicoesCumulativas?.[cumulKey] || 0) : 0;
         // Cumulativo: impor de novo o mesmo grau (1 ou 2) que o alvo já está sofrendo
         // deste efeito faz ele escalar um grau acima, em vez de se repetir.
-        const escalou = efeito.cumulativo && (nivel === 1 || nivel === 2) && nivel === nivelAnterior;
+        const escalou = efeito.cumulativo && (nivel === 1 || nivel === 2) && nivel === nivelAnterior && nivel < grausMax;
         if (escalou) nivel = Math.min(nivel + 1, 3);
         const condNome = nivel === 1 ? efeito.grau1 : nivel === 2 ? efeito.grau2 : nivel === 3 ? efeito.grau3 : null;
         if (condNome) {
@@ -1935,6 +2103,37 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       atualizarCampo(alvo.id, "ataques", novosAtaques);
     }
     return { r, ...extra };
+  };
+
+  /* ----- esquiva em área: CD 10 + maior graduação de efeito da habilidade; sucesso = nenhum efeito ----- */
+  const cdEsquivaArea = 10 + maiorGraduacaoEfeitos(contexto.ataque?.efeitos, origemAtual);
+  const rolarEsquivaArea = (alvo) => {
+    if (esquivaArea[alvo.id]) return;
+    const cd = cdEsquivaArea;
+    if (condicaoAtiva(alvo, "Imóvel")) {
+      setEsquivaArea((x) => ({ ...x, [alvo.id]: { auto: true, sucesso: false, cd } }));
+      registrar({ tipo: "rolagem", desc: `${alvo.nome} tenta esquivar de "${contexto.ataque.nome}"`, detalhe: `CD ${cd}`, total: "Imóvel — falha automática", tipoClasse: "hw" });
+      return;
+    }
+    const dado = rolarD20();
+    const bonus = statDefesa(alvo, "esquiva");
+    const r = montarTeste(dado, bonus, cd);
+    setEsquivaArea((x) => ({ ...x, [alvo.id]: { ...r, auto: false } }));
+    registrar({ tipo: "rolagem", desc: `${alvo.nome} tenta esquivar de "${contexto.ataque.nome}"`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, total: r.sucesso ? "Esquivou — sem efeito" : "Falhou na esquiva", tipoClasse: r.tipoClasse });
+    if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Esquivou!" : "Falhou na esquiva" });
+  };
+  const renderEsquivaArea = (alvo) => {
+    const esq = esquivaArea[alvo.id];
+    if (!esq) {
+      const imovel = condicaoAtiva(alvo, "Imóvel");
+      return (
+        <button className="btn btn-ghost btn-block" style={{ marginBottom: 10 }} onClick={() => rolarEsquivaArea(alvo)}>
+          {imovel ? "Esquiva (Imóvel — falha automática)" : `⚄ Rolar Esquiva (CD ${cdEsquivaArea})`}
+        </button>
+      );
+    }
+    if (esq.auto) return <div className="efeito-card dano" style={{ marginBottom: 10 }}><div className="efeito-t">Imóvel — falhou na esquiva (CD {esq.cd})</div></div>;
+    return <div style={{ marginBottom: 10 }}><ResultadoCard r={esq} efeito={{ classe: esq.sucesso ? "ok" : "dano", titulo: esq.sucesso ? "Esquivou — nenhum efeito" : "Falhou na esquiva" }} /></div>;
   };
 
   const [protecaoLimitada, setProtecaoLimitada] = useState({});
@@ -2071,8 +2270,21 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const custoAplicadoRef = useRef(false);
   useEffect(() => {
     if (!ehAtaque || custoAplicadoRef.current || !atualizarCampo) return;
-    if (custoVida <= 0 && custoNen <= 0) return;
+    if (bloqueioVar) return;
+    const usoVar = aplicarUsoVariaveis(origemAtual, contexto.ataque);
+    const temDesgastante = !!contexto.ataque?.desgastante?.ativo;
+    if (custoVida <= 0 && custoNen <= 0 && !usoVar.variaveis && !temDesgastante) return;
     custoAplicadoRef.current = true;
+    if (usoVar.variaveis) {
+      atualizarCampo(origemAtual.id, "variaveis", usoVar.variaveis);
+      registrar({
+        tipo: "rolagem",
+        desc: `${origemAtual.nome} usa "${contexto.ataque.nome}"`,
+        detalhe: (contexto.ataque.usoVariaveis || []).filter((u) => u.variavelId && u.delta).map((u) => { const v = (origemAtual.variaveis || []).find((x) => x.id === u.variavelId); return `${v?.nome || "Variável"} ${u.delta > 0 ? "+" : ""}${u.delta}`; }).join(" · "),
+        total: "Variáveis atualizadas", tipoClasse: "hw",
+      });
+    }
+    if (temDesgastante) setDesgastanteR(usarDesgastante(origemAtual, contexto.ataque, atualizarCampo, registrar, animar));
     if (custoVida > 0) {
       if (itemComPv) {
         const atualItem = contexto.ataque.pvItemAtual ?? contexto.ataque.pvItemMax;
@@ -2083,7 +2295,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       }
     }
     if (custoNen > 0) atualizarCampo(origemAtual.id, "nenAtual", (origemAtual.nenAtual || 0) - custoNen);
-    registrar({
+    if (custoVida > 0 || custoNen > 0) registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} paga o custo de "${contexto.ataque.nome}"`,
       detalhe: `${custoVida > 0 ? `-${custoVida} ${itemComPv ? "PV do item" : "Vida"}` : ""}${custoVida > 0 && custoNen > 0 ? " · " : ""}${custoNen > 0 ? `-${custoNen} Nen` : ""}`,
@@ -2114,10 +2326,31 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({ tipo: "rolagem", desc: `${origemAtual.nome} monta um ataque de arremesso com "${nomeObjeto || "objeto"}"`, detalhe: `Novo ataque à distância criado (Dano graduação ${graduacaoDano})`, total: "Criado", tipoClasse: "hs" });
   };
 
+  if (bloqueioVar) return (
+    <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}>
+      <div className="modal-box">
+        <div className="modal-head"><span className="mt">{contexto.label}</span><button className="modal-close" onClick={fechar}>×</button></div>
+        <div className="efeito-card dano"><div className="efeito-t">Não pode ser usada</div><div className="efeito-f">{bloqueioVar}</div></div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}>
       <div className="modal-box">
         <div className="modal-head"><span className="mt">{contexto.label}</span><button className="modal-close" onClick={fechar}>×</button></div>
+        {desgastanteR && (
+          <div className="subcard2" style={{ marginBottom: 12 }}>
+            <div className="section-title">Desgastante</div>
+            {desgastanteR.teste && (
+              <div className={"grau-card " + (desgastanteR.teste.sucesso ? "success" : "warn")}>
+                <div className="gl">{desgastanteR.teste.sal}: d20({desgastanteR.teste.dado}) {fmtBonus(desgastanteR.teste.bonus)} = {desgastanteR.teste.total} vs CD {desgastanteR.teste.cd}</div>
+                <div className="gn">{desgastanteR.texto}</div>
+              </div>
+            )}
+            {!desgastanteR.teste && <div className="efeito-card dano"><div className="efeito-f">{desgastanteR.texto}</div></div>}
+          </div>
+        )}
         {ehAtaque && contexto.ataque?.textoFormatado && (
           <div className="rich-display" style={{ marginBottom: 12 }} dangerouslySetInnerHTML={{ __html: contexto.ataque.textoFormatado }} />
         )}
@@ -2163,7 +2396,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
             {alvosArea.map((alvo) => (
               <div className="subcard" key={alvo.id}>
                 <div className="section-title">{alvo.nome}</div>
-                {(contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos").map((efeito) => {
+                {renderEsquivaArea(alvo)}
+                {!esquivaArea[alvo.id]?.sucesso && (contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos").map((efeito) => {
                   const key = `${alvo.id}:${efeito.id}`;
                   const res = efeitosR[key];
                   return (
@@ -2278,7 +2512,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                     {!dividAlvo2Id && <div className="field-note">Escolha um segundo alvo, diferente de {oponente.nome}, entre os oponentes engajados no combate. Não é permitido dividir o efeito duas vezes no mesmo alvo.</div>}
 
                     {alvo2Dividido && efeitosResistiveisDividido.map((efeito) => {
-                      const total = efeito.graduacao || 0;
+                      const total = graduacaoEfetiva(efeito, origemAtual);
                       const g1 = dividGrad[efeito.id] != null ? dividGrad[efeito.id] : Math.ceil(total / 2);
                       const g2 = Math.max(0, total - g1);
                       const res1 = efeitosR[`div1:${efeito.id}`];
@@ -2301,7 +2535,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                             <>
                               {renderProtecaoLimitada(efeito, oponente, `div1:${efeito.id}`)}
                               <button className="btn btn-ghost btn-block" style={{ marginBottom: 6 }}
-                                onClick={() => rolarEfeito({ ...efeito, graduacao: g1 }, oponente, `div1:${efeito.id}`)}>
+                                onClick={() => rolarEfeito({ ...efeito, graduacao: g1, baseadoAtivo: false }, oponente, `div1:${efeito.id}`)}>
                                 ⚄ Rolar para {oponente.nome} (graduação {g1})
                               </button>
                             </>
@@ -2310,7 +2544,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                             <>
                               {renderProtecaoLimitada(efeito, alvo2Dividido, `div2:${efeito.id}`)}
                               <button className="btn btn-ghost btn-block"
-                                onClick={() => rolarEfeito({ ...efeito, graduacao: g2 }, alvo2Dividido, `div2:${efeito.id}`)}>
+                                onClick={() => rolarEfeito({ ...efeito, graduacao: g2, baseadoAtivo: false }, alvo2Dividido, `div2:${efeito.id}`)}>
                                 ⚄ Rolar para {alvo2Dividido.nome} (graduação {g2})
                               </button>
                             </>
@@ -2433,6 +2667,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
 
         {!ehAtaque && resultado && <div style={{ marginTop: 10 }}><ResultadoCard r={resultado} /><BotaoSorte /></div>}
       </div>
+      {pfAberto && <PontoFracoJanela origem={origemAtual} entidades={entidades} pf={contexto.ataque.pontoFraco} nomeHabilidade={contexto.ataque.nome}
+        onFechar={() => setPfAberto(false)} registrar={registrar} animar={animar} enviarPontoFraco={enviarPontoFraco} />}
     </div>
   );
 }
@@ -2446,7 +2682,7 @@ const AJUDA_CHAVES = [
 ];
 
 /* ---------- modal de ações padrão ---------- */
-function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atualizarCampo }) {
+function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atualizarCampo, iniciativa }) {
   const { origem, acao } = ctx;
   const origemAtual = entidades.find((e) => e.id === origem.id) || origem;
   const outros = entidades.filter((e) => e.id !== origemAtual.id);
@@ -2719,11 +2955,8 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     const totalAt = dAt + bAt, totalDef = dDef + bDef;
     const vitoria = totalAt > totalDef;
     setR2({ dAt, bAt, totalAt, dDef, bDef, totalDef, vitoria });
-    if (vitoria) {
-      const atuais = { ...(oponente.condicoes || {}) };
-      atuais[acao.condicao] = (atuais[acao.condicao] || 0) + 1;
-      atualizarCampo(oponente.id, "condicoes", atuais);
-    }
+    // Desmoralizar: até o INÍCIO do próximo turno de quem usou. Fintar: até o FIM do próximo turno de quem usou.
+    if (vitoria) aplicarCondicaoTemporaria(atualizarCampo, oponente, acao.condicao, acao.id === "fintar" ? "fim" : "inicio", origemAtual.id, iniciativa);
     registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa ${acao.nome} em ${oponente.nome}${fintaAgilAtiva ? " (Finta Ágil: Acrobacia/Enganação)" : ""}`, detalhe: `${totalAt} (d20 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (d20 ${dDef}${fmtBonus(bDef)})`, total: vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Sem efeito", tipoClasse: vitoria ? "hs" : "hw" });
     if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
     consumirBonusDescansoAcao();
@@ -2771,12 +3004,12 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     } else if (acao.subtipo === "cuidado") {
       alvo = aliado;
       if (!alvo) return;
-      entrada = { id: uid(), tipo: "cuidado", chave: defesaCuidado, valor: 2, deNome: origemAtual.nome, consumo: "turno" };
+      entrada = { id: uid(), tipo: "cuidado", chave: defesaCuidado, valor: 2, deNome: origemAtual.nome, consumo: "turnoDe", turnoDeId: origemAtual.id };
       desc = `${origemAtual.nome} usa Cuidado em ${alvo.nome} (+2 ${defesaCuidado === "esquiva" ? "Esquiva" : "Aparar"})`;
     } else if (acao.subtipo === "nossoAlvo") {
       alvo = oponente;
       if (!alvo) return;
-      entrada = { id: uid(), tipo: "nossoAlvo", valor: 2, deNome: origemAtual.nome, consumo: "ataque" };
+      entrada = { id: uid(), tipo: "nossoAlvo", valor: 2, deNome: origemAtual.nome, consumo: "ataque", turnoDeId: origemAtual.id };
       desc = `${origemAtual.nome} designa ${alvo.nome} como Nosso Alvo (+2 pro próximo aliado que atacá-lo)`;
     } else if (acao.subtipo === "reposicionar") {
       alvo = aliado;
@@ -3107,6 +3340,11 @@ export default function MesaMM3() {
   const [abaDireita, setAbaDireita] = useState("iniciativa");
   const [eventosAnim, setEventosAnim] = useState([]);
   const [erroSync, setErroSync] = useState(null);
+  const [pastas, setPastas] = useState([]);
+  const [avisosPF, setAvisosPF] = useState([]);
+  const pfSeenRef = useRef(new Set());
+  const entidadesRef = useRef([]);
+  useEffect(() => { entidadesRef.current = entidades; }, [entidades]);
   const animSeenRef = useRef(new Set());
   const erroSyncTimeoutRef = useRef(null);
 
@@ -3180,6 +3418,7 @@ export default function MesaMM3() {
       setCarregando(true);
       const perfil = await getPersonal(usuario.uid);
       if (perfil && perfil.papel) setIdentidade(perfil);
+      setPastas(Array.isArray(perfil?.pastas) ? perfil.pastas : []);
       setCarregando(false);
     })();
   }, [usuario, authCarregando]);
@@ -3196,6 +3435,17 @@ export default function MesaMM3() {
     const unsubRoster = ouvirRoster((lista) => setRoster(Array.isArray(lista) ? lista : []));
     const unsubHist = ouvirHistorico((lista) => setHistorico(Array.isArray(lista) ? lista : []));
     const unsubIni = ouvirShared("iniciativa", (v) => setIniciativa(v && !Array.isArray(v) && v.ordem ? v : INICIATIVA_VAZIA));
+    const unsubPF = ouvirShared("pontoFraco", (fila) => {
+      if (!Array.isArray(fila)) return;
+      const agora = Date.now();
+      const novos = fila.filter((ev) => ev && !pfSeenRef.current.has(ev.id) && agora - (ev.ts || 0) < 20000);
+      novos.forEach((ev) => pfSeenRef.current.add(ev.id));
+      const meus = novos.filter((ev) => {
+        const alvo = entidadesRef.current.find((e) => e.id === ev.alvoId);
+        return alvo && (alvo.donoUid ? alvo.donoUid === usuario.uid : alvo.dono === identidade.nome);
+      });
+      if (meus.length) setAvisosPF((a) => [...a, ...meus]);
+    });
     const unsubAnim = ouvirShared("animQueue", (fila) => {
       if (!Array.isArray(fila)) return;
       const agora = Date.now();
@@ -3205,7 +3455,7 @@ export default function MesaMM3() {
         setEventosAnim((atual) => [...atual, ...novos]);
       }
     });
-    return () => { unsubEnt(); unsubRoster(); unsubHist(); unsubIni(); unsubAnim(); };
+    return () => { unsubEnt(); unsubRoster(); unsubHist(); unsubIni(); unsubAnim(); unsubPF(); };
   }, [identidade, usuario]);
 
   const escolherIdentidade = async (papel, nome) => {
@@ -3282,23 +3532,63 @@ export default function MesaMM3() {
     registrar({ tipo: "rolagem", desc: `${entidade.nome} rola Iniciativa`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${valor}`, total: valor, tipoClasse: "hs" });
     dispararAnimacao({ modo: "simples", nome: `${entidade.nome} rola Iniciativa`, foto: entidade.foto, dado, bonus, total: valor, rotulo: "Iniciativa" });
   };
+  /* Ponto Fraco: manda o texto pra tela do dono de cada alvo que passou no teste (fila compartilhada). */
+  const enviarPontoFraco = useCallback(async (payloads) => {
+    const lista = Array.isArray(payloads) ? payloads : [payloads];
+    const eventos = lista.map((p) => ({ id: uid(), ts: Date.now(), ...p }));
+    const filaAtual = await getShared("pontoFraco");
+    const base = Array.isArray(filaAtual) ? filaAtual : [];
+    const agora = Date.now();
+    await escreverCompartilhado("pontoFraco", [...base.filter((e) => e && agora - (e.ts || 0) < 60000), ...eventos].slice(-30));
+  }, [escreverCompartilhado]);
+  const salvarPastas = async (novas) => {
+    setPastas(novas);
+    if (usuario) await setPersonal(usuario.uid, { pastas: novas });
+  };
+
+  /* Início do turno: tira "Defendendo", efeitos de manobra que duravam "até o começo do turno" de quem os
+     aplicou (Cuidado, Nosso Alvo) e as durações do tipo "início" desse mesmo dono do turno. */
   const limparTurnoFlags = (entidadeId) => {
     atualizarCampo(entidadeId, "defendendo", false);
     setEntidades((atual) => {
-      const nova = atual.map((e) => (e.id === entidadeId ? { ...e, efeitosManobra: (e.efeitosManobra || []).filter((m) => m.consumo !== "turno") } : e));
-      const alvo = nova.find((e) => e.id === entidadeId);
-      if (alvo) salvarEntidade(alvo);
+      const nova = atual.map((e) => {
+        const em = e.efeitosManobra || [];
+        const em2 = em.filter((m) => !((e.id === entidadeId && m.consumo === "turno" && !m.turnoDeId) || (m.turnoDeId === entidadeId && m.consumo !== "manual")));
+        if (em2.length === em.length) return e;
+        const ne = { ...e, efeitosManobra: em2 };
+        salvarEntidade(ne);
+        return ne;
+      });
       return nova;
     });
+  };
+  /* Expira condições/reduções ligadas ao turno de alguém. quando: "inicio" | "fim". */
+  const processarDuracoes = (entidadeId, quando) => {
+    setEntidades((atual) => atual.map((e) => {
+      const ds = e.duracoes || [];
+      if (!ds.some((d) => d.turnoDeId === entidadeId && d.quando === quando)) return e;
+      const cond = { ...(e.condicoes || {}) };
+      const resto = [];
+      ds.forEach((d) => {
+        if (!(d.turnoDeId === entidadeId && d.quando === quando)) { resto.push(d); return; }
+        if (quando === "fim" && d.pular) { resto.push({ ...d, pular: false }); return; }
+        if (d.tipo === "condicao" && cond[d.nome]) { cond[d.nome] -= 1; if (cond[d.nome] <= 0) delete cond[d.nome]; }
+      });
+      const ne = { ...e, condicoes: cond, duracoes: resto };
+      salvarEntidade(ne);
+      return ne;
+    }));
   };
   const avancarTurno = async () => {
     const ordem = iniciativa.ordem || [];
     if (ordem.length === 0) return;
     let prox = iniciativa.turnoAtual + 1, rodada = iniciativa.rodada;
     if (prox >= ordem.length) { prox = 0; rodada += 1; }
+    const quemTerminou = ordem[iniciativa.turnoAtual];
+    if (quemTerminou) processarDuracoes(quemTerminou.entidadeId, "fim");
     await salvarIniciativa({ ...iniciativa, turnoAtual: prox, rodada });
     const alvo = ordem[prox];
-    if (alvo) limparTurnoFlags(alvo.entidadeId);
+    if (alvo) { limparTurnoFlags(alvo.entidadeId); processarDuracoes(alvo.entidadeId, "inicio"); }
   };
   const retrocederTurno = async () => {
     const ordem = iniciativa.ordem || [];
@@ -3334,7 +3624,8 @@ export default function MesaMM3() {
         <div className="split-wrap">
           <div className="split-col col-fichas">
             <FichasTab entidades={entidades} salvar={salvarEntidades} identidade={identidade} usuario={usuario} registrar={registrar}
-              onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa} />
+              onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa}
+              pastas={pastas} onSalvarPastas={salvarPastas} />
           </div>
           <div className="split-col col-lateral">
             <div className="tabs-row">
@@ -3350,8 +3641,17 @@ export default function MesaMM3() {
           </div>
         </div>
       </div>
-      {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} />}
-      {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} />}
+      {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} enviarPontoFraco={enviarPontoFraco} />}
+      {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} iniciativa={iniciativa} />}
+      {avisosPF.length > 0 && (
+        <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) setAvisosPF((a) => a.slice(1)); }}>
+          <div className="modal-box" style={{ maxWidth: 420 }}>
+            <div className="modal-head"><span className="mt">Ponto Fraco descoberto</span><button className="modal-close" onClick={() => setAvisosPF((a) => a.slice(1))}>×</button></div>
+            <div className="field-note" style={{ marginBottom: 8 }}>{avisosPF[0].alvoNome} percebeu um ponto fraco em {avisosPF[0].deNome}{avisosPF[0].habilidade ? ` (${avisosPF[0].habilidade})` : ""}:</div>
+            <div className="modal-desc" style={{ whiteSpace: "pre-wrap" }}>{avisosPF[0].texto || "(sem texto)"}</div>
+          </div>
+        </div>
+      )}
       <AnimacaoOverlay eventos={eventosAnim} onTerminar={removerEventoAnim} />
     </div>
   );
@@ -3455,8 +3755,24 @@ function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
 
       {efeito.categoria === "Dano" && (
         <>
-          <label className="label">Graduação de Dano</label>
-          <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
+          <label className="checkbox-row"><input type="checkbox" checked={!!efeito.baseadoAtivo} onChange={(e) => upd("baseadoAtivo", e.target.checked)} />Dano Baseado Em</label>
+          {efeito.baseadoAtivo ? (
+            <>
+              <label className="label">Atributo</label>
+              <SearchableSelect value={efeito.atributoBase || ""} onChange={(e) => upd("atributoBase", e.target.value)} style={{ marginBottom: 8 }}>
+                <option value="">Selecione o atributo…</option>
+                {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
+              </SearchableSelect>
+              <label className="label">Dano adicional</label>
+              <input type="number" value={efeito.danoAdicional || 0} onChange={(e) => upd("danoAdicional", Number(e.target.value))} />
+              <div className="field-note">A graduação do dano é o valor atual do atributo escolhido + o dano adicional (que não varia com o atributo). Ela conta na CD; o dano em si continua limitado pelo nível do atacante.</div>
+            </>
+          ) : (
+            <>
+              <label className="label">Graduação de Dano</label>
+              <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
+            </>
+          )}
         </>
       )}
       {efeito.categoria === "Cura" && (
@@ -3475,21 +3791,34 @@ function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.cumulativo} onChange={(e) => upd("cumulativo", e.target.checked)} />Cumulativo</label>
           <div className="field-note" style={{ marginBottom: 10 }}>Ao impor uma condição de grau 1 em um alvo que já está com uma condição de grau 1 imposta por você (com este efeito), ela se torna uma de grau 2. O mesmo se aplica pro grau 2 (vira grau 3).</div>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.condicaoExtra} onChange={(e) => upd("condicaoExtra", e.target.checked)} />Condição extra</label>
+          <div className="row-inline" style={{ marginBottom: 6, alignItems: "center" }}>
+            <label className="label" style={{ margin: 0 }}>Graus de falha: {grausAflicao(efeito)}</label>
+            <button type="button" className="small-btn" title="Adicionar grau" disabled={grausAflicao(efeito) >= 3} onClick={() => upd("graus", grausAflicao(efeito) + 1)}>+</button>
+            <button type="button" className="small-btn" title="Remover o último grau" disabled={grausAflicao(efeito) <= 1} onClick={() => upd("graus", grausAflicao(efeito) - 1)}>×</button>
+          </div>
           <label className="label">Falha (um grau)</label>
           <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
             <SearchableSelect value={efeito.grau1} onChange={(e) => upd("grau1", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G1.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>
             {efeito.condicaoExtra && <SearchableSelect value={efeito.grau1b} onChange={(e) => upd("grau1b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G1.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>}
           </div>
-          <label className="label">Falha (dois graus)</label>
-          <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
-            <SearchableSelect value={efeito.grau2} onChange={(e) => upd("grau2", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>
-            {efeito.condicaoExtra && <SearchableSelect value={efeito.grau2b} onChange={(e) => upd("grau2b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>}
-          </div>
-          <label className="label">Falha (três graus)</label>
-          <div className={efeito.condicaoExtra ? "grid2" : ""}>
-            <SearchableSelect value={efeito.grau3} onChange={(e) => upd("grau3", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>
-            {efeito.condicaoExtra && <SearchableSelect value={efeito.grau3b} onChange={(e) => upd("grau3b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>}
-          </div>
+          {grausAflicao(efeito) >= 2 && (
+            <>
+              <label className="label">Falha (dois graus)</label>
+              <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
+                <SearchableSelect value={efeito.grau2} onChange={(e) => upd("grau2", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>
+                {efeito.condicaoExtra && <SearchableSelect value={efeito.grau2b} onChange={(e) => upd("grau2b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G2.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>}
+              </div>
+            </>
+          )}
+          {grausAflicao(efeito) >= 3 && (
+            <>
+              <label className="label">Falha (três graus)</label>
+              <div className={efeito.condicaoExtra ? "grid2" : ""}>
+                <SearchableSelect value={efeito.grau3} onChange={(e) => upd("grau3", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>
+                {efeito.condicaoExtra && <SearchableSelect value={efeito.grau3b} onChange={(e) => upd("grau3b", e.target.value)}><option value="">Selecione…</option>{AFLICOES_G3.map((a) => <option key={a} value={a}>{a}</option>)}</SearchableSelect>}
+              </div>
+            </>
+          )}
         </>
       )}
       {efeito.categoria === "Enfraquecer" && (
@@ -3793,7 +4122,127 @@ function MoverObjetosCampos({ mo, onMudar, onCriarArremesso }) {
   );
 }
 
-function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onDescer }) {
+/* ---------- Falha: Desgastante ---------- */
+function DesgastanteEditor({ desgastante, onMudar }) {
+  const d = desgastante || {};
+  const upd = (campo, valor) => onMudar({ ...d, [campo]: valor });
+  const reds = d.reducoes || [];
+  const updRed = (id, patch) => upd("reducoes", reds.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  return (
+    <>
+      <label className="checkbox-row"><input type="checkbox" checked={!!d.ativo} onChange={(e) => onMudar({ modo: "automatico", salvamento: "Fortitude", reducoes: [], ...d, ativo: e.target.checked })} />Desgastante</label>
+      <div className="field-note" style={{ marginBottom: 10 }}>
+        Reduz um ou mais atributos de quem usa até o começo do seu próximo turno. Automático: só reduz. Com teste: teste de Fortitude ou Vontade, CD 10 + a maior graduação dos efeitos da habilidade; se passar, não sofre a redução.
+      </div>
+      {d.ativo && (
+        <>
+          <div className="grid2" style={{ marginBottom: 8 }}>
+            <div>
+              <label className="label">Versão</label>
+              <SearchableSelect value={d.modo || "automatico"} onChange={(e) => upd("modo", e.target.value)}>
+                <option value="automatico">Automático</option>
+                <option value="teste">Com teste</option>
+              </SearchableSelect>
+            </div>
+            {d.modo === "teste" && (
+              <div>
+                <label className="label">Teste</label>
+                <SearchableSelect value={d.salvamento || "Fortitude"} onChange={(e) => upd("salvamento", e.target.value)}>
+                  <option value="Fortitude">Fortitude</option>
+                  <option value="Vontade">Vontade</option>
+                </SearchableSelect>
+              </div>
+            )}
+          </div>
+          <label className="label">Atributos reduzidos</label>
+          {reds.map((r) => (
+            <div className="row-inline" key={r.id} style={{ marginBottom: 6 }}>
+              <SearchableSelect value={r.atributo || ""} onChange={(e) => updRed(r.id, { atributo: e.target.value })}>
+                <option value="">Atributo…</option>
+                {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
+              </SearchableSelect>
+              <input type="number" min={1} value={r.valor || 1} style={{ maxWidth: 70 }} title="Quanto reduz" onChange={(e) => updRed(r.id, { valor: Math.max(1, Number(e.target.value) || 1) })} />
+              <button type="button" className="small-btn" onClick={() => upd("reducoes", reds.filter((x) => x.id !== r.id))}>×</button>
+            </div>
+          ))}
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => upd("reducoes", [...reds, { id: uid(), atributo: "", valor: 1 }])}>+ Atributo</button>
+        </>
+      )}
+    </>
+  );
+}
+
+/* ---------- campos de variável (Munição / Carga) usados pela habilidade ---------- */
+function VariaveisUsoEditor({ usos, variaveis, onMudarUsos, onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
+  const lista = usos || [];
+  const updUso = (id, patch) => onMudarUsos(lista.map((u) => (u.id === id ? { ...u, ...patch } : u)));
+  return (
+    <div style={{ marginBottom: 10 }}>
+      {lista.map((u) => {
+        const v = variaveis.find((x) => x.id === u.variavelId);
+        const aumenta = (u.delta || 0) > 0;
+        return (
+          <div className="subcard2" key={u.id} style={{ marginBottom: 8 }}>
+            <div className="row-inline">
+              <SearchableSelect value={u.variavelId || ""} onChange={(e) => {
+                if (e.target.value === "__nova__") {
+                  const nv = { id: uid(), nome: "Variável", tipo: "carga", atributo: "forca" };
+                  onCriarVariavel(nv);
+                  updUso(u.id, { variavelId: nv.id });
+                } else updUso(u.id, { variavelId: e.target.value });
+              }}>
+                <option value="">Escolha a variável…</option>
+                {variaveis.map((x) => <option key={x.id} value={x.id}>{x.nome || "Variável"}</option>)}
+                <option value="__nova__">+ Nova variável</option>
+              </SearchableSelect>
+              <button type="button" className="small-btn" title="Tirar este campo da habilidade" onClick={() => onMudarUsos(lista.filter((x) => x.id !== u.id))}>×</button>
+            </div>
+            {v && (
+              <>
+                <div className="grid2" style={{ marginTop: 8 }}>
+                  <div><label className="label">Nome</label><input type="text" value={v.nome} onChange={(e) => onMudarVariavel(v.id, { nome: e.target.value })} /></div>
+                  <div>
+                    <label className="label">Tipo</label>
+                    <SearchableSelect value={v.tipo || "carga"} onChange={(e) => onMudarVariavel(v.id, { tipo: e.target.value, valor: undefined })}>
+                      <option value="municao">Munição (baseada em atributo)</option>
+                      <option value="carga">Carga (começa em 0)</option>
+                    </SearchableSelect>
+                  </div>
+                </div>
+                {v.tipo === "municao" && (
+                  <div style={{ marginTop: 8 }}>
+                    <label className="label">Atributo (valor máximo)</label>
+                    <SearchableSelect value={v.atributo || "forca"} onChange={(e) => onMudarVariavel(v.id, { atributo: e.target.value })}>
+                      {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
+                    </SearchableSelect>
+                  </div>
+                )}
+                <div className="grid2" style={{ marginTop: 8 }}>
+                  <div>
+                    <label className="label">Ao usar a habilidade</label>
+                    <SearchableSelect value={aumenta ? "aumenta" : "reduz"} onChange={(e) => updUso(u.id, { delta: (e.target.value === "aumenta" ? 1 : -1) * Math.max(1, Math.abs(u.delta || 1)) })}>
+                      <option value="reduz">Reduz</option>
+                      <option value="aumenta">Aumenta</option>
+                    </SearchableSelect>
+                  </div>
+                  <div>
+                    <label className="label">Quantidade</label>
+                    <input type="number" min={1} value={Math.max(1, Math.abs(u.delta || 1))} onChange={(e) => updUso(u.id, { delta: (aumenta ? 1 : -1) * Math.max(1, Number(e.target.value) || 1) })} />
+                  </div>
+                </div>
+                <div className="field-note">Não pode ficar negativa: se a habilidade reduzir além do que há, ela não pode ser usada.{v.tipo === "municao" ? " Munição nunca passa do máximo." : ""}</div>
+                <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 6 }} onClick={() => onExcluirVariavel(v.id)}>Excluir variável da ficha</button>
+              </>
+            )}
+          </div>
+        );
+      })}
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMudarUsos([...lista, { id: uid(), variavelId: "", delta: -1 }])}>+ Campo (variável)</button>
+    </div>
+  );
+}
+
+function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onDescer, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
   const [extrasAberto, setExtrasAberto] = useState(false);
   const [exigirTesteAberto, setExigirTesteAberto] = useState(false);
   const colapsado = !!ataque.colapsado;
@@ -3884,6 +4333,8 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
           <input type="number" min={0} value={ataque.custoNen || 0} onChange={(e) => upd("custoNen", Math.max(0, Number(e.target.value)))} />
         </div>
       </div>
+      <VariaveisUsoEditor usos={ataque.usoVariaveis} variaveis={variaveis} onMudarUsos={(novos) => upd("usoVariaveis", novos)}
+        onCriarVariavel={onCriarVariavel || (() => {})} onMudarVariavel={onMudarVariavel || (() => {})} onExcluirVariavel={onExcluirVariavel || (() => {})} />
 
       <div className="row-inline" style={{ marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
         <div className="tipo-toggle" role="tablist" aria-label="Tipo de habilidade">
@@ -3937,7 +4388,7 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
       )}
 
       <div className="acoes-header" onClick={() => setExigirTesteAberto((s) => !s)}>
-        <div className="section-title" style={{ marginBottom: 0 }}>Exigir Teste</div>
+        <div className="section-title" style={{ marginBottom: 0 }}>Falhas</div>
         <span className={"arrow" + (exigirTesteAberto ? " open" : "")}>▶</span>
       </div>
       {exigirTesteAberto && (
@@ -3964,6 +4415,21 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
               </div>
             </div>
           )}
+
+          <div className="divider" />
+          <DesgastanteEditor desgastante={ataque.desgastante} onMudar={(d) => upd("desgastante", d)} />
+
+          <div className="divider" />
+          <label className="checkbox-row">
+            <input type="checkbox" checked={!!ataque.pontoFraco?.ativo} onChange={(e) => upd("pontoFraco", { texto: "", ...(ataque.pontoFraco || {}), ativo: e.target.checked })} />
+            Ponto Fraco
+          </label>
+          <div className="field-note" style={{ marginBottom: 10 }}>
+            Ao usar a habilidade, você escolhe entre as criaturas engajadas quem vai tentar notar o ponto fraco. Cada uma faz Investigação contra um único teste de Enganação seu; quem passar vê o texto abaixo na tela.
+          </div>
+          {ataque.pontoFraco?.ativo && (
+            <textarea className="outros-textarea" rows={3} value={ataque.pontoFraco?.texto || ""} onChange={(e) => upd("pontoFraco", { ...ataque.pontoFraco, texto: e.target.value })} placeholder="Texto do ponto fraco (aparece para quem passar no teste)…" />
+          )}
         </div>
       )}
 
@@ -3985,6 +4451,7 @@ function fichaPadrao(rotulos) {
     atributos: { ...ATRIBUTOS_VAZIOS },
     periciaPontos: { ...PERICIA_PONTOS_VAZIO },
     ataques: [],
+    variaveis: [],
     vantagens: [],
     complicacoes: { texto: "", pontos: 0 },
   };
@@ -4217,6 +4684,10 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       <div className="divider" />
       <div className="section-title">Habilidades</div>
       {f.ataques.map((a, i) => <AtaqueForm key={a.id} ataque={a} onMudar={(novo) => updAtaque(i, novo)} onRemover={() => rmAtaque(i)} onCriarArremesso={addAtaqueArremesso}
+        variaveis={f.variaveis || []}
+        onCriarVariavel={(v) => upd("variaveis", [...(f.variaveis || []), v])}
+        onMudarVariavel={(id, patch) => upd("variaveis", (f.variaveis || []).map((v) => (v.id === id ? { ...v, ...patch } : v)))}
+        onExcluirVariavel={(id) => { upd("variaveis", (f.variaveis || []).filter((v) => v.id !== id)); upd("ataques", f.ataques.map((a) => ({ ...a, usoVariaveis: (a.usoVariaveis || []).filter((u) => u.variavelId !== id) }))); }}
         onSubir={i > 0 ? () => moverAtaque(i, -1) : null} onDescer={i < f.ataques.length - 1 ? () => moverAtaque(i, 1) : null} />)}
       <button className="btn btn-ghost btn-sm" onClick={addAtaque}>+ Habilidade</button>
 
@@ -4256,8 +4727,12 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   );
 }
 
-function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa }) {
+function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas }) {
   const [editando, setEditando] = useState(null);
+  const [pastasAbertas, setPastasAbertas] = useState({});
+  const [criandoPasta, setCriandoPasta] = useState(false);
+  const [nomeNovaPasta, setNomeNovaPasta] = useState("");
+  const [pastaParaExcluir, setPastaParaExcluir] = useState(null);
   const [busca, setBusca] = useState("");
   const [vantagemCtx, setVantagemCtx] = useState(null);
   const ehMestre = identidade.papel === "mestre";
@@ -4301,13 +4776,69 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
 
   const podeMarcarOponente = ehMestre;
 
+  const idsPastas = new Set(pastas.map((p) => p.id));
+  const semPasta = meus.filter((e) => !e.pasta || !idsPastas.has(e.pasta));
+  const criarPasta = () => {
+    const nome = nomeNovaPasta.trim();
+    if (!nome || !onSalvarPastas) return;
+    onSalvarPastas([...pastas, { id: uid(), nome }]);
+    setNomeNovaPasta(""); setCriandoPasta(false);
+  };
+  const excluirPasta = (p) => {
+    onSalvarPastas(pastas.filter((x) => x.id !== p.id));
+    meusTodos.filter((e) => e.pasta === p.id).forEach((e) => atualizarCampo(e.id, "pasta", null));
+    setPastaParaExcluir(null);
+  };
+  // Engaja (ou desengaja) todas as fichas da pasta no combate de uma vez.
+  const engajarPasta = (p) => {
+    const fs = meusTodos.filter((e) => e.pasta === p.id);
+    if (!fs.length) return;
+    const todasEngajadas = fs.every((e) => e.oponente);
+    fs.forEach((e) => atualizarCampo(e.id, "oponente", !todasEngajadas));
+    registrar({ tipo: "sistema", desc: `${identidade.nome} ${todasEngajadas ? "tirou do combate" : "engajou no combate"} a pasta "${p.nome}"`, detalhe: `${fs.length} ficha(s)`, total: todasEngajadas ? "Desengajadas" : "Engajadas", tipoClasse: todasEngajadas ? "hw" : "hd" });
+  };
+  const renderItem = (e) => <EntidadeItem key={e.id} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
+    pastas={pastas} onMoverPasta={(id) => atualizarCampo(e.id, "pasta", id || null)} />;
+
   return (
     <div>
       <div className="section-title">Minhas fichas ({ehMestre ? "criaturas e NPCs" : "personagens e invocações"})</div>
       <input type="text" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ marginBottom: 10 }} />
-      {meus.length === 0 && <div className="card empty">Nenhuma ficha encontrada.</div>}
-      {meus.map((e) => <EntidadeItem key={e.id} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar} />)}
-      <button className="btn btn-accent btn-block" onClick={() => setEditando("novo")} style={{ marginBottom: 20 }}>+ Nova ficha</button>
+      {meus.length === 0 && pastas.length === 0 && <div className="card empty">Nenhuma ficha encontrada.</div>}
+      {pastas.map((p) => {
+        const todos = meusTodos.filter((e) => e.pasta === p.id);
+        const visiveis = meus.filter((e) => e.pasta === p.id);
+        const aberta = !!pastasAbertas[p.id] || (busca.trim() && visiveis.length > 0);
+        const engajadas = todos.length > 0 && todos.every((e) => e.oponente);
+        return (
+          <div key={p.id} className="subcard2" style={{ marginBottom: 10 }}>
+            <div className="row-inline" style={{ justifyContent: "space-between", alignItems: "center" }}>
+              <div className="acoes-header" style={{ flex: 1 }} onClick={() => setPastasAbertas((x) => ({ ...x, [p.id]: !x[p.id] }))}>
+                <div className="stat-group-label">📁 {p.nome} ({todos.length}{todos.some((e) => e.oponente) ? ` · ${todos.filter((e) => e.oponente).length} engajada(s)` : ""})</div>
+                <span className={"arrow" + (aberta ? " open" : "")}>▶</span>
+              </div>
+              {ehMestre && <button className={"btn btn-sm " + (engajadas ? "btn-danger" : "btn-ghost")} disabled={!todos.length} onClick={() => engajarPasta(p)}>{engajadas ? "Desengajar pasta" : "Engajar pasta"}</button>}
+              <button className="small-btn" title="Excluir pasta (as fichas voltam para 'Sem pasta')" onClick={() => setPastaParaExcluir(p)}>×</button>
+            </div>
+            {aberta && (visiveis.length === 0
+              ? <div className="field-note">Pasta vazia. Abra uma ficha e escolha esta pasta no campo "Pasta".</div>
+              : <div style={{ marginTop: 8 }}>{visiveis.map(renderItem)}</div>)}
+          </div>
+        );
+      })}
+      {pastas.length > 0 && semPasta.length > 0 && <div className="stat-group-label" style={{ marginBottom: 6 }}>Sem pasta</div>}
+      {semPasta.map(renderItem)}
+      <div className="grid2" style={{ marginBottom: 20 }}>
+        <button className="btn btn-accent btn-block" onClick={() => setEditando("novo")}>+ Nova ficha</button>
+        {!criandoPasta && <button className="btn btn-ghost btn-block" onClick={() => setCriandoPasta(true)}>+ Nova pasta</button>}
+        {criandoPasta && (
+          <div className="row-inline">
+            <input type="text" autoFocus placeholder="Nome da pasta" value={nomeNovaPasta} onChange={(ev) => setNomeNovaPasta(ev.target.value)} onKeyDown={(ev) => { if (ev.key === "Enter") criarPasta(); if (ev.key === "Escape") { setCriandoPasta(false); setNomeNovaPasta(""); } }} />
+            <button className="small-btn" onClick={criarPasta} title="Criar">✓</button>
+            <button className="small-btn" onClick={() => { setCriandoPasta(false); setNomeNovaPasta(""); }} title="Cancelar">×</button>
+          </div>
+        )}
+      </div>
 
       {ehMestre && (
         <>
@@ -4317,6 +4848,11 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
         </>
       )}
 
+      {pastaParaExcluir && (
+        <ConfirmModal titulo="Excluir pasta" textoConfirmar="Excluir pasta"
+          mensagem={`Excluir a pasta "${pastaParaExcluir.nome}"? As fichas dentro dela não são apagadas, só voltam para "Sem pasta".`}
+          onConfirmar={() => excluirPasta(pastaParaExcluir)} onCancelar={() => setPastaParaExcluir(null)} />
+      )}
       {vantagemCtx && <VantagemModal ctx={vantagemCtx} onFechar={() => setVantagemCtx(null)} onToggle={toggleVantagem} />}
     </div>
   );
@@ -4326,7 +4862,7 @@ function StatChip({ label, value, onClick }) {
   return <button className="stat-chip" onClick={onClick}>{label} <b>{value >= 0 ? "+" : ""}{value}</b></button>;
 }
 
-function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar }) {
+function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta }) {
   const [aberto, setAberto] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const confirmarExclusao = () => { setConfirmandoExclusao(false); onExcluir(); };
@@ -4363,6 +4899,16 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
       }
       if (!r.sucesso) return; // efeito não funciona, mas a ação foi gasta (não ativa a passiva)
     }
+    if (novoAtivo) {
+      // Variáveis (Munição/Carga): se não aguentar o custo, não ativa. Desgastante vale na ativação.
+      const uso = aplicarUsoVariaveis(e, ataque);
+      if (!uso.ok) {
+        if (registrar) registrar({ tipo: "rolagem", desc: `${e.nome} não pode ativar "${ataque.nome || "Passiva"}"`, detalhe: uso.motivo, total: "Bloqueada", tipoClasse: "hw" });
+        return;
+      }
+      if (uso.variaveis) onAtualizarCampo(e.id, "variaveis", uso.variaveis);
+      usarDesgastante(e, ataque, onAtualizarCampo, registrar, null);
+    }
     aplicarTogglePassiva(ataque, novoAtivo);
   };
   const abrirAcao = (acao) => onAbrirAcao({ origem: e, acao });
@@ -4376,8 +4922,26 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
   const jogadoresDisponiveis = (entidades || []).filter((j) => j.rotulo === "Personagem" && j.id !== e.id);
 
   const ativarBonusDescanso = (chave) => onAtualizarCampo(e.id, "descansoAtivos", { ...(e.descansoAtivos || {}), [chave]: true });
-  const alimentarSe = () => onAtualizarCampo(e.id, "pvAtual", Math.min(pvMaxCalc(e), (e.pvAtual || 0) + attr(e, "vigor") + (e.nivel || 1)));
-  const meditar = () => onAtualizarCampo(e.id, "nenAtual", Math.min(nenMaxCalc(e), (e.nenAtual || 0) + attr(e, "prontidao") + (e.nivel || 1)));
+  // Alimentar-se e Meditar também devolvem as variáveis (Munição = máximo, Carga = 0) ao valor original.
+  const resetarVariaveis = () => {
+    if ((e.variaveis || []).length) onAtualizarCampo(e.id, "variaveis", e.variaveis.map((v) => ({ ...v, valor: valorInicialVariavel(e, v) })));
+  };
+  const alimentarSe = () => { onAtualizarCampo(e.id, "pvAtual", Math.min(pvMaxCalc(e), (e.pvAtual || 0) + attr(e, "vigor") + (e.nivel || 1))); resetarVariaveis(); };
+  const meditar = () => { onAtualizarCampo(e.id, "nenAtual", Math.min(nenMaxCalc(e), (e.nenAtual || 0) + attr(e, "prontidao") + (e.nivel || 1))); resetarVariaveis(); };
+  const ajustarVariavel = (v, valor) => {
+    const max = v.tipo === "municao" ? maxVariavel(e, v) : Infinity;
+    const novo = Math.max(0, Math.min(max, Math.round(Number(valor) || 0)));
+    onAtualizarCampo(e.id, "variaveis", (e.variaveis || []).map((x) => (x.id === v.id ? { ...x, valor: novo } : x)));
+  };
+  const removerDuracao = (d) => {
+    if (d.tipo === "condicao") {
+      const atuais = { ...(e.condicoes || {}) };
+      if (atuais[d.nome]) { atuais[d.nome] -= 1; if (atuais[d.nome] <= 0) delete atuais[d.nome]; }
+      onAtualizarCampo(e.id, "condicoes", atuais);
+    }
+    onAtualizarCampo(e.id, "duracoes", (e.duracoes || []).filter((x) => x.id !== d.id));
+  };
+  const nomeDoTurno = (id) => (entidades || []).find((x) => x.id === id)?.nome || "?";
   const tratarJogador = () => {
     const alvo = jogadoresDisponiveis.find((j) => j.id === tratamentoAlvoId);
     if (!alvo || !onAtualizarCampo) return;
@@ -4398,6 +4962,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
     const atuais = { ...(e.condicoes || {}) };
     if (atuais[nome]) delete atuais[nome]; else atuais[nome] = 1;
     onAtualizarCampo(e.id, "condicoes", atuais);
+    if (!atuais[nome] && (e.duracoes || []).some((d) => d.nome === nome)) onAtualizarCampo(e.id, "duracoes", (e.duracoes || []).filter((d) => d.nome !== nome));
   };
   const ajustarMachucado = (delta) => {
     const atuais = { ...(e.condicoes || {}) };
@@ -4463,6 +5028,16 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
         )}
       </div>
 
+      {editavel && onMoverPasta && (pastas || []).length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <label className="label">Pasta</label>
+          <SearchableSelect value={e.pasta || ""} onChange={(ev) => onMoverPasta(ev.target.value)}>
+            <option value="">Sem pasta</option>
+            {pastas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
+          </SearchableSelect>
+        </div>
+      )}
+
       <div className="vitals">
         <span>Vida{" "}
           {editavel ? <input className="in-vida" type="number" value={e.pvAtual || 0} onChange={(ev) => onAtualizarCampo(e.id, "pvAtual", Number(ev.target.value))} /> : <b>{e.pvAtual || 0}</b>}
@@ -4472,6 +5047,12 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
           {editavel ? <input className="in-nen" type="number" value={e.nenAtual || 0} onChange={(ev) => onAtualizarCampo(e.id, "nenAtual", Number(ev.target.value))} /> : <b>{e.nenAtual || 0}</b>}
           {" "}/ <b>{nenMax}</b>
         </span>
+        {(e.variaveis || []).map((v) => (
+          <span key={v.id}>{v.nome || "Variável"}{" "}
+            {editavel ? <input className="in-nen" type="number" min={0} value={valorVariavel(e, v)} onChange={(ev) => ajustarVariavel(v, ev.target.value)} /> : <b>{valorVariavel(e, v)}</b>}
+            {v.tipo === "municao" && <>{" "}/ <b>{maxVariavel(e, v)}</b></>}
+          </span>
+        ))}
         <span>Deslocamento <b>{deslocamentoTexto(e)}</b></span>
         <span>PP <b>{pontosPoderGastos(e)}/{pontosPoderMax(e)}</b></span>
         {pontosEquipamentoMax(e) > 0 && <span>Equip <b>{pontosEquipamentoGastos(e)}/{pontosEquipamentoMax(e)}</b></span>}
@@ -4558,6 +5139,20 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
             {Object.entries(e.condicoes || {}).map(([nome, qtd]) => (
               <button key={nome} className="stat-chip vantagem-chip ativo" onClick={() => toggleCondicao(nome)}>
                 {nome}{qtd > 1 ? <b> ×{qtd}</b> : null}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(e.duracoes || []).length > 0 && (
+        <div className="stat-group">
+          <div className="stat-group-label">Temporários (acabam sozinhos no turno)</div>
+          <div className="chip-row">
+            {e.duracoes.map((d) => (
+              <button key={d.id} className="stat-chip ajuda-chip" title="Clique para remover agora" onClick={() => editavel && removerDuracao(d)}>
+                {d.tipo === "atributo" ? <>{ATRIBUTOS.find((a) => a.k === d.chave)?.l || d.chave} <b>-{d.valor}</b></> : d.nome}
+                {" "}<span style={{ opacity: 0.7 }}>· até {d.quando === "inicio" ? "o início" : "o fim"} do turno de {nomeDoTurno(d.turnoDeId)}</span>
               </button>
             ))}
           </div>
