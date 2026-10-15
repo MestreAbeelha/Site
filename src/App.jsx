@@ -262,6 +262,12 @@ const GlobalStyle = () => (
     .mm3 .acoes-header .arrow { color:var(--muted); font-size:0.7rem; transition: transform 0.15s; }
     .mm3 .acoes-header .arrow.open { transform: rotate(90deg); }
     .mm3 .acao-chip { background:var(--surface3); }
+    .mm3 .acoes-bolinhas { display:flex; align-items:center; gap:10px; margin:0 0 10px; flex-wrap:wrap; }
+    .mm3 .acoes-bolinhas .ab-label { font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+    .mm3 .acao-bolinha { width:20px; height:20px; border-radius:50%; border:2px solid var(--ab-cor); background:var(--ab-cor); box-shadow:0 0 8px var(--ab-cor); padding:0; transition:background .2s ease, box-shadow .2s ease, opacity .2s ease, transform .15s ease; cursor:default; }
+    .mm3 .acao-bolinha.pode { cursor:pointer; }
+    .mm3 .acao-bolinha.pode:hover { transform:scale(1.15); }
+    .mm3 .acao-bolinha.gasta { background:transparent; box-shadow:none; opacity:0.35; }
     .mm3 .acao-tipo { font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; display:block; margin-top:1px; }
     .mm3 .modal-tag { display:inline-block; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--accent); background:var(--accent-soft); border-radius:20px; padding:2px 9px; margin-bottom:8px; }
     .mm3 .versus-row { display:grid; grid-template-columns:1fr auto 1fr; gap:8px; align-items:center; margin-bottom:10px; }
@@ -642,6 +648,31 @@ const PLANO_EFEITOS = [
   { subtipo: "nossoAlvo", nome: "Nosso Alvo", desc: "O próximo aliado a atacar o alvo designado recebe +2 no teste de ataque. Efeito perdido se ninguém atacar o alvo até o começo do seu próximo turno." },
   { subtipo: "reposicionar", nome: "Reposicionar", desc: "Um aliado pode usar uma ação de movimento fora do turno dele, desde que relacionada à movimentação." },
 ];
+
+/* ---------- economia de ações (bolinhas na ficha) ---------- */
+const ACOES_TIPOS = [
+  { k: "padrao", nome: "Ação Padrão", curto: "padrão", cor: "#e8c84a" },
+  { k: "movimento", nome: "Ação de Movimento", curto: "movimento", cor: "#5aa9e6" },
+  { k: "livre", nome: "Ação Livre", curto: "livre", cor: "#5fcf80" },
+  { k: "reacao", nome: "Reação", curto: "reação", cor: "#b07be0" },
+];
+const ACOES_USO_OPCOES = ["Ação Padrão", "Ação Livre", "Ação de Movimento", "Reação"];
+const ACOES_SUSTENTAR_OPCOES = ["Ação Padrão", "Ação Livre", "Reação", "Nenhuma"];
+function chaveAcaoDeNome(nome) {
+  const n = String(nome || "");
+  if (n.startsWith("Ação Padrão")) return "padrao";
+  if (n.startsWith("Ação de Movimento")) return "movimento";
+  if (n.startsWith("Ação Livre")) return "livre";
+  if (n.startsWith("Reação")) return "reacao";
+  return null;
+}
+function acaoDaHabilidade(a) { return a?.acao || (a?.tipo === "passiva" ? "Ação Livre" : "Ação Padrão"); }
+function rotuloAcaoCurto(nome) { const k = chaveAcaoDeNome(nome); return ACOES_TIPOS.find((x) => x.k === k)?.curto || ""; }
+function gastarAcao(atualizarCampo, entId, nomeAcao) {
+  const k = chaveAcaoDeNome(nomeAcao);
+  if (!k || !atualizarCampo) return;
+  atualizarCampo(entId, "acoesGastas", (g) => ({ ...(g || {}), [k]: true }));
+}
 
 /* ---------- condições ---------- */
 const CONDICOES_LISTA = [
@@ -1144,7 +1175,7 @@ function rolarTesteColateral(entidade, item, registrar) {
     registrar({
       tipo: "rolagem",
       desc: `${entidade.nome} testa Efeito Colateral (${col.salvamento})`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`,
+      detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(entidade, CHAVE_SALV[col.salvamento] || "fortitude"))}`,
       total: r.sucesso ? "Resistiu" : `Falhou — fica ${col.condicao}`,
       tipoClasse: r.sucesso ? "hs" : "hw",
     });
@@ -1283,6 +1314,60 @@ function cdDefesa(ent, key) {
   const cd = 10 + statDefesa(ent, key, true);
   // Lubridiar já reduz o bônus de Enganação pela metade se estiver Vulnerável: não corta duas vezes.
   return aj.includes("metade") && !ent?.lubridiando ? Math.floor(cd / 2) : cd;
+}
+/* ---------- resumo de bônus/penalidades pro histórico ---------- */
+function fmtMods(notas) { const l = (notas || []).filter(Boolean); return l.length ? ` · Mods: ${l.join(", ")}` : ""; }
+function notasCondicoesGerais(ent) {
+  const n = [];
+  Object.entries(ent?.condicoes || {}).forEach(([nome, qtd]) => {
+    const ef = CONDICOES_LISTA.find((c) => c.nome === nome)?.efeito;
+    if (ef?.testesGerais) n.push(`${nome} ${fmtBonus(ef.testesGerais * (qtd || 1))}`);
+  });
+  return n;
+}
+function notasModsDefesa(ent, key) {
+  const n = [];
+  const geral = ["fortitude", "vontade", "resistencia"].includes(key);
+  Object.entries(ent?.condicoes || {}).forEach(([nome, qtd]) => {
+    const ef = CONDICOES_LISTA.find((c) => c.nome === nome)?.efeito;
+    if (!ef) return;
+    const q = qtd || 1;
+    if (geral) {
+      const v = ((ef.testesGerais || 0) + (ef[key] || 0)) * q;
+      if (v) n.push(`${nome} ${fmtBonus(v)}`);
+    } else if (ef[key] === "zero") n.push(`${nome}: defesa em 1`);
+    else if (ef[key] === "metade") n.push(`${nome}: defesa pela metade`);
+    else if (typeof ef[key] === "number") n.push(`${nome} ${fmtBonus(ef[key] * q)}`);
+  });
+  (ent?.efeitosManobra || []).forEach((m) => {
+    if (geral && m.tipo === "agora") n.push(`Agora! ${fmtBonus(m.valor)}`);
+    if (!geral && m.tipo === "cuidado" && m.chave === key) n.push(`Cuidado ${fmtBonus(m.valor)}`);
+  });
+  const vt = bonusVantagemToggle(ent, key);
+  if (vt) n.push(`Vantagem ${fmtBonus(vt)}`);
+  if (!geral && (key === "aparar" || key === "esquiva")) {
+    const p = modificadoresPassivos(ent);
+    const v = key === "aparar" ? p.aparar : p.esquiva;
+    if (v) n.push(`Habilidade passiva ${fmtBonus(v)}`);
+  }
+  return n;
+}
+const CHAVE_SALV = { "Fortitude": "fortitude", "Vontade": "vontade", "Resistência": "resistencia", "Aparar": "aparar", "Esquiva": "esquiva" };
+/* Peculiaridade: a "chave" de um turno na iniciativa (rodada + posição) e a do turno imediatamente anterior. */
+function chaveTurnoIniciativa(ini) { return (ini?.rodada || 1) * 1000 + (ini?.turnoAtual || 0); }
+function chaveTurnoAnterior(ini) {
+  const tam = (ini?.ordem || []).length;
+  if ((ini?.turnoAtual || 0) > 0) return chaveTurnoIniciativa(ini) - 1;
+  return Math.max(0, (ini?.rodada || 1) - 1) * 1000 + Math.max(0, tam - 1);
+}
+function notasPericiaEnt(ent, nomePericia) {
+  const n = notasCondicoesGerais(ent);
+  const vt = bonusVantagemToggle(ent, nomePericia);
+  if (vt) n.push(`Vantagem ${fmtBonus(vt)}`);
+  const p = modificadoresPassivos(ent);
+  const bp = (nomePericia === "Furtividade" ? p.furtividade : 0) + (p.periciasBonus?.[nomePericia] || 0);
+  if (bp) n.push(`Habilidade passiva ${fmtBonus(bp)}`);
+  return n;
 }
 function computeBonusBase(ent, tipo, chave) {
   if (tipo === "atributo") return attr(ent, chave) + calcModCondicoes(ent).testesGerais;
@@ -1929,7 +2014,7 @@ function PontoFracoJanela({ origem, entidades, pf, nomeHabilidade, onFechar, reg
 }
 
 /* ---------- modal de rolagem ---------- */
-function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDano, atualizarCampo, enviarPontoFraco }) {
+function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDano, atualizarCampo, enviarPontoFraco, iniciativa }) {
   const [escolha, setEscolha] = useState(null);
   const [cdManual, setCdManual] = useState(15);
   const [oponenteId, setOponenteId] = useState("");
@@ -1969,6 +2054,21 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const ajudaAtiva = atualizarCampo ? ajudaDisponivelPara(origemAtual, chaveCondicional) : null;
   const consumirAjudaSeHouver = () => { if (ajudaAtiva && atualizarCampo) atualizarCampo(origemAtual.id, "buffsAjuda", (origemAtual.buffsAjuda || []).filter((b) => b.id !== ajudaAtiva.id)); };
 
+  const notasSimples = (alvoRolagem) => {
+    const n = [];
+    if (contexto.tipo === "defesa") n.push(...notasModsDefesa(origemAtual, contexto.chave));
+    else {
+      n.push(...notasCondicoesGerais(origemAtual));
+      const vt = bonusVantagemToggle(origemAtual, contexto.chave);
+      if (vt) n.push(`Vantagem ${fmtBonus(vt)}`);
+    }
+    if (bonusCondicionalTotal) n.push(`Vantagem condicional ${fmtBonus(bonusCondicionalTotal)}`);
+    if (bonusDescansoValor) n.push("Bônus de descanso +2");
+    if (ajudaAtiva) n.push(`Ajuda de ${ajudaAtiva.deNome} ${fmtBonus(ajudaAtiva.bonus)}`);
+    if (alvoRolagem && CHAVE_SALV[statOponente]) n.push(...notasModsDefesa(alvoRolagem, CHAVE_SALV[statOponente]).map((t) => `alvo: ${t}`));
+    else if (alvoRolagem && ["aparar", "esquiva", "fortitude", "vontade", "resistencia"].includes(statOponente)) n.push(...notasModsDefesa(alvoRolagem, statOponente).map((t) => `alvo: ${t}`));
+    return n;
+  };
   const rolarSimples = (bonus, cd, alvoRolagem) => {
     const bonusFinal = bonus + (ajudaAtiva ? ajudaAtiva.bonus : 0);
     const dado = rolarD20();
@@ -1979,7 +2079,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} testa ${contexto.label}`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""} = ${r.total} vs CD ${cd}`,
+      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""} = ${r.total} vs CD ${cd}${fmtMods(notasSimples(alvoRolagem))}`,
       total: r.grauTexto, tipoClasse: r.tipoClasse,
     });
     if (animar) {
@@ -2028,6 +2128,21 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       animar({ modo: "simples", nome: `${origemAtual.nome} — Exigir Teste`, foto: origemAtual.foto, dado: r.dado, bonus: r.bonus, total: r.total, cd: r.cd, sucesso: r.sucesso, ehCrit: false, grauTexto: r.falhaAutomatica ? "Falha automática" : (r.sucesso ? `Libera ${r.graduacoesLiberadas} grad.` : "Falhou") });
     }
   };
+  const notasAcerto = (info) => {
+    const n = [];
+    if (origemAtual.mirando) n.push("Mirar +10");
+    n.push(...notasCondicoesGerais(origemAtual));
+    if (contexto.ataque?.tipoAcerto === "corpo" && condicaoAtiva(origemAtual, "Caído")) n.push("Caído -5");
+    const vt = bonusVantagemToggle(origemAtual, "ataque");
+    if (vt) n.push(`Vantagem ${fmtBonus(vt)}`);
+    if (bonusCondicionalTotal) n.push(`Vantagem condicional ${fmtBonus(bonusCondicionalTotal)}`);
+    if (ajudaAtiva) n.push(`Ajuda de ${ajudaAtiva.deNome} ${fmtBonus(ajudaAtiva.bonus)}`);
+    const nossoAlvo = (oponente?.efeitosManobra || []).find((m) => m.tipo === "nossoAlvo");
+    if (nossoAlvo) n.push(`Nosso Alvo ${fmtBonus(nossoAlvo.valor)}`);
+    if (bonusTreinoValor) n.push("Treinamento +2");
+    n.push(...notasModsDefesa(oponente, info.defKey).map((t) => `alvo: ${t}`));
+    return n;
+  };
   const rolarAcerto = () => {
     const info = infoAtaque();
     const nossoAlvoBuff = (oponente?.efeitosManobra || []).find((m) => m.tipo === "nossoAlvo");
@@ -2051,7 +2166,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} ataca ${oponente.nome} com "${contexto.ataque.nome}"`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""}${bonusTreinoValor ? " (com bônus de Treinamento)" : ""} = ${r.total} vs ${info.defLabel} ${defVal}`,
+      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""}${bonusTreinoValor ? " (com bônus de Treinamento)" : ""} = ${r.total} vs ${info.defLabel} ${defVal}${fmtMods(notasAcerto(info))}`,
       total: r.sucesso ? "Acertou" : "Errou", tipoClasse: r.tipoClasse,
     });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus: bonusFinal, total: r.total, cd: defVal, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Acertou!" : "Errou" });
@@ -2089,6 +2204,19 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     // Dano Baseado Em: a graduação vem do atributo (+ dano adicional) do atacante, ao vivo.
     if (efeito.categoria === "Dano") efeito = { ...efeito, graduacao: graduacaoEfetiva(efeito, origemAtual), baseadoAtivo: false };
     const dados = dadosEfeito(efeito, alvo, critico);
+    const notasRes = [];
+    if (!dados.quemRolaAtacante) {
+      notasRes.push(...notasModsDefesa(alvo, CHAVE_SALV[dados.salvLabel] || "resistencia"));
+      if (critico) notasRes.push("Crítico: CD +5");
+      const pec = contexto.ataque?.peculiaridade;
+      if (pec?.ativo && alvo.ultimoDanoTurno !== undefined && alvo.ultimoDanoTurno === chaveTurnoAnterior(iniciativa)) {
+        const b = Number(pec.bonus) || 2;
+        dados.bonus += b;
+        notasRes.push(`⚠ Peculiaridade ativada: ${alvo.nome} sofreu dano no turno anterior, ${fmtBonus(b)} para resistir`);
+      }
+    } else if (efeito.categoria === "Nulificar") {
+      notasRes.push(...notasModsDefesa(alvo, "vontade").map((t) => `alvo: ${t}`));
+    }
     if (dados.quemRolaAtacante) {
       const dado = rolarD20();
       const r = montarTeste(dado, dados.bonus, dados.cd);
@@ -2107,14 +2235,14 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       registrar({
         tipo: "rolagem",
         desc: `${origemAtual.nome} tenta Nulificar em ${alvo.nome}`,
-        detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}`,
+        detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${fmtMods(notasRes)}`,
         total: r.sucesso ? r.grauTexto : "Sem efeito", tipoClasse: r.tipoClasse,
       });
       if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? r.grauTexto : "Sem efeito" });
       return { r, texto: textoNulificar(r.graus) };
     }
     // Esquivou do efeito em área: a CD do teste de resistência cai pela metade.
-    if (cdMetade) dados.cd = Math.max(1, Math.floor(dados.cd / 2));
+    if (cdMetade) { dados.cd = Math.max(1, Math.floor(dados.cd / 2)); notasRes.push("Esquivou: CD pela metade"); }
     const dado = rolarD20();
     const r = montarTeste(dado, dados.bonus, dados.cd);
     let extra = {};
@@ -2195,7 +2323,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({
       tipo: "rolagem",
       desc: `${alvo.nome} resiste a ${efeito.categoria} (${dados.salvLabel})${cdMetade ? " — esquivou, CD pela metade" : ""}`,
-      detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${extra.reducaoDefesa > 0 && !r.sucesso ? ` · Defender-se reduz ${extra.reducaoDefesa} de dano` : ""}`,
+      detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${extra.reducaoDefesa > 0 && !r.sucesso ? ` · Defender-se reduz ${extra.reducaoDefesa} de dano` : ""}${fmtMods(notasRes)}`,
       total: r.sucesso ? "Resistiu" : "Sofreu efeito", tipoClasse: r.tipoClasse,
     });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu efeito" });
@@ -2226,7 +2354,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const bonus = statDefesa(alvo, "esquiva");
     const r = montarTeste(dado, bonus, cd);
     setEsquivaArea((x) => ({ ...x, [alvo.id]: { ...r, auto: false } }));
-    registrar({ tipo: "rolagem", desc: `${alvo.nome} tenta esquivar de "${contexto.ataque.nome}"`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, total: r.sucesso ? "Esquivou — CD de resistência pela metade" : "Falhou na esquiva", tipoClasse: r.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${alvo.nome} tenta esquivar de "${contexto.ataque.nome}"`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(alvo, "esquiva"))}`, total: r.sucesso ? "Esquivou — CD de resistência pela metade" : "Falhou na esquiva", tipoClasse: r.tipoClasse });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Esquivou!" : "Falhou na esquiva" });
   };
   const renderEsquivaArea = (alvo) => {
@@ -2408,6 +2536,15 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       detalhe: `${custoVida > 0 ? `-${custoVida} ${itemComPv ? "PV do item" : "Vida"}` : ""}${custoVida > 0 && custoNen > 0 ? " · " : ""}${custoNen > 0 ? `-${custoNen} Nen` : ""}`,
       total: "Custo pago", tipoClasse: "hw",
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Usar uma habilidade gasta a ação dela. */
+  const acaoHabRef = useRef(false);
+  useEffect(() => {
+    if (!ehAtaque || acaoHabRef.current || !atualizarCampo || bloqueioVar || !contexto.ataque) return;
+    acaoHabRef.current = true;
+    gastarAcao(atualizarCampo, origemAtual.id, acaoDaHabilidade(contexto.ataque));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2803,8 +2940,16 @@ const AJUDA_CHAVES = [
 ];
 
 /* ---------- modal de ações padrão ---------- */
-function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atualizarCampo, iniciativa }) {
+function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp, animar, atualizarCampo, iniciativa }) {
   const { origem, acao } = ctx;
+  // Usar a ação/manobra gasta a ação correspondente (uma vez só por abertura da janela).
+  const acaoGastaRef = useRef(false);
+  const gastarAcaoDaManobra = () => {
+    if (acaoGastaRef.current) return;
+    acaoGastaRef.current = true;
+    gastarAcao(atualizarCampo, origem.id, acao.tag);
+  };
+  const registrar = (entry) => { registrarProp(entry); gastarAcaoDaManobra(); };
   const origemAtual = entidades.find((e) => e.id === origem.id) || origem;
   const outros = entidades.filter((e) => e.id !== origemAtual.id);
   const oponentesDisponiveis = outros.filter((e) => e.oponente);
@@ -2878,6 +3023,21 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     return attr(ent, "luta") + penal + bonusVantagemToggle(ent, "ataque") + ajudaBonus + (ent.mirando ? 10 : 0) + mods.testesGerais + penalCaido;
   };
   const limparMira = (ent) => { if (ent.mirando) atualizarCampo(ent.id, "mirando", false); };
+  /* resumos de bônus/penalidades pro histórico */
+  const nAtq = (penal, ajuda, alvo, defKey, extra) => {
+    const n = [];
+    if (origemAtual.mirando) n.push("Mirar +10");
+    n.push(...notasCondicoesGerais(origemAtual));
+    if (condicaoAtiva(origemAtual, "Caído")) n.push("Caído -5");
+    const vt = bonusVantagemToggle(origemAtual, "ataque");
+    if (vt) n.push(`Vantagem ${fmtBonus(vt)}`);
+    if (penal) n.push(`${acao.nome} ${fmtBonus(penal)}`);
+    if (extra) n.push(extra);
+    if (ajuda) n.push(`Ajuda ${fmtBonus(ajuda)}`);
+    if (alvo) n.push(...notasModsDefesa(alvo, defKey).map((t) => `alvo: ${t}`));
+    return n;
+  };
+  const nDescanso = () => (bonusDescansoAcaoValor ? ["Bônus de descanso +2"] : []);
 
   /* ----- oposto: agarrar / derrubar ----- */
   const rolarAtaqueOposto = () => {
@@ -2889,7 +3049,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta ${acao.nome} em ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}`, total: res.sucesso ? "Acertou" : "Errou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta ${acao.nome} em ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(acao.penalidade || 0, ajudaBonus, oponente, "aparar"))}`, total: res.sucesso ? "Acertou" : "Errou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdDef, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Acertou!" : "Errou" });
   };
   const rolarOpostoContestado = () => {
@@ -2918,7 +3078,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
       }
     }
     else resultadoTxt = vitoria ? "Oponente CAIU" : "Oponente resistiu";
-    registrar({ tipo: "rolagem", desc: `Teste oposto (${acao.periciaOposta.join("/")}): ${origemAtual.nome} vs ${oponente.nome}`, detalhe: `${totalAt} (d20 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (d20 ${dDef}${fmtBonus(bDef)})`, total: resultadoTxt, tipoClasse: vitoria ? "hs" : "hw" });
+    registrar({ tipo: "rolagem", desc: `Teste oposto (${acao.periciaOposta.join("/")}): ${origemAtual.nome} vs ${oponente.nome}`, detalhe: `${totalAt} (d20 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (d20 ${dDef}${fmtBonus(bDef)})${fmtMods([...notasCondicoesGerais(origemAtual), ...nDescanso(), ...notasCondicoesGerais(oponente).map((t) => `alvo: ${t}`)])}`, total: resultadoTxt, tipoClasse: vitoria ? "hs" : "hw" });
     if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
     consumirBonusDescansoAcao();
   };
@@ -2933,14 +3093,14 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Desarmar ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}`, total: res.sucesso ? "Acertou" : "Errou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Desarmar ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(acao.penalidade || 0, ajudaBonus, oponente, "aparar"))}`, total: res.sucesso ? "Acertou" : "Errou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdDef, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Acertou!" : "Errou" });
   };
   const rolarSalvamentoForca = () => {
     const dado = rolarD20(), bonus = attr(oponente, "forca") + calcModCondicoes(oponente).testesGerais;
     const res = montarTeste(dado, bonus, Number(cd) || 15);
     setR2(res);
-    registrar({ tipo: "rolagem", desc: `${oponente.nome} resiste ao Desarmar`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}`, total: res.sucesso ? "Manteve o item" : "Soltou o item", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${oponente.nome} resiste ao Desarmar`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods(notasCondicoesGerais(oponente))}`, total: res.sucesso ? "Manteve o item" : "Soltou o item", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: oponente.nome, foto: oponente.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus, total: res.total, cd: Number(cd) || 15, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Manteve o item" : "Soltou o item" });
   };
 
@@ -2957,7 +3117,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Quebrar "${itemAlvo.nome}" de ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Defesa ${cdDef}`, total: res.sucesso ? "Acertou o item" : "Errou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Quebrar "${itemAlvo.nome}" de ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Defesa ${cdDef}${fmtMods(nAtq(0, ajudaBonus, oponente, "aparar", penal ? "Item segurado -2" : ""))}`, total: res.sucesso ? "Acertou o item" : "Errou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdDef, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Acertou o item!" : "Errou" });
   };
   const rolarDanoItem = () => {
@@ -3006,7 +3166,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
       if (atuais["Amarrado"]) { delete atuais["Amarrado"]; mudou = true; }
       if (mudou) atualizarCampo(origemAtual.id, "condicoes", atuais);
     }
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa ${acao.nome} (${periciaUsada === "inteligencia" ? "Inteligência" : periciaUsada})`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}`, total: acao.id === "escapar" ? (res.sucesso ? "Escapou! Condição removida" : "Continua preso") : res.grauTexto, tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa ${acao.nome} (${periciaUsada === "inteligencia" ? "Inteligência" : periciaUsada})`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods([...(periciaUsada === "inteligencia" ? notasCondicoesGerais(origemAtual) : notasPericiaEnt(origemAtual, periciaUsada)), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : [])])}`, total: acao.id === "escapar" ? (res.sucesso ? "Escapou! Condição removida" : "Continua preso") : res.grauTexto, tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} testa ${acao.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: Number(cd) || 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: acao.id === "escapar" ? (res.sucesso ? "Escapou!" : "Continua preso") : res.grauTexto });
     consumirBonusDescansoAcao();
   };
@@ -3024,7 +3184,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     const dado = rolarD20();
     const res = montarTeste(dado, bonus, cdLevantamento);
     setR1(res);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Levantamento (até ${pesoAlvoLevantamento}kg)`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cdLevantamento}`, total: res.grauTexto, tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Levantamento (até ${pesoAlvoLevantamento}kg)`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cdLevantamento}${fmtMods([...notasPericiaEnt(origemAtual, "Atletismo"), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : []), ...(gradMassa ? [`Massa extra: CD +${gradMassa}`] : [])])}`, total: res.grauTexto, tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} testa Levantamento`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: cdLevantamento, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.grauTexto });
     consumirBonusDescansoAcao();
   };
@@ -3040,7 +3200,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     const resultados = selecionados.map((o) => { const cdP = valorAlvoComoCD(o, "Percepção"); return { id: o.id, nome: o.nome, cd: cdP, sucesso: total >= cdP }; });
     setMultiResultados({ dado, bonus, total, resultados });
     const passouTudo = resultados.length > 0 && resultados.every((r) => r.sucesso);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Fugir de Vista de ${resultados.length || "nenhum"} oponente(s)`, detalhe: `Furtividade d20(${dado}) ${fmtBonus(bonus)} = ${total}`, total: resultados.length === 0 ? "Sem alvos selecionados" : passouTudo ? "Ficou furtivo" : "Foi percebido", tipoClasse: resultados.length && passouTudo ? "hs" : "hw" });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Fugir de Vista de ${resultados.length || "nenhum"} oponente(s)`, detalhe: `Furtividade d20(${dado}) ${fmtBonus(bonus)} = ${total}${fmtMods([...notasPericiaEnt(origemAtual, "Furtividade"), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : [])])}`, total: resultados.length === 0 ? "Sem alvos selecionados" : passouTudo ? "Ficou furtivo" : "Foi percebido", tipoClasse: resultados.length && passouTudo ? "hs" : "hw" });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} tenta Fugir de Vista`, foto: origemAtual.foto, dado, bonus, total, rotulo: resultados.length === 0 ? "Sem alvos selecionados" : passouTudo ? "Ficou furtivo!" : "Foi percebido" });
     consumirBonusDescansoAcao();
   };
@@ -3058,14 +3218,14 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
       const buff = { id: uid(), chave: chaveAjuda, bonus: grau * 2, deNome: origemAtual.nome };
       adicionarItemArray(aliado.id, "buffsAjuda", buff);
     }
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} ajuda ${aliado.nome} em ${infoChave.l}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10`, total: res.sucesso ? `+${Math.max(1, res.graus) * 2} para ${aliado.nome}` : "Não ajudou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} ajuda ${aliado.nome} em ${infoChave.l}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10${fmtMods([...notasCondicoesGerais(origemAtual), ...nDescanso()])}`, total: res.sucesso ? `+${Math.max(1, res.graus) * 2} para ${aliado.nome}` : "Não ajudou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} ajuda ${aliado.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? `+${Math.max(1, res.graus) * 2} para ${aliado.nome}` : "Não ajudou" });
     consumirBonusDescansoAcao();
   };
 
   /* ----- defender-se / mirar (toggles) ----- */
-  const toggleDefender = () => atualizarCampo(origemAtual.id, "defendendo", !origemAtual.defendendo);
-  const toggleMirar = () => atualizarCampo(origemAtual.id, "mirando", !origemAtual.mirando);
+  const toggleDefender = () => { if (!origemAtual.defendendo) gastarAcaoDaManobra(); atualizarCampo(origemAtual.id, "defendendo", !origemAtual.defendendo); };
+  const toggleMirar = () => { if (!origemAtual.mirando) gastarAcaoDaManobra(); atualizarCampo(origemAtual.id, "mirando", !origemAtual.mirando); };
 
   /* ----- manobras: desmoralizar / fintar ----- */
   const rolarOposicaoCondicao = () => {
@@ -3078,7 +3238,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     setR2({ dAt, bAt, totalAt, dDef, bDef, totalDef, vitoria });
     // Desmoralizar: até o INÍCIO do próximo turno de quem usou. Fintar: até o FIM do próximo turno de quem usou.
     if (vitoria) aplicarCondicaoTemporaria(atualizarCampo, oponente, acao.condicao, acao.id === "fintar" ? "fim" : "inicio", origemAtual.id, iniciativa);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa ${acao.nome} em ${oponente.nome}${fintaAgilAtiva ? " (Finta Ágil: Acrobacia/Enganação)" : ""}`, detalhe: `${totalAt} (d20 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (d20 ${dDef}${fmtBonus(bDef)})`, total: vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Sem efeito", tipoClasse: vitoria ? "hs" : "hw" });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa ${acao.nome} em ${oponente.nome}${fintaAgilAtiva ? " (Finta Ágil: Acrobacia/Enganação)" : ""}`, detalhe: `${totalAt} (d20 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (d20 ${dDef}${fmtBonus(bDef)})${fmtMods([...notasPericiaEnt(origemAtual, acao.pericia), ...nDescanso(), ...notasPericiaEnt(oponente, acao.pericia).map((t) => `alvo: ${t}`)])}`, total: vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Sem efeito", tipoClasse: vitoria ? "hs" : "hw" });
     if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
     consumirBonusDescansoAcao();
   };
@@ -3093,12 +3253,12 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Encontrão em ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}`, total: res.sucesso ? "Acertou" : "Errou (alvo pode reagir com Agarrar, Derrubar ou Desarmar)", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Encontrão em ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(0, ajudaBonus, oponente, "aparar", Number(graduacoesMovidas) ? `Deslocamento ${fmtBonus(Number(graduacoesMovidas))}` : ""))}`, total: res.sucesso ? "Acertou" : "Errou (alvo pode reagir com Agarrar, Derrubar ou Desarmar)", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdDef, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Acertou!" : "Errou" });
   };
 
   /* ----- manobra: lubridiar (toggle) ----- */
-  const toggleLubridiar = () => atualizarCampo(origemAtual.id, "lubridiando", !origemAtual.lubridiando);
+  const toggleLubridiar = () => { if (!origemAtual.lubridiando) gastarAcaoDaManobra(); atualizarCampo(origemAtual.id, "lubridiando", !origemAtual.lubridiando); };
 
   /* ----- manobra: planejar (criação do plano) ----- */
   const rolarPlano = () => {
@@ -3107,7 +3267,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar, animar, atuali
     const res = montarTeste(dado, bonus, 10);
     setR1(res);
     if (res.sucesso) atualizarCampo(origemAtual.id, "plano", { acoes: Math.max(1, res.graus) });
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa Planejar`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10`, total: res.sucesso ? `${Math.max(1, res.graus)} Ação(ões) de Planejamento` : "Sem plano", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa Planejar`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10${fmtMods([...notasPericiaEnt(origemAtual, "Investigação"), ...nDescanso()])}`, total: res.sucesso ? `${Math.max(1, res.graus)} Ação(ões) de Planejamento` : "Sem plano", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} testa Planejar`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? `${Math.max(1, res.graus)} Ação(ões) de Planejamento` : "Sem plano" });
     consumirBonusDescansoAcao();
   };
@@ -3609,7 +3769,7 @@ export default function MesaMM3() {
     // salvarEntidade()/removerEntidadeDoc() já mostram o aviso vermelho no topo sozinhos, mas
     // quem chamou (o formulário de ficha) também precisa saber, pra não fechar como se tivesse
     // dado tudo certo e a pessoa achar que salvou quando na verdade perdeu a edição.
-    return resultados.every(Boolean);
+    return resultados.every((r) => r !== false);
   };
   const registrar = async (entry) => {
     await adicionarHistorico({ tipo: "sistema", ...entry, hora: horaAgora() });
@@ -3621,7 +3781,8 @@ export default function MesaMM3() {
       const abs = Math.min(antes.pvTemp, dano);
       registrar({ tipo: "rolagem", desc: `${antes.nome} perde Vida Temporária`, detalhe: `${abs} PV temporários absorveram o dano`, total: `${antes.pvTemp - abs} PV temp.`, tipoClasse: "hw" });
     }
-    atualizarCampo(entidadeId, "*", (e) => { const d = danoComTemp(e, dano); return { ...e, pvTemp: d.pvTemp, pvAtual: d.pvAtual }; });
+    const chaveTurno = chaveTurnoIniciativa(iniciativa);
+    atualizarCampo(entidadeId, "*", (e) => { const d = danoComTemp(e, dano); return { ...e, pvTemp: d.pvTemp, pvAtual: d.pvAtual, ...(dano > 0 ? { ultimoDanoTurno: chaveTurno } : {}) }; });
   };
   /* "valor" pode ser uma função (recebe o valor mais recente do campo). O campo especial "*" recebe uma função
      que transforma a ficha inteira. Mirar e Morrendo são tratados em posProcessarEntidade. */
@@ -3728,7 +3889,9 @@ export default function MesaMM3() {
   /* Tudo que acontece sozinho no começo do turno de uma ficha. */
   const iniciarTurnoAutomatico = (entidadeId) => {
     const ent = entidades.find((x) => x.id === entidadeId);
-    if (!ent || condicaoAtiva(ent, "Morto")) return;
+    if (!ent) return;
+    atualizarCampo(entidadeId, "acoesGastas", {});
+    if (condicaoAtiva(ent, "Morto")) return;
     const logs = [];
     const log = (desc, detalhe, total, tipoClasse = "hw") => logs.push({ tipo: "rolagem", desc, detalhe, total, tipoClasse });
     const pvMax = pvMaxCalc(ent);
@@ -3778,8 +3941,15 @@ export default function MesaMM3() {
     const morrendo = condicaoAtiva(ent, "Morrendo") && (pvSim - danoTotal) <= 0;
     if (morrendo) log(`${ent.nome} está Morrendo`, `Contador desce para ${(ent.morrendoContador ?? 3) - 1}`, "Teste de morte pendente", "hd");
 
+    // Ação para sustentar: quem continua sustentando uma habilidade já começa o turno com essa ação gasta.
+    const marcasSustentar = {};
+    (ent.ataques || []).forEach((a) => {
+      const sustentada = a.tipo === "passiva" ? (passivaEstaAtiva(a) && a.sustentado) : (a.sustentado && a.sustentando);
+      const k = chaveAcaoDeNome(a.acaoSustentar);
+      if (sustentada && k && !paradas.includes(a.id)) marcasSustentar[k] = true;
+    });
     atualizarCampo(entidadeId, "*", (e) => {
-      let n = { ...e };
+      let n = { ...e, acoesGastas: marcasSustentar };
       if (cura > 0) n.pvAtual = Math.min(pvMax, (n.pvAtual || 0) + cura);
       if (nenGasto > 0) n.nenAtual = (n.nenAtual || 0) - nenGasto;
       if (danoTotal > 0) { const d = danoComTemp(n, danoTotal); n.pvTemp = d.pvTemp; n.pvAtual = d.pvAtual; }
@@ -3805,7 +3975,7 @@ export default function MesaMM3() {
     const r = montarTeste(dado, bonus, cd);
     const novo = (ent.morrendoContador ?? 0) + (r.sucesso ? 1 : 0);
     const morreu = novo <= 0;
-    registrar({ tipo: "rolagem", desc: `${ent.nome} faz o teste de morte`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, total: morreu ? "Morreu" : (r.sucesso ? `Sobreviveu — contador ${novo}` : `Falhou — contador ${novo}`), tipoClasse: r.sucesso ? "hs" : "hd" });
+    registrar({ tipo: "rolagem", desc: `${ent.nome} faz o teste de morte`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(ent, "fortitude"))}`, total: morreu ? "Morreu" : (r.sucesso ? `Sobreviveu — contador ${novo}` : `Falhou — contador ${novo}`), tipoClasse: r.sucesso ? "hs" : "hd" });
     dispararAnimacao({ modo: "simples", nome: `${ent.nome} · teste de morte`, foto: ent.foto, dado, bonus, total: r.total, rotulo: "Teste de morte" });
     atualizarCampo(ent.id, "*", (e) => {
       const { testeMorteAguardando, ...resto } = e;
@@ -3876,7 +4046,7 @@ export default function MesaMM3() {
           </div>
         </div>
       </div>
-      {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} enviarPontoFraco={enviarPontoFraco} />}
+      {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} enviarPontoFraco={enviarPontoFraco} iniciativa={iniciativa} />}
       {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} iniciativa={iniciativa} />}
       {avisosPF.length > 0 && (
         <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) setAvisosPF((a) => a.slice(1)); }}>
@@ -4596,6 +4766,22 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
           Sustentado
         </label>
       </div>
+      <div className="grid2" style={{ marginBottom: 10 }}>
+        <div>
+          <label className="label">Ação para usar</label>
+          <SearchableSelect value={ataque.acao || acaoDaHabilidade(ataque)} onChange={(e) => upd("acao", e.target.value)}>
+            {ACOES_USO_OPCOES.map((o) => <option key={o} value={o}>{o}</option>)}
+          </SearchableSelect>
+        </div>
+        {ataque.sustentado && (
+          <div>
+            <label className="label">Ação para sustentar</label>
+            <SearchableSelect value={ataque.acaoSustentar || "Nenhuma"} onChange={(e) => upd("acaoSustentar", e.target.value)}>
+              {ACOES_SUSTENTAR_OPCOES.map((o) => <option key={o} value={o}>{o}</option>)}
+            </SearchableSelect>
+          </div>
+        )}
+      </div>
 
       {!ehPassiva && (
         <>
@@ -4680,6 +4866,21 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
           {ataque.pontoFraco?.ativo && (
             <textarea className="outros-textarea" rows={3} value={ataque.pontoFraco?.texto || ""} onChange={(e) => upd("pontoFraco", { ...ataque.pontoFraco, texto: e.target.value })} placeholder="Texto do ponto fraco (aparece para quem passar no teste)…" />
           )}
+
+          <div className="divider" />
+          <label className="checkbox-row">
+            <input type="checkbox" checked={!!ataque.peculiaridade?.ativo} onChange={(e) => upd("peculiaridade", { bonus: 2, ...(ataque.peculiaridade || {}), ativo: e.target.checked })} />
+            Peculiaridade
+          </label>
+          <div className="field-note" style={{ marginBottom: 10 }}>
+            Se a ficha afetada tiver sofrido dano no turno anterior, ela ganha o bônus abaixo para resistir aos efeitos desta habilidade. O histórico avisa quando isso acontece.
+          </div>
+          {ataque.peculiaridade?.ativo && (
+            <SearchableSelect value={String(ataque.peculiaridade?.bonus || 2)} onChange={(e) => upd("peculiaridade", { ...ataque.peculiaridade, bonus: Number(e.target.value) })}>
+              <option value="2">+2 para resistir</option>
+              <option value="5">+5 para resistir</option>
+            </SearchableSelect>
+          )}
         </div>
       )}
 
@@ -4742,7 +4943,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
 
   const updAtaque = (idx, novo) => { const arr = [...f.ataques]; arr[idx] = novo; upd("ataques", arr); };
   const addAtaque = () => upd("ataques", [...f.ataques, {
-    id: uid(), nome: "", tipo: "ativa", tipoAcerto: "corpo", custoVida: 0, custoNen: 0, extras: {}, ativo: false,
+    id: uid(), nome: "", tipo: "ativa", acao: "Ação Padrão", tipoAcerto: "corpo", custoVida: 0, custoNen: 0, extras: {}, ativo: false,
     efeitos: [{ id: uid(), ...efeitoPadrao("Dano") }],
     passivos: [{ id: uid(), tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {} }],
   }]);
@@ -5131,7 +5332,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
     });
     onAtualizarCampo(e.id, "ataques", novos);
     if (ataque.sustentado) onAtualizarCampo(e.id, "sustentado", true);
-    if (novoAtivo) ativarColaterais(e, ataque, onAtualizarCampo, registrar); else desativarColaterais(e, ataque, onAtualizarCampo);
+    if (novoAtivo) { gastarAcao(onAtualizarCampo, e.id, acaoDaHabilidade(ataque)); ativarColaterais(e, ataque, onAtualizarCampo, registrar); } else desativarColaterais(e, ataque, onAtualizarCampo);
   };
   const alternarPassiva = (ataque) => {
     if (!onAtualizarCampo) return;
@@ -5312,6 +5513,19 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
         {pontosEquipamentoMax(e) > 0 && <span>Equip <b>{pontosEquipamentoGastos(e)}/{pontosEquipamentoMax(e)}</b></span>}
       </div>
 
+      <div className="acoes-bolinhas">
+        <span className="ab-label">Ações</span>
+        {ACOES_TIPOS.map((t) => {
+          const gasta = !!(e.acoesGastas || {})[t.k];
+          return (
+            <button key={t.k} type="button" className={"acao-bolinha" + (gasta ? " gasta" : "") + (editavel ? " pode" : "")} style={{ "--ab-cor": t.cor }}
+              title={`${t.nome} — ${gasta ? "já usada neste turno" : "disponível"}${editavel ? " (clique para alternar)" : ""}`}
+              aria-label={`${t.nome}: ${gasta ? "usada" : "disponível"}`}
+              onClick={() => { if (editavel) onAtualizarCampo(e.id, "acoesGastas", (g) => ({ ...(g || {}), [t.k]: !(g || {})[t.k] })); }} />
+          );
+        })}
+      </div>
+
       {editavel && (
         <div style={{ marginBottom: 10, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
           <button className="btn btn-ghost btn-sm" onClick={() => onRolarIniciativa(e)}>⚄ Iniciativa</button>
@@ -5466,7 +5680,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
             <div className="chip-row">
               {ACOES_PADRAO.map((a) => (
                 <button key={a.id} className="stat-chip acao-chip" onClick={() => abrirAcao(a)}>
-                  {a.nome}<span className="acao-tipo">{a.tag === "Ação Padrão" ? "padrão" : "movimento"}</span>
+                  {a.nome}<span className="acao-tipo">{rotuloAcaoCurto(a.tag)}</span>
                 </button>
               ))}
             </div>
@@ -5484,7 +5698,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
             <div className="chip-row">
               {MANOBRAS.map((m) => (
                 <button key={m.id} className="stat-chip acao-chip" onClick={() => abrirAcao(m)}>
-                  {m.nome}<span className="acao-tipo">{m.tag}</span>
+                  {m.nome}<span className="acao-tipo">{rotuloAcaoCurto(m.tag)}</span>
                 </button>
               ))}
             </div>
@@ -5504,12 +5718,13 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
                 a.tipo === "passiva" ? (
                   <button key={a.id} className={"stat-chip passiva-chip" + (passivaEstaAtiva(a) ? " ativo" : "")} onClick={() => (editavel ? alternarPassiva(a) : null)} disabled={!editavel} title={editavel ? (passivaEstaAtiva(a) ? "Clique pra desativar" : "Clique pra ativar") : undefined}>
                     <span className="passiva-chip-dot" />
-                    {a.nome || "(sem nome)"} <b>{rotuloPassivos(a)}</b>
+                    {a.nome || "(sem nome)"} <b>{rotuloPassivos(a)}</b><span className="acao-tipo">{rotuloAcaoCurto(acaoDaHabilidade(a))}</span>
                   </button>
                 ) : (
                   <button key={a.id} className={"stat-chip ataque-chip" + (itemQuebrado(a) ? " item-quebrado" : "")} onClick={() => abrirAtaque(a)}>
                     {a.nome || "(sem nome)"} <b>{TIPOS_ACERTO.find((t) => t.v === a.tipoAcerto)?.l}</b>
                     {itemQuebrado(a) && <b style={{ color: "var(--danger, #e05a5a)" }}> · Quebrado</b>}
+                    <span className="acao-tipo">{rotuloAcaoCurto(acaoDaHabilidade(a))}{a.sustentado && a.acaoSustentar && a.acaoSustentar !== "Nenhuma" ? ` · sustenta: ${rotuloAcaoCurto(a.acaoSustentar)}` : ""}</span>
                   </button>
                 )
               ))}
