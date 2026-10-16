@@ -263,6 +263,59 @@ const GlobalStyle = () => (
     .mm3 .acoes-header .arrow.open { transform: rotate(90deg); }
     .mm3 .acao-chip { background:var(--surface3); }
     .mm3 .ent-item.arrastavel .ent-collapsed { cursor:grab; }
+
+    /* ---- tela de edição da ficha ---- */
+    .mm3 .ficha-edit { padding:1rem; }
+    .mm3 .ed-hero { margin:0 0 16px; }
+    .mm3 .ed-retrato { position:relative; }
+    .mm3 .ed-retrato img { width:100%; height:100%; object-fit:cover; display:block; }
+    .mm3 .ed-retrato-dica { position:absolute; left:0; right:0; bottom:0; font-style:normal; font-size:0.68rem; text-align:center; padding:4px 0; background:rgba(14,14,18,0.72); color:var(--accent); opacity:0; transition:opacity .15s; }
+    .mm3 .ed-retrato:hover .ed-retrato-dica, .mm3 .ed-retrato:focus-within .ed-retrato-dica { opacity:1; }
+    @media (hover:none) { .mm3 .ed-retrato-dica { opacity:1; } }
+    .mm3 .ed-hero-info { flex:1; min-width:180px; }
+    .mm3 .ed-hero input.ed-nome { font-family:'Bebas Neue',sans-serif; font-size:1.9rem; letter-spacing:0.03em; padding:6px 12px; background:rgba(14,14,18,0.55); }
+    .mm3 .ed-hero input, .mm3 .ed-hero .ssel input[type="text"] { background:rgba(14,14,18,0.55); }
+    .mm3 .ed-sec { background:var(--surface2); border:1px solid var(--border); border-radius:14px; padding:14px 14px 8px; margin-bottom:12px; }
+    .mm3 .ed-sec > .section-title { display:flex; align-items:center; gap:8px; font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:0.05em; color:var(--text); text-transform:none; margin-bottom:12px; }
+    .mm3 .ed-sec > .section-title::before { content:""; width:4px; height:1.05em; border-radius:2px; background:var(--accent); }
+    .mm3 .ed-sec > .section-title.colapsavel { cursor:pointer; user-select:none; }
+    .mm3 .ed-sec input[type="text"], .mm3 .ed-sec input[type="number"], .mm3 .ed-sec select, .mm3 .ed-sec textarea { background:var(--surface); }
+    .mm3 .ed-sec .subcard { background:var(--surface); }
+    .mm3 .ed-sec .subcard2 { background:var(--surface3); }
+    .mm3 .ed-sec .subcard input, .mm3 .ed-sec .subcard select { background:var(--surface2); }
+    .mm3 .ed-barras { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+    .mm3 .ed-attr-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(96px,1fr)); gap:8px; }
+    .mm3 .ed-attr { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:8px 8px 10px; text-align:center; }
+    .mm3 .ed-attr .label { text-align:center; margin-bottom:4px; }
+    .mm3 .ed-attr input[type="number"] { text-align:center; font-family:'Bebas Neue',sans-serif; font-size:1.7rem; color:var(--accent); padding:2px 4px; background:transparent; border-color:transparent; }
+    .mm3 .ed-attr:focus-within { border-color:var(--accent); }
+    .mm3 .ed-sec .ed-defesas { grid-template-columns:repeat(auto-fill,minmax(100px,1fr)); gap:8px; }
+    .mm3 .ed-defesas .ro-row { flex-direction:column; align-items:center; gap:2px; background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:8px 4px; }
+    .mm3 .ed-defesas .ro-row span { font-size:0.68rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    .mm3 .ed-defesas .ro-row b { font-family:'Bebas Neue',sans-serif; font-size:1.7rem; line-height:1; }
+    .mm3 .ed-sec .pericias-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:6px 12px; }
+    .mm3 .ed-sec .pericias-grid .pe-row { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:6px 10px; }
+    .mm3 .ed-vant { background:var(--surface); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:10px; padding:10px; margin-bottom:8px; }
+    .mm3 .ed-vant .vantagem-row { margin-bottom:4px; }
+    .mm3 .ed-vant input, .mm3 .ed-vant select { background:var(--surface2) !important; }
+    .mm3 .ed-sec .pp-box { flex-wrap:wrap; gap:8px; background:var(--surface); border:1px solid var(--border); }
+    .mm3 .ed-pp-trilho { flex-basis:100%; height:8px; border-radius:6px; background:var(--surface3); overflow:hidden; }
+    .mm3 .ed-pp-fill { height:100%; border-radius:6px; background:linear-gradient(90deg,#a8902a,var(--accent)); transition:width .3s; }
+    .mm3 .pp-box.excedido .ed-pp-fill { background:var(--danger); }
+    .mm3 .ed-vazio { text-align:center; color:var(--muted); font-size:0.85rem; border:1px dashed var(--border); border-radius:12px; padding:16px; margin-bottom:10px; }
+    .mm3 .ed-hab { position:relative; padding-left:1.2rem; border-radius:12px; overflow:hidden; }
+    .mm3 .ed-hab::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:linear-gradient(180deg,var(--accent),transparent); }
+    .mm3 .ed-hab.passiva::before { background:linear-gradient(180deg,#5cc3f5,transparent); }
+    .mm3 .ed-hab-topo input[type="text"] { font-family:'Bebas Neue',sans-serif; font-size:1.25rem; letter-spacing:0.03em; }
+    .mm3 .ed-hab-tags { display:flex; flex-wrap:wrap; gap:6px; margin:2px 0 4px; }
+    .mm3 .ed-hab-img { background:var(--surface2); border:1px dashed var(--border); border-radius:12px; padding:10px; }
+    .mm3 .ed-hab-img .foto-preview { width:84px; height:84px; }
+    .mm3 .ed-sub { font-family:'Bebas Neue',sans-serif; font-size:1.05rem !important; letter-spacing:0.05em; color:var(--text) !important; text-transform:none !important; margin-top:6px; }
+    .mm3 .ed-colapso-head { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:8px 12px; margin-bottom:8px; }
+    .mm3 .ed-colapso-head .section-title { color:var(--text); }
+    .mm3 .ed-colapso-head:hover { border-color:var(--accent); }
+    .mm3 .ed-efeito { border-left:3px solid var(--danger-border); background:var(--surface3); }
+    @media (max-width:560px) { .mm3 .ficha-edit { padding:0.7rem; } .mm3 .ed-sec { padding:12px 10px 6px; } .mm3 .ed-hero input.ed-nome { font-size:1.6rem; } .mm3 .ed-sec .pericias-grid { grid-template-columns:1fr; } }
     /* ---- ficha em modo leitura: cabeçalho com retrato ---- */
     .mm3 .ficha-hero { position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--border); margin:-6px -6px 14px; background:var(--surface); }
     .mm3 .ficha-hero .hero-bg { position:absolute; inset:-24px; background-size:cover; background-position:center; filter:blur(24px) saturate(1.2); opacity:0.42; transform:scale(1.15); z-index:0; }
@@ -739,10 +792,70 @@ function chaveAcaoDeNome(nome) {
 }
 function acaoDaHabilidade(a) { return a?.acao || (a?.tipo === "passiva" ? "Ação Livre" : "Ação Padrão"); }
 function rotuloAcaoCurto(nome) { const k = chaveAcaoDeNome(nome); return ACOES_TIPOS.find((x) => x.k === k)?.curto || ""; }
-function gastarAcao(atualizarCampo, entId, nomeAcao) {
+/* ---------- Rapidez (efeito passivo): graduações = pontos para comprar habilidades ---------- */
+const MANOBRAS_MAQUINA_PALAVRAS = { fintar: "Fintar", lubridiar: "Lubridiar", desmoralizar: "Desmoralizar" };
+const RAPIDEZ_LOJA = [
+  { id: "maquinaPalavras", nome: "Máquina de Palavras", custo: 1,
+    desc: "Uma vez por turno, você pode usar as ações Fintar, Ludibriar ou Desmoralizar (escolha uma) sem custo de ação.",
+    escolha: { tipo: "manobra", label: "Qual ação?", padrao: "fintar" } },
+  { id: "elusivo", nome: "Elusivo", custo: 3, desc: "Uma vez por turno, você pode esconder-se sem o custo de ação." },
+  { id: "carente", nome: "Carente", custo: 3, desc: "Manter um agarrão não exige mais uma ação livre." },
+  { id: "mestreNen", nome: "Mestre do Nen", custo: 5,
+    desc: "Uma vez por turno, você pode usar uma habilidade que seja de ação livre sem custo de ação (escolha a habilidade ao comprar esse efeito). Ao invés disso, você pode escolher que uma habilidade sustentada não use sua ação livre para manter o efeito. (Só informativo na ficha.)",
+    escolha: { tipo: "texto", label: "Habilidade escolhida" } },
+  { id: "adrenalina", nome: "Adrenalina", custo: 10, desc: "Uma vez por turno, você pode se mover sem custo de ação de movimento." },
+  { id: "apressado", nome: "Apressado", custo: 15, desc: "Você obtém uma ação livre extra nas suas rodadas em um combate." },
+  { id: "mestreCombate", nome: "Mestre do Combate", custo: 20, desc: "Você obtém uma ação padrão extra nas suas rodadas em um combate." },
+];
+/* Usos "uma vez por turno" que viram marcadores na ficha (voltam a cada turno). */
+const RAPIDEZ_GRATIS = [
+  { id: "maquinaPalavras", nome: "Máquina de Palavras" },
+  { id: "elusivo", nome: "Elusivo" },
+  { id: "adrenalina", nome: "Adrenalina" },
+];
+/* O que a ficha tem comprado na Rapidez (só de efeitos passivos ativos). Ex.: { elusivo: true, maquinaPalavras: "fintar" } */
+function rapidezDe(ent) {
+  const out = {};
+  if (!ent) return out;
+  instanciasPassivasAtivas(ent).forEach(({ inst }) => {
+    if (inst.tipoId !== "rapidez") return;
+    const c = inst.campos?.compras || {};
+    const es = inst.campos?.escolhas || {};
+    RAPIDEZ_LOJA.forEach((it) => { if (c[it.id]) out[it.id] = it.escolha ? (es[it.id] || it.escolha.padrao || true) : true; });
+  });
+  return out;
+}
+/* Bolinhas de ação visíveis: as 4 padrão + as extras da Rapidez (Apressado / Mestre do Combate). */
+function acoesVisiveis(ent) {
+  const rap = rapidezDe(ent);
+  const out = [];
+  ACOES_TIPOS.forEach((t) => {
+    out.push(t);
+    if (t.k === "padrao" && rap.mestreCombate) out.push({ k: "padrao2", nome: "Ação Padrão extra (Mestre do Combate)", curto: "padrão extra", cor: t.cor });
+    if (t.k === "livre" && rap.apressado) out.push({ k: "livre2", nome: "Ação Livre extra (Apressado)", curto: "livre extra", cor: t.cor });
+  });
+  return out;
+}
+/* Gasta a ação de uma habilidade/ação. "acaoId" (opcional) é o id da ação/manobra usada: se a Rapidez der o
+   primeiro uso do turno de graça (Adrenalina, Elusivo, Máquina de Palavras), nenhuma ação é gasta. Se a ação
+   normal já foi usada e há uma extra (Apressado / Mestre do Combate), a extra é usada. */
+function gastarAcao(atualizarCampo, entId, nomeAcao, acaoId) {
   const k = chaveAcaoDeNome(nomeAcao);
   if (!k || !atualizarCampo) return;
-  atualizarCampo(entId, "acoesGastas", (g) => ({ ...(g || {}), [k]: true }));
+  atualizarCampo(entId, "*", (e) => {
+    const rap = rapidezDe(e);
+    let gratis = null;
+    if (acaoId === "mover" && rap.adrenalina) gratis = "adrenalina";
+    else if (acaoId === "fugir" && rap.elusivo) gratis = "elusivo";
+    else if (acaoId && rap.maquinaPalavras === acaoId) gratis = "maquinaPalavras";
+    if (gratis && !(e.rapidezUsos || {})[gratis]) return { ...e, rapidezUsos: { ...(e.rapidezUsos || {}), [gratis]: true } };
+    const g = { ...(e.acoesGastas || {}) };
+    let chave = k;
+    if (g[k] && k === "padrao" && rap.mestreCombate && !g.padrao2) chave = "padrao2";
+    else if (g[k] && k === "livre" && rap.apressado && !g.livre2) chave = "livre2";
+    g[chave] = true;
+    return { ...e, acoesGastas: g };
+  });
 }
 
 /* ---------- condições ---------- */
@@ -1056,6 +1169,20 @@ const PODERES_PASSIVOS = [
     extras: [], falhas: [],
     aplicar1() {}, aplicar2(ent, inst, acc) { if (inst.campos?.nome) acc.notas.push(`Característica: ${inst.campos.nome}`); } },
 
+  { id: "rapidez", nome: "Rapidez", categoria: "Coringa", custoBase: 1,
+    desc: "Você pode executar ações com mais rapidez. As graduações de Rapidez são pontos para comprar habilidades. Você pode ter graduações de Rapidez sem depender de Nen, mudando sua duração para permanente.",
+    extras: [], falhas: [],
+    aplicar1() {},
+    aplicar2(ent, inst, acc) {
+      const c = inst.campos?.compras || {};
+      const es = inst.campos?.escolhas || {};
+      RAPIDEZ_LOJA.forEach((it) => {
+        if (!c[it.id]) return;
+        const extra = it.id === "maquinaPalavras" ? ` (${MANOBRAS_MAQUINA_PALAVRAS[es.maquinaPalavras || "fintar"]})` : (it.id === "mestreNen" && es.mestreNen ? `: ${es.mestreNen}` : "");
+        acc.notas.push(`Rapidez — ${it.nome}${extra}`);
+      });
+    } },
+
   { id: "shuNota", nome: "Shu (absorver dano de item)", categoria: "Coringa", custoBase: 1, oculto: true,
     desc: "Enquanto ativo: quando um item seu sofrer dano, em vez de perder Pontos de Vida do item, esse tanto é descontado dos seus Pontos de Nen. (Aplicado automaticamente ao usar a ação Quebrar contra um item seu.)",
     extras: [], falhas: [],
@@ -1166,7 +1293,7 @@ function instanciasPassivasAtivas(ent) {
   const out = [];
   (ent?.ataques || []).forEach((a) => {
     if (a.tipo !== "passiva" || !passivaEstaAtiva(a)) return;
-    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId) out.push({ ataque: a, inst, idx }); });
+    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id]) out.push({ ataque: a, inst: comAquecimento(inst, ent), idx }); });
   });
   return out;
 }
@@ -1196,9 +1323,9 @@ function efeitosColateraisAtivos(ent) {
   const out = [];
   (ent?.ataques || []).forEach((a) => {
     if (a.tipo === "passiva" && passivaEstaAtiva(a)) {
-      passivosDe(a).forEach((inst) => { if (inst?.colateral?.ativo) out.push({ ataque: a, item: inst }); });
+      passivosDe(a).forEach((inst) => { if (inst?.colateral?.ativo && !(ent?.efeitosPerdidos || {})[inst.id]) out.push({ ataque: a, item: inst }); });
     } else if (a.tipo !== "passiva" && a.sustentado && a.sustentando) {
-      (a.efeitos || []).forEach((ef) => { if (ef?.colateral?.ativo) out.push({ ataque: a, item: ef }); });
+      (a.efeitos || []).forEach((ef) => { if (ef?.colateral?.ativo && !(ent?.efeitosPerdidos || {})[ef.id]) out.push({ ataque: a, item: ef }); });
     }
   });
   return out;
@@ -1581,18 +1708,65 @@ function calcGraus(diff) {
   return -Math.floor((-diff - 1) / 5) - 1;
 }
 function rolarD20() { return Math.floor(Math.random() * 20) + 1; }
-/* Rola o teste exigido pela falha "Exigir Teste": d20 + atributo escolhido vs 10 + graduações
-   em Exigir Teste. Um natural 1 sempre falha. Sucesso libera 1 graduação do efeito por ponto
-   que o total superar a CD (o jogador aplica manualmente ao usar o efeito). */
+/* Bônus BASE de uma perícia, usado só na CD do Exigir Teste: atributo base + pontos da perícia.
+   Não entra nada de características/passivos, vantagens situacionais (Atraente, Ambiente Favorito...)
+   nem condições — só o que a ficha tem "de fábrica". */
+function bonusBasePericia(ent, nomePericia) {
+  if (!ent) return 0;
+  const nomeReal = nomePericia === "Enganação" && temCaracteristica(ent, "Fejonetto") ? "Persuasão" : nomePericia;
+  const p = PERICIAS.find((x) => x.nome === nomeReal);
+  if (!p) return 0;
+  return attrBase(ent, p.atributo) + ((ent.periciaPontos && ent.periciaPontos[nomeReal]) || 0);
+}
+/* Rola o teste exigido pela falha "Exigir Teste" de um efeito.
+   CD = 10 + (pontos de Exigir Teste - 1) + bônus base da perícia escolhida.
+   A rolagem soma o bônus COMPLETO da perícia (com todos os buffs/debuffs). Um natural 1 sempre falha.
+   Passar libera todas as graduações do efeito; falhar cancela só aquele efeito.
+   (Falhas antigas, sem perícia escolhida, usam o atributo que tinham até a ficha ser editada.) */
 function rolarExigirTeste(ent, exigirTeste) {
-  const cd = 10 + (exigirTeste?.graduacoes || 0);
+  const pontos = Math.max(1, Number(exigirTeste?.graduacoes) || 1);
+  const pericia = exigirTeste?.pericia || "";
+  const atrLegado = exigirTeste?.atributo || "luta";
+  const base = pericia ? bonusBasePericia(ent, pericia) : attrBase(ent, atrLegado);
+  const cd = 10 + (pontos - 1) + base;
   const dado = rolarD20();
-  const bonus = attr(ent, exigirTeste?.atributo || "luta");
+  const bonus = pericia ? bonusPericia(ent, pericia) : attr(ent, atrLegado);
   const total = dado + bonus;
   const falhaAutomatica = dado === 1;
   const sucesso = !falhaAutomatica && total >= cd;
-  const graduacoesLiberadas = sucesso ? Math.max(0, total - cd) : 0;
-  return { dado, bonus, total, cd, falhaAutomatica, sucesso, graduacoesLiberadas };
+  return { dado, bonus, total, cd, falhaAutomatica, sucesso, pericia };
+}
+function textoResultadoExigirTeste(r) {
+  if (r.falhaAutomatica) return "Falha automática (1 natural) — efeito perdido";
+  return r.sucesso ? "Sucesso — todas as graduações do efeito" : "Falhou — efeito perdido";
+}
+/* Aquecimento: o efeito começa com graduação reduzida e vai ganhando graduações até chegar na total em
+   N turnos (3, 5 ou 10). "c" é quantas vezes o efeito já "aqueceu" (turnos de combate com ele ativo, se
+   sustentado; usos, se instantâneo). Exemplos: 10 grad. em 3 turnos = 4, 7, 10; 10 grad. em 10 turnos =
+   1, 2, ... 10; 5 grad. em 10 turnos = 1 e +1 a cada 2 turnos. */
+function graduacaoAquecida(total, turnos, c) {
+  const G = Math.max(0, Math.floor(total || 0));
+  const N = Math.max(1, Number(turnos) || 3);
+  const passos = Math.max(0, c || 0);
+  if (G <= 1) return G;
+  if (G >= N) {
+    const ganho = Math.floor(G / N);
+    const inicio = G - ganho * (N - 1);
+    return Math.min(G, inicio + ganho * passos);
+  }
+  const intervalo = Math.max(1, Math.floor(N / G));
+  return Math.min(G, 1 + Math.floor(passos / intervalo));
+}
+/* Devolve o efeito já com a graduação "aquecida". Se o efeito também tem Exigir Teste, quem passa no teste
+   usa todas as graduações normalmente, então o Aquecimento não reduz nada. "snap" permite congelar a contagem
+   (o modal de rolagem guarda a contagem de quando abriu). */
+function comAquecimento(item, ent, snap) {
+  if (!item?.aquecimento?.ativo || item?.exigirTeste?.ativo) return item;
+  const c = ((snap || ent?.aquecimento || {})[item.id]) || 0;
+  const out = { ...item };
+  if (typeof item.graduacao === "number") out.graduacao = graduacaoAquecida(item.graduacao, item.aquecimento.turnos, c);
+  if (typeof item.graduacaoNulificar === "number") out.graduacaoNulificar = graduacaoAquecida(item.graduacaoNulificar, item.aquecimento.turnos, c);
+  return out;
 }
 function montarTeste(dado, bonus, cd, limiarCrit = 20) {
   const total = dado + bonus;
@@ -1961,8 +2135,9 @@ function AnimacaoOverlay({ eventos, onTerminar }) {
 function normalizarBusca(txt) {
   return (txt || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
 }
-function SearchableSelect({ value, onChange, children, style, disabled, placeholder }) {
+function SearchableSelect({ value, onChange, children, style, disabled, placeholder, listaCheia }) {
   const [aberto, setAberto] = useState(false);
+  const [pos, setPos] = useState(null);
   const [busca, setBusca] = useState("");
   const [destacado, setDestacado] = useState(0);
   const ref = useRef(null);
@@ -1980,6 +2155,27 @@ function SearchableSelect({ value, onChange, children, style, disabled, placehol
     document.addEventListener("mousedown", aoClicar);
     return () => document.removeEventListener("mousedown", aoClicar);
   }, [aberto]);
+
+  /* listaCheia (seletores de alvo): a lista abre com toda a altura que couber na tela (para baixo, ou para cima se
+     faltar espaço) e só rola se mesmo assim não couber. Fica "fixa" na tela para o modal não cortar a lista. */
+  React.useLayoutEffect(() => {
+    if (!aberto || !listaCheia) { setPos(null); return; }
+    const calcular = () => {
+      if (!ref.current) return;
+      const r = ref.current.getBoundingClientRect();
+      const vh = window.innerHeight;
+      const abaixo = vh - r.bottom - 12;
+      const acima = r.top - 12;
+      const paraCima = abaixo < 220 && acima > abaixo;
+      setPos(paraCima
+        ? { bottom: vh - r.top + 4, left: r.left, width: r.width, maxHeight: Math.max(120, acima) }
+        : { top: r.bottom + 4, left: r.left, width: r.width, maxHeight: Math.max(120, abaixo) });
+    };
+    calcular();
+    window.addEventListener("resize", calcular);
+    window.addEventListener("scroll", calcular, true);
+    return () => { window.removeEventListener("resize", calcular); window.removeEventListener("scroll", calcular, true); };
+  }, [aberto, listaCheia]);
 
   const escolher = (opt) => {
     onChange({ target: { value: opt.value } });
@@ -2007,7 +2203,7 @@ function SearchableSelect({ value, onChange, children, style, disabled, placehol
         readOnly={disabled}
       />
       {aberto && !disabled && (
-        <div className="ssel-lista">
+        <div className="ssel-lista" style={listaCheia && pos ? { position: "fixed", top: pos.top ?? "auto", bottom: pos.bottom ?? "auto", left: pos.left, width: pos.width, right: "auto", maxHeight: pos.maxHeight } : undefined}>
           {filtradas.length === 0 && <div className="ssel-vazio">Nada encontrado…</div>}
           {filtradas.map((o, i) => (
             <div key={String(o.value)} className={"ssel-opt" + (i === destacado ? " destacado" : "")}
@@ -2156,6 +2352,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   });
 
   const origemAtual = entidades.find((e) => e.id === contexto.origem.id) || contexto.origem;
+  // Aquecimento: a contagem de quando o modal abriu fica congelada (usar o efeito sobe a contagem para o próximo uso).
+  const [aquecSnap] = useState(() => ({ ...(origemAtual.aquecimento || {}) }));
   const oponente = entidades.find((e) => e.id === oponenteId);
   const ehAtaque = contexto.tipo === "ataque";
   const fotoAtq = (ehAtaque && contexto.ataque?.imagem) || origemAtual.foto; // a imagem da habilidade substitui o retrato na animação
@@ -2229,30 +2427,18 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   };
 
   const testesExigidos = ehAtaque ? exigirTestesDe(contexto.ataque) : [];
-  const rolarExigirTesteAtaque = (it) => {
-    const r = rolarExigirTeste(origemAtual, it.cfg);
-    setExigirTesteR((m) => ({ ...m, [it.id]: r }));
-    registrar({
-      tipo: "rolagem",
-      desc: `${origemAtual.nome} testa Exigir Teste (${contexto.ataque.nome || "Habilidade"} — ${it.rotulo})`,
-      detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${fmtMods(notasCondicoesGerais(origemAtual))}`,
-      total: r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões)` : "Falhou — efeito não funciona"),
-      tipoClasse: r.sucesso ? "hs" : "hw",
-    });
-    if (animar) {
-      animar({ modo: "simples", nome: `${origemAtual.nome} — Exigir Teste`, foto: fotoAtq, dado: r.dado, bonus: r.bonus, total: r.total, cd: r.cd, sucesso: r.sucesso, ehCrit: false, grauTexto: r.falhaAutomatica ? "Falha automática" : (r.sucesso ? `Libera ${r.graduacoesLiberadas} grad.` : "Falhou") });
-    }
-  };
+  // Efeito cujo Exigir Teste falhou: não funciona nesta ação (a falha antiga, da habilidade inteira, derruba todos).
+  const falhouTeste = (ef) => !!exigirTesteR && (exigirTesteR.legado?.sucesso === false || exigirTesteR[ef?.id]?.sucesso === false);
   const renderExigirTestes = (mb) => testesExigidos.map((it) => {
-    const r = exigirTesteR[it.id];
+    const r = exigirTesteR?.[it.id];
     return (
       <div key={it.id} className="subcard2" style={{ marginBottom: mb }}>
         <div className="section-title">Exigir Teste — {it.rotulo}</div>
-        {!r && <button className="btn btn-ghost btn-block" onClick={() => rolarExigirTesteAtaque(it)}>⚄ Rolar Teste (Exigir Teste)</button>}
+        {!r && <div className="field-note">Rolando o teste…</div>}
         {r && (
           <div className={"grau-card " + (r.sucesso ? "success" : "warn")}>
-            <div className="gl">d20({r.dado}) {fmtBonus(r.bonus)} = {r.total} vs CD {r.cd}</div>
-            <div className="gn">{r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões) do efeito` : "Falhou — o efeito não funciona")}</div>
+            <div className="gl">d20({r.dado}) {fmtBonus(r.bonus)} = {r.total} vs CD {r.cd}{r.pericia ? ` (${r.pericia})` : ""}</div>
+            <div className="gn">{textoResultadoExigirTeste(r)}</div>
           </div>
         )}
       </div>
@@ -2334,6 +2520,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const efeitoOriginal = efeito;
     // Dano Baseado Em: a graduação vem do atributo (+ dano adicional) do atacante, ao vivo.
     if (efeito.categoria === "Dano") efeito = { ...efeito, graduacao: graduacaoEfetiva(efeito, origemAtual), baseadoAtivo: false };
+    efeito = comAquecimento(efeito, origemAtual, aquecSnap); // Aquecimento: graduação reduzida nos primeiros usos/turnos
     const brutal = critico ? bonusBrutal(origemAtual, contexto.ataque, efeitoOriginal) : 0;
     const dados = dadosEfeito(efeito, alvo, critico, brutal);
     const notasRes = [];
@@ -2348,6 +2535,13 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       }
     } else if (efeito.categoria === "Nulificar") {
       notasRes.push(...notasModsDefesa(alvo, efeito.salvamento === "Fortitude" ? "fortitude" : "vontade").map((t) => `alvo: ${t}`));
+      // Peculiaridade no Nulificar: quem rola é o atacante, então o bônus de resistência do alvo sobe a CD.
+      const pecN = efeito.peculiaridade || contexto.ataque?.peculiaridade;
+      if (pecN?.ativo && alvo.ultimoDanoTurno !== undefined && alvo.ultimoDanoTurno === chaveTurnoAnterior(iniciativa)) {
+        const bN = Number(pecN.bonus) || 2;
+        dados.cd += bN;
+        notasRes.push(`⚠ Peculiaridade ativada: ${alvo.nome} sofreu dano no turno anterior, CD ${fmtBonus(bN)}`);
+      }
     }
     if (dados.quemRolaAtacante) {
       const dado = rolarD20();
@@ -2532,7 +2726,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [multiAtaques, setMultiAtaques] = useState([]);
   const [multiAlvoEscolha, setMultiAlvoEscolha] = useState("");
   const alvosEngajados = entidades.filter((e2) => e2.id !== origemAtual.id && e2.oponente);
-  const efeitosDoAtaque = (contexto.ataque?.efeitos || []).filter((ef) => ef.categoria !== "Outros" && ef.categoria !== "Mover Objetos");
+  const efeitosDoAtaque = (contexto.ataque?.efeitos || []).filter((ef) => ef.categoria !== "Outros" && ef.categoria !== "Mover Objetos" && !falhouTeste(ef));
 
   const rolarMultiataque = (alvoId) => {
     const alvoMA = entidades.find((e2) => e2.id === alvoId);
@@ -2593,7 +2787,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
 
   /* ----- agarrar rápido (checkbox em ataques corpo-a-corpo) ----- */
   const podeAgarrarRapido = ehAtaque && !isArea && contexto.ataque?.tipoAcerto === "corpo" && temVantagem(origemAtual, "Agarrar Rápido");
-  const efeitosPendentesAgarrar = (contexto.ataque?.efeitos || []).filter((ef) => ef.categoria !== "Outros");
+  const efeitosPendentesAgarrar = (contexto.ataque?.efeitos || []).filter((ef) => ef.categoria !== "Outros" && !falhouTeste(ef));
   const todosEfeitosResolvidos = efeitosPendentesAgarrar.every((ef) => !!efeitosR[ef.id]);
   const rolarAgarrao = () => {
     if (!oponente) return;
@@ -2677,6 +2871,45 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     if (!ehAtaque || acaoHabRef.current || !atualizarCampo || bloqueioVar || !contexto.ataque) return;
     acaoHabRef.current = true;
     gastarAcao(atualizarCampo, origemAtual.id, acaoDaHabilidade(contexto.ataque));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  /* Exigir Teste (falha de efeito): rolado automaticamente ao usar a habilidade, ANTES de qualquer outra rolagem.
+     Quem falha perde só aquele efeito (a ação já foi gasta). Também sobe a contagem do Aquecimento dos efeitos
+     instantâneos usados (habilidades sustentadas sobem a contagem no começo de cada turno). */
+  const testeAutoRef = useRef(false);
+  useEffect(() => {
+    if (!ehAtaque || testeAutoRef.current || !atualizarCampo || bloqueioVar || !contexto.ataque) return;
+    testeAutoRef.current = true;
+    const a = contexto.ataque;
+    const efs = a.tipo === "passiva" ? [] : (a.efeitos || []);
+    const res = {};
+    exigirTestesDe(a).forEach((it) => {
+      const r = rolarExigirTeste(origemAtual, it.cfg);
+      res[it.id] = r;
+      registrar({
+        tipo: "rolagem",
+        desc: `${origemAtual.nome} testa Exigir Teste (${a.nome || "Habilidade"} — ${it.rotulo})`,
+        detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}${fmtMods(notasCondicoesGerais(origemAtual))}`,
+        total: textoResultadoExigirTeste(r),
+        tipoClasse: r.sucesso ? "hs" : "hw",
+      });
+      if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} — Exigir Teste`, foto: fotoAtq, dado: r.dado, bonus: r.bonus, total: r.total, cd: r.cd, sucesso: r.sucesso, ehCrit: false, grauTexto: r.falhaAutomatica ? "Falha automática" : (r.sucesso ? "Passou" : "Falhou — efeito perdido") });
+    });
+    setExigirTesteR(res);
+    const falhos = Object.keys(res).filter((id) => !res[id].sucesso && id !== "legado");
+    atualizarCampo(origemAtual.id, "*", (e) => {
+      const perd = { ...(e.efeitosPerdidos || {}) };
+      efs.forEach((ef) => { delete perd[ef.id]; }); // usar de novo = novo teste
+      falhos.forEach((id) => { perd[id] = true; });
+      let n = { ...e, efeitosPerdidos: perd };
+      if (!a.sustentado) {
+        const aq = { ...(e.aquecimento || {}) };
+        efs.forEach((ef) => { if (ef.aquecimento?.ativo && !ef.exigirTeste?.ativo && res.legado?.sucesso !== false) aq[ef.id] = (aq[ef.id] || 0) + 1; });
+        n.aquecimento = aq;
+      }
+      return n;
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -2772,6 +3005,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           </div>
         )}
 
+        {ehAtaque && testesExigidos.length > 0 && renderExigirTestes(12)}
+
         {ehAtaque && isArea && (
           <>
             <label className="label">Alvos (área — múltiplos)</label>
@@ -2788,7 +3023,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
               <div className="subcard" key={alvo.id}>
                 <div className="section-title">{alvo.nome}</div>
                 {renderEsquivaArea(alvo)}
-                {(contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos").map((efeito) => {
+                {(contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos" && !falhouTeste(efeito)).map((efeito) => {
                   const key = `${alvo.id}:${efeito.id}`;
                   const res = efeitosR[key];
                   return (
@@ -2808,14 +3043,13 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                 })}
               </div>
             ))}
-            {renderExigirTestes(10)}
           </>
         )}
 
         {ehAtaque && !isArea && (
           <>
             <label className="label">Oponente</label>
-            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); setExigirTesteR(null); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
             </SearchableSelect>
@@ -2849,7 +3083,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                   </label>
                 )}
 
-                {(!temDividido || !usarDividido) && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos").map((efeito) => {
+                {(!temDividido || !usarDividido) && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos" && !falhouTeste(efeito)).map((efeito) => {
                   const res = efeitosR[efeito.id];
                   return (
                     <div className="subcard" key={efeito.id}>
@@ -2866,8 +3100,6 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                     </div>
                   );
                 })}
-
-                {(ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && renderExigirTestes(12)}
 
                 {temDividido && usarDividido && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (
                   <div className="subcard2" style={{ marginBottom: 12 }}>
@@ -2972,7 +3204,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                     {multiAtaques.length === 0 ? (
                       <>
                         <label className="label">Alvo do ataque extra (mesmo alvo ou outro engajado)</label>
-                        <SearchableSelect value={multiAlvoEscolha} onChange={(e) => setMultiAlvoEscolha(e.target.value)} style={{ marginBottom: 10 }}>
+                        <SearchableSelect listaCheia value={multiAlvoEscolha} onChange={(e) => setMultiAlvoEscolha(e.target.value)} style={{ marginBottom: 10 }}>
                           <option value="">Selecione…</option>
                           {alvosEngajados.map((e2) => <option key={e2.id} value={e2.id}>{e2.nome}{e2.id === oponente.id ? " (mesmo alvo)" : ""}</option>)}
                         </SearchableSelect>
@@ -3015,7 +3247,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         {!ehAtaque && escolha === "oponente" && !resultado && (
           <>
             <label className="label">Oponente</label>
-            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setStatOponente(""); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setStatOponente(""); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
             </SearchableSelect>
@@ -3058,7 +3290,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
   const gastarAcaoDaManobra = () => {
     if (acaoGastaRef.current) return;
     acaoGastaRef.current = true;
-    gastarAcao(atualizarCampo, origem.id, acao.tag);
+    gastarAcao(atualizarCampo, origem.id, acao.tag, acao.id);
   };
   const registrar = (entry) => { registrarProp(entry); gastarAcaoDaManobra(); };
   const origemAtual = entidades.find((e) => e.id === origem.id) || origem;
@@ -3450,7 +3682,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
         {(acao.resolvedor === "oposto" || acao.resolvedor === "desarmar" || acao.resolvedor === "ataqueObjeto") && (
           <>
             <label className="label">Oponente</label>
-            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); setR2(null); setR3(null); setItemAlvoId(""); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); setR2(null); setR3(null); setItemAlvoId(""); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
             </SearchableSelect>
@@ -3605,7 +3837,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
         {acao.resolvedor === "ajudar" && (
           <>
             <label className="label">Aliado a ajudar</label>
-            <SearchableSelect value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
+            <SearchableSelect listaCheia value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {aliadosDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
             </SearchableSelect>
@@ -3626,7 +3858,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
         {acao.resolvedor === "oposicaoCondicao" && (
           <>
             <label className="label">Alvo</label>
-            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR2(null); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR2(null); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
             </SearchableSelect>
@@ -3650,7 +3882,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
         {acao.resolvedor === "encontrao" && (
           <>
             <label className="label">Oponente</label>
-            <SearchableSelect value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); }} style={{ marginBottom: 12 }}>
+            <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
             </SearchableSelect>
@@ -3695,7 +3927,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
                 {(acao.subtipo === "agora" || acao.subtipo === "nossoAlvo") && (
                   <>
                     <label className="label">Inimigo</label>
-                    <SearchableSelect value={oponenteId} onChange={(e) => setOponenteId(e.target.value)} style={{ marginBottom: 12 }}>
+                    <SearchableSelect listaCheia value={oponenteId} onChange={(e) => setOponenteId(e.target.value)} style={{ marginBottom: 12 }}>
                       <option value="">Selecione…</option>
                       {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
                     </SearchableSelect>
@@ -3704,7 +3936,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
                 {(acao.subtipo === "cuidado" || acao.subtipo === "reposicionar") && (
                   <>
                     <label className="label">Aliado</label>
-                    <SearchableSelect value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
+                    <SearchableSelect listaCheia value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
                       <option value="">Selecione…</option>
                       {aliadosDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
                     </SearchableSelect>
@@ -4017,6 +4249,7 @@ export default function MesaMM3() {
     const ent = entidades.find((x) => x.id === entidadeId);
     if (!ent) return;
     atualizarCampo(entidadeId, "acoesGastas", {});
+    if (ent.rapidezUsos && Object.keys(ent.rapidezUsos).length) atualizarCampo(entidadeId, "rapidezUsos", {});
     if (condicaoAtiva(ent, "Morto")) return;
     const logs = [];
     const log = (desc, detalhe, total, tipoClasse = "hw") => logs.push({ tipo: "rolagem", desc, detalhe, total, tipoClasse });
@@ -4049,10 +4282,42 @@ export default function MesaMM3() {
       danoTotal += d; log(`${ent.nome} sofre dano de Sangrando`, `-${d} PV (10% da vida máxima)`, "Sangrando", "hd");
     }
     if (danoTotal > 0 && (ent.pvTemp || 0) > 0) log(`${ent.nome} perde Vida Temporária`, `${Math.min(ent.pvTemp, danoTotal)} PV temporários absorveram o dano`, "", "hw");
+    // Exigir Teste dos efeitos de habilidades que continuam sustentadas: testa todo começo de turno.
+    // Quem falha perde só aquele efeito (e o jogador é avisado).
+    const perdidosNovos = [];
+    const avisosNovos = [];
+    (ent.ataques || []).forEach((a) => {
+      const sustentada = a.tipo === "passiva" ? (passivaEstaAtiva(a) && a.sustentado) : (a.sustentado && a.sustentando);
+      if (!sustentada || paradas.includes(a.id)) return;
+      const lista = a.tipo === "passiva" ? passivosDe(a) : (a.efeitos || []);
+      lista.forEach((it) => {
+        if (!it?.exigirTeste?.ativo || (ent.efeitosPerdidos || {})[it.id]) return;
+        const rotulo = it.categoria || (PODERES_PASSIVOS.find((p) => p.id === it.tipoId)?.nome) || "efeito";
+        const r = rolarExigirTeste(ent, it.exigirTeste);
+        log(`${ent.nome} testa Exigir Teste (${a.nome || "Habilidade"} — ${rotulo}) no começo do turno`, `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}`, r.sucesso ? "Passou — mantém todas as graduações" : textoResultadoExigirTeste(r), r.sucesso ? "hs" : "hd");
+        if (!r.sucesso) {
+          perdidosNovos.push(it);
+          avisosNovos.push({ id: uid(), texto: `${rotulo} de "${a.nome || "Habilidade"}" foi perdido: ${ent.nome} falhou no Exigir Teste no começo do turno.` });
+        }
+      });
+    });
+    const idsPerdidos = perdidosNovos.map((it) => it.id);
+    // Aquecimento: efeitos ativos (sustentados) ganham 1 passo a cada começo de turno da ficha.
+    const novoAquec = { ...(ent.aquecimento || {}) };
+    let mudouAquec = false;
+    (ent.ataques || []).forEach((a) => {
+      const ativa = a.tipo === "passiva" ? passivaEstaAtiva(a) : (a.sustentado && a.sustentando);
+      if (!ativa || paradas.includes(a.id)) return;
+      (a.tipo === "passiva" ? passivosDe(a) : (a.efeitos || [])).forEach((it) => {
+        if (!it?.aquecimento?.ativo || it?.exigirTeste?.ativo || idsPerdidos.includes(it.id) || (ent.efeitosPerdidos || {})[it.id]) return;
+        novoAquec[it.id] = (novoAquec[it.id] || 0) + 1;
+        mudouAquec = true;
+      });
+    });
     // Efeito Colateral das habilidades que continuam sustentadas
     const colatOps = [];
     efeitosColateraisAtivos(ent).forEach(({ ataque: a, item }) => {
-      if (paradas.includes(a.id)) return;
+      if (paradas.includes(a.id) || idsPerdidos.includes(item.id)) return;
       const col = item.colateral;
       if (!col.condicao) return;
       let ligar = true;
@@ -4084,6 +4349,12 @@ export default function MesaMM3() {
         (e.ataques || []).filter((a) => paradas.includes(a.id)).forEach((a) => itensColaterais(a).forEach((it) => { n = mutarColateral(n, it.id, it.colateral.condicao, false); }));
       }
       colatOps.forEach(([id, nome, ligar]) => { n = mutarColateral(n, id, nome, ligar); });
+      if (mudouAquec) n.aquecimento = novoAquec;
+      if (perdidosNovos.length) {
+        n.efeitosPerdidos = { ...(n.efeitosPerdidos || {}), ...Object.fromEntries(idsPerdidos.map((id) => [id, true])) };
+        n.avisosPerdidos = [...(n.avisosPerdidos || []), ...avisosNovos];
+        perdidosNovos.forEach((it) => { if (it.colateral?.ativo && it.colateral.condicao) n = mutarColateral(n, it.id, it.colateral.condicao, false); });
+      }
       if (teveExplosao) {
         n.ataques = (n.ataques || []).map((a) => (a.tipo === "passiva" ? { ...a, passivos: passivosDe(a).map((p) => ({ ...p, explosaoLigada: false })) } : a));
         n.condicoes = { ...(n.condicoes || {}), Fatigado: (n.condicoes || {}).Fatigado || 1 };
@@ -4128,7 +4399,11 @@ export default function MesaMM3() {
     if (prox < 0) { prox = ordem.length - 1; rodada = Math.max(1, rodada - 1); }
     await salvarIniciativa({ ...iniciativa, turnoAtual: prox, rodada });
   };
-  const zerarIniciativa = async () => salvarIniciativa(INICIATIVA_VAZIA);
+  const zerarIniciativa = async () => {
+    // Fim do combate: o Aquecimento de todas as fichas volta ao começo.
+    (entidades || []).forEach((en) => { if (en.aquecimento && Object.keys(en.aquecimento).length) atualizarCampo(en.id, "aquecimento", {}); });
+    return salvarIniciativa(INICIATIVA_VAZIA);
+  };
 
   if (authCarregando || carregando) return <div className="mm3"><GlobalStyle /><div className="wrap"><div className="empty">Carregando mesa…</div></div></div>;
   if (!usuario) return <div className="mm3"><GlobalStyle /><TelaLogin onCadastrar={cadastrar} onEntrar={entrar} /></div>;
@@ -4183,6 +4458,21 @@ export default function MesaMM3() {
           </div>
         </div>
       )}
+      {(() => {
+        const perdido = entidades.find((x) => (x.avisosPerdidos || []).length > 0 && (identidade.papel === "mestre" || x.donoUid === usuario.uid || x.dono === identidade.nome));
+        if (!perdido) return null;
+        const aviso = perdido.avisosPerdidos[0];
+        return (
+          <div className="modal-backdrop">
+            <div className="modal-box" style={{ maxWidth: 420 }}>
+              <div className="modal-head"><span className="mt">Efeito perdido — {perdido.nome}</span></div>
+              <div className="modal-desc">{aviso.texto}</div>
+              <div className="field-note" style={{ marginTop: 8 }}>Os outros efeitos da habilidade continuam. Para recuperar este efeito, é preciso ativar a habilidade de novo (e passar no teste).</div>
+              <button className="btn btn-accent btn-block" style={{ marginTop: 10 }} onClick={() => atualizarCampo(perdido.id, "avisosPerdidos", (perdido.avisosPerdidos || []).slice(1))}>Ok</button>
+            </div>
+          </div>
+        );
+      })()}
       {(() => {
         const pend = entidades.find((x) => x.testeMorteAguardando && (identidade.papel === "mestre" || x.donoUid === usuario.uid || x.dono === identidade.nome));
         if (!pend) return null;
@@ -4287,13 +4577,13 @@ function TelaIdentidade({ onEscolher }) {
 /* ---------- efeito (form) ---------- */
 function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
   const upd = (campo, valor) => onMudar({ ...efeito, [campo]: valor });
-  const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat), colateral: efeito.colateral, exigirTeste: efeito.exigirTeste, peculiaridade: efeito.peculiaridade });
+  const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat), colateral: efeito.colateral, exigirTeste: efeito.exigirTeste, peculiaridade: efeito.peculiaridade, aquecimento: efeito.aquecimento });
   const addSentido = () => upd("sentidos", [...(efeito.sentidos || []), ""]);
   const updSentido = (i, v) => { const arr = [...efeito.sentidos]; arr[i] = v; upd("sentidos", arr); };
   const rmSentido = (i) => upd("sentidos", efeito.sentidos.filter((_, idx) => idx !== i));
 
   return (
-    <div className="subcard2">
+    <div className="subcard2 ed-efeito">
       <div className="row-inline">
         <SearchableSelect value={efeito.categoria} onChange={(e) => mudarCategoria(e.target.value)}>{EFEITO_CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}</SearchableSelect>
         <button className="small-btn" onClick={onRemover}>×</button>
@@ -4434,28 +4724,45 @@ function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
 /* ---------- Falhas de um efeito/poder: Exigir Teste, Peculiaridade e Efeito Colateral ---------- */
 function ExigirTesteEditor({ valor, onMudar }) {
   const v = valor || {};
-  const upd = (c, x) => onMudar({ atributo: "luta", graduacoes: 0, ...v, [c]: x });
+  const upd = (c, x) => onMudar({ graduacoes: 1, ...v, [c]: x });
   return (
     <>
       <label className="checkbox-row"><input type="checkbox" checked={!!v.ativo} onChange={(e) => upd("ativo", e.target.checked)} />Exigir Teste</label>
       {v.ativo && (
         <>
           <div className="field-note" style={{ marginBottom: 8 }}>
-            Ao usar este poder, rola um teste de atributo contra CD 10 + graduações em Exigir Teste. Se falhar, o poder não funciona (mas a ação é gasta). Um 1 natural sempre falha. Cada ponto acima da CD libera 1 graduação.
+            Ao usar este efeito (e, se for sustentado, no começo de cada turno), rola um teste da perícia escolhida contra CD 10 + (pontos − 1) + bônus base da perícia (só atributo + pontos da perícia; características e vantagens situacionais não contam). Se falhar, só este efeito é perdido (a ação é gasta). Um 1 natural sempre falha. Ao passar, todas as graduações do efeito ficam disponíveis.
           </div>
           <div className="grid2">
             <div>
-              <label className="label">Atributo do teste</label>
-              <SearchableSelect value={v.atributo || "luta"} onChange={(e) => upd("atributo", e.target.value)}>
-                {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
+              <label className="label">Perícia do teste</label>
+              <SearchableSelect value={v.pericia || ""} onChange={(e) => upd("pericia", e.target.value)}>
+                <option value="">Selecione…</option>
+                {PERICIAS.map((p) => <option key={p.nome} value={p.nome}>{p.nome}</option>)}
               </SearchableSelect>
             </div>
             <div>
-              <label className="label">Graduações em Exigir Teste</label>
-              <input type="number" min={0} value={v.graduacoes || 0} onChange={(e) => upd("graduacoes", Math.max(0, Number(e.target.value)))} />
+              <label className="label">Pontos de Exigir Teste</label>
+              <input type="number" min={1} value={v.graduacoes || 1} onChange={(e) => upd("graduacoes", Math.max(1, Number(e.target.value)))} />
             </div>
           </div>
+          {!v.pericia && <div className="field-note" style={{ marginTop: 6 }}>Escolha a perícia do teste{v.atributo ? ` — até lá, usa o atributo antigo (${ATRIBUTOS.find((x) => x.k === v.atributo)?.l || v.atributo})` : ""}.</div>}
         </>
+      )}
+    </>
+  );
+}
+function AquecimentoEditor({ valor, onMudar }) {
+  const v = valor || {};
+  return (
+    <>
+      <label className="checkbox-row"><input type="checkbox" checked={!!v.ativo} onChange={(e) => onMudar({ turnos: 3, ...v, ativo: e.target.checked })} />Aquecimento</label>
+      {v.ativo && (
+        <SearchableSelect value={String(v.turnos || 3)} onChange={(e) => onMudar({ ...v, turnos: Number(e.target.value) })} style={{ marginBottom: 8 }}>
+          <option value="3">Aquecimento 3</option>
+          <option value="5">Aquecimento 5</option>
+          <option value="10">Aquecimento 10</option>
+        </SearchableSelect>
       )}
     </>
   );
@@ -4479,13 +4786,14 @@ function PeculiaridadeEditor({ valor, onMudar }) {
     </>
   );
 }
-const CATEGORIAS_COM_RESISTENCIA = ["Dano", "Aflição", "Enfraquecer", "Camuflagem", "Leitura Mental"];
+const CATEGORIAS_COM_RESISTENCIA = ["Dano", "Aflição", "Enfraquecer", "Camuflagem", "Leitura Mental", "Nulificar"];
 function FalhasEfeito({ item, onMudar, graduacao, mostrarPeculiaridade }) {
   return (
     <>
       <div className="section-title" style={{ marginTop: 4 }}>Falhas</div>
       <ExigirTesteEditor valor={item.exigirTeste} onMudar={(x) => onMudar({ ...item, exigirTeste: x })} />
       {mostrarPeculiaridade && <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />}
+      <AquecimentoEditor valor={item.aquecimento} onMudar={(x) => onMudar({ ...item, aquecimento: x })} />
       <ColateralEditor colateral={item.colateral} onMudar={(c) => onMudar({ ...item, colateral: c })} graduacao={graduacao} />
     </>
   );
@@ -4595,12 +4903,59 @@ function PassivoEditor({ passivos, onMudar }) {
     </>
   );
 }
+function RapidezLoja({ passivo, onMudar }) {
+  const compras = passivo.campos?.compras || {};
+  const escolhas = passivo.campos?.escolhas || {};
+  const total = passivo.graduacao || 0;
+  const gastos = RAPIDEZ_LOJA.reduce((sum, it) => sum + (compras[it.id] ? it.custo : 0), 0);
+  const salvar = (c, es) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), compras: c, escolhas: es } });
+  const comprar = (it, sim) => {
+    const c = { ...compras };
+    const es = { ...escolhas };
+    if (sim) { c[it.id] = true; if (it.escolha?.padrao && !es[it.id]) es[it.id] = it.escolha.padrao; } else delete c[it.id];
+    salvar(c, es);
+  };
+  const escolher = (it, v) => salvar(compras, { ...escolhas, [it.id]: v });
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div className="label">Loja de Rapidez — {gastos}/{total} pontos usados</div>
+      {gastos > total && <div className="field-note" style={{ color: "#e05a5a", marginBottom: 6 }}>Você gastou mais pontos do que tem. Remova uma compra ou aumente os pontos.</div>}
+      {RAPIDEZ_LOJA.map((it) => {
+        const comprado = !!compras[it.id];
+        const semPontos = !comprado && gastos + it.custo > total;
+        return (
+          <div key={it.id} className="subcard2" style={{ marginBottom: 6, opacity: semPontos ? 0.5 : 1 }}>
+            <label className="checkbox-row">
+              <input type="checkbox" checked={comprado} disabled={semPontos} onChange={(e) => comprar(it, e.target.checked)} />
+              {it.nome} — {it.custo} {it.custo === 1 ? "ponto" : "pontos"}
+            </label>
+            <div className="field-note">{it.desc}</div>
+            {comprado && it.escolha?.tipo === "manobra" && (
+              <div style={{ marginTop: 6 }}>
+                <label className="label">{it.escolha.label}</label>
+                <SearchableSelect value={escolhas[it.id] || it.escolha.padrao} onChange={(e) => escolher(it, e.target.value)}>
+                  {Object.entries(MANOBRAS_MAQUINA_PALAVRAS).map(([k, nome]) => <option key={k} value={k}>{nome}</option>)}
+                </SearchableSelect>
+              </div>
+            )}
+            {comprado && it.escolha?.tipo === "texto" && (
+              <div style={{ marginTop: 6 }}>
+                <label className="label">{it.escolha.label}</label>
+                <input type="text" value={escolhas[it.id] || ""} placeholder="Nome da habilidade" onChange={(e) => escolher(it, e.target.value)} />
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
   const def = PODERES_PASSIVOS.find((p) => p.id === passivo?.tipoId);
   const upd = (campo, valor) => onMudar({ ...passivo, [campo]: valor });
   const updCampo = (chave, valor) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), [chave]: valor } });
   const toggleExtra = (chave) => onMudar({ ...passivo, extrasAtivos: { ...(passivo.extrasAtivos || {}), [chave]: !passivo.extrasAtivos?.[chave] } });
-  const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, colateral: passivo?.colateral, exigirTeste: passivo?.exigirTeste });
+  const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, colateral: passivo?.colateral, exigirTeste: passivo?.exigirTeste, aquecimento: passivo?.aquecimento });
   return (
     <div className="subcard2" style={{ marginBottom: 10 }}>
       <div className="row-inline">
@@ -4613,7 +4968,8 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
       {def && (
         <>
           <div className="field-note" style={{ marginBottom: 8 }}>{def.desc}</div>
-          <div style={{ marginBottom: 8 }}><label className="label">Graduação</label><input type="number" min={0} value={passivo.graduacao || 0} onChange={(e) => upd("graduacao", Math.max(0, Number(e.target.value)))} /></div>
+          <div style={{ marginBottom: 8 }}><label className="label">{def.id === "rapidez" ? "Pontos de Rapidez" : "Graduação"}</label><input type="number" min={0} value={passivo.graduacao || 0} onChange={(e) => upd("graduacao", Math.max(0, Number(e.target.value)))} /></div>
+          {def.id === "rapidez" && <RapidezLoja passivo={passivo} onMudar={onMudar} />}
           {def.campoEscolha && !def.campoEscolha.multi && (
             <div style={{ marginBottom: 8 }}>
               <label className="label">{def.campoEscolha.label}</label>
@@ -4872,8 +5228,8 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
   const rmEfeito = (idx) => upd("efeitos", ataque.efeitos.filter((_, i) => i !== idx));
   const ehPassiva = ataque.tipo === "passiva";
   return (
-    <div className="subcard">
-      <div className="row-inline">
+    <div className={"subcard ed-hab" + (ehPassiva ? " passiva" : "")}>
+      <div className="row-inline ed-hab-topo">
         <button type="button" className="small-btn" onClick={() => setColapsado((s) => !s)} title={colapsado ? "Expandir" : "Recolher"}>{colapsado ? "▶" : "▼"}</button>
         <div className="reorder-btns">
           <button type="button" className="small-btn" onClick={onSubir} disabled={!onSubir} title="Mover pra cima">▲</button>
@@ -4883,7 +5239,7 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
         <button className="small-btn" onClick={onRemover}>×</button>
       </div>
       {colapsado && (
-        <div className="field-note" style={{ marginTop: -2, marginBottom: 0 }}>{ehPassiva ? "Passiva" : "Ativa"}{ataque.equipamento ? " · Equipamento" : ""}</div>
+        <div className="ed-hab-tags"><span className={"hab-tag" + (ehPassiva ? "" : " ligada")}>{ehPassiva ? "Passiva" : "Ativa"}</span>{!ehPassiva && <span className="hab-tag">{ataque.acao || acaoDaHabilidade(ataque)}</span>}{ataque.equipamento && <span className="hab-tag">Equipamento</span>}{ataque.sustentado && <span className="hab-tag">Sustentado</span>}{(ataque.pp || 0) > 0 && <span className="hab-tag">{ataque.pp} PP</span>}</div>
       )}
       {!colapsado && (
       <>
@@ -4962,7 +5318,7 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
           Sustentado
         </label>
       </div>
-      <div className="foto-upload-row">
+      <div className="foto-upload-row ed-hab-img">
         {ataque.imagem ? <img src={ataque.imagem} alt="" className="foto-preview" /> : <div className="foto-preview" />}
         <div>
           <label className="label">Imagem ou GIF da habilidade</label>
@@ -4999,12 +5355,12 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
 
       {!ehPassiva && (
         <>
-          <div className="acoes-header" onClick={() => setExtrasAberto((s) => !s)}>
+          <div className="acoes-header ed-colapso-head" onClick={() => setExtrasAberto((s) => !s)}>
             <div className="section-title" style={{ marginBottom: 0 }}>Extras</div>
             <span className={"arrow" + (extrasAberto ? " open" : "")}>▶</span>
           </div>
           {extrasAberto && (
-            <div className="subcard2" style={{ marginBottom: 10 }}>
+            <div className="subcard2 ed-colapso" style={{ marginBottom: 10 }}>
               <label className="checkbox-row">
                 <input type="checkbox" checked={!!ataque.extras?.dividido}
                   onChange={(e) => upd("extras", { ...(ataque.extras || {}), dividido: e.target.checked, multiataque: e.target.checked ? false : !!ataque.extras?.multiataque })} />
@@ -5024,7 +5380,7 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
             </div>
           )}
 
-          <div className="section-title">Efeitos</div>
+          <div className="section-title ed-sub">Efeitos</div>
           {ataque.efeitos.map((ef, i) => <EfeitoForm key={ef.id} efeito={ef} onMudar={(novo) => updEfeito(i, novo)} onRemover={() => rmEfeito(i)} onCriarArremesso={onCriarArremesso} />)}
           <button className="btn btn-ghost btn-sm" onClick={addEfeito} style={{ marginBottom: 12 }}>+ Efeito</button>
         </>
@@ -5032,12 +5388,12 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
 
       {ehPassiva && (
         <>
-          <div className="section-title">Efeitos passivos</div>
+          <div className="section-title ed-sub">Efeitos passivos</div>
           <PassivoEditor passivos={passivosDe(ataque)} onMudar={(nova) => upd("passivos", nova)} />
         </>
       )}
 
-      <div className="acoes-header" onClick={() => setExigirTesteAberto((s) => !s)}>
+      <div className="acoes-header ed-colapso-head" onClick={() => setExigirTesteAberto((s) => !s)}>
         <div className="section-title" style={{ marginBottom: 0 }}>Falhas</div>
         <span className={"arrow" + (exigirTesteAberto ? " open" : "")}>▶</span>
       </div>
@@ -5176,26 +5532,38 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   };
 
   return (
-    <div className="card">
+    <div className="card ficha-edit">
       {erro && <div className="erro-box">{erro}</div>}
 
-      <div className="foto-upload-row">
-        {f.foto ? <img src={f.foto} alt="Foto da ficha" className="foto-preview" /> : <div className="foto-preview" />}
-        <div>
-          <input type="file" accept="image/*" onChange={handleFoto} style={{ marginBottom: 6 }} />
-          {f.foto && <button className="btn btn-ghost btn-sm" onClick={() => upd("foto", null)}>Remover foto</button>}
+      <div className="ficha-hero ed-hero">
+        {f.foto && <div className="hero-bg" style={{ backgroundImage: `url(${f.foto})` }} />}
+        <div className="hero-conteudo">
+          <div className="hero-linha" style={{ marginBottom: 0 }}>
+            <label className="hero-retrato ed-retrato" title="Trocar foto">
+              {f.foto ? <img src={f.foto} alt="Foto da ficha" /> : <span>{(f.nome || "?").trim().charAt(0).toUpperCase() || "?"}</span>}
+              <em className="ed-retrato-dica">📷 Trocar</em>
+              <input type="file" accept="image/*" onChange={handleFoto} style={{ display: "none" }} />
+            </label>
+            <div className="hero-info ed-hero-info">
+              <label className="label">Nome</label>
+              <input type="text" className="ed-nome" placeholder="Nome do personagem" value={f.nome} onChange={(e) => upd("nome", e.target.value)} />
+              {f.foto && <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={() => upd("foto", null)}>Remover foto</button>}
+            </div>
+          </div>
+          <div className="grid3" style={{ marginTop: 12 }}>
+            <div><label className="label">Tipo</label><SearchableSelect value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>
+            <div><label className="label">Tipo de Nen</label><SearchableSelect value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>
+            <div><label className="label">Nível</label><input type="number" min="1" value={f.nivel} onChange={(e) => upd("nivel", Math.max(1, Number(e.target.value)))} /></div>
+          </div>
         </div>
       </div>
 
-      <div style={{ marginBottom: 10 }}><label className="label">Nome</label><input type="text" value={f.nome} onChange={(e) => upd("nome", e.target.value)} /></div>
-      <div className="grid3" style={{ marginBottom: 10 }}>
-        <div><label className="label">Tipo</label><SearchableSelect value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>
-        <div><label className="label">Tipo de Nen</label><SearchableSelect value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>
-        <div><label className="label">Nível</label><input type="number" min="1" value={f.nivel} onChange={(e) => upd("nivel", Math.max(1, Number(e.target.value)))} /></div>
-      </div>
-
-      <div className="divider" />
+      <section className="ed-sec">
       <div className="section-title">Vida &amp; Nen</div>
+      <div className="ed-barras">
+        <BarraVital tipo="vida" nome="Vida" atual={f.pvAtual} max={pvMax} temp={f.pvTemp || 0} />
+        <BarraVital tipo="nen" nome="Nen" atual={f.nenAtual} max={nenMax} />
+      </div>
       <div className="grid4" style={{ marginBottom: 6 }}>
         <div><label className="label">Vida Atual</label><input className="in-vida" type="number" value={f.pvAtual} onChange={(e) => upd("pvAtual", Number(e.target.value))} /></div>
         <div><label className="label">Vida Máx.</label><input className="in-vida" type="number" value={pvMax} disabled /></div>
@@ -5206,22 +5574,25 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         <label className="label">Vida Temporária</label><input className="in-vida-temp" type="number" value={f.pvTemp} onChange={(e) => upd("pvTemp", Number(e.target.value))} />
       </div>
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title">Atributos (máx. {maxAtr}, mín. -2)</div>
-      <div className="grid4" style={{ marginBottom: 10 }}>
-        {ATRIBUTOS.map((a) => <div key={a.k}><label className="label">{a.l}</label><input type="number" min={-2} max={maxAtr} value={f.atributos[a.k]} onChange={(e) => updAtributo(a.k, Number(e.target.value))} /></div>)}
+      <div className="ed-attr-grid" style={{ marginBottom: 10 }}>
+        {ATRIBUTOS.map((a) => <div key={a.k} className="ed-attr"><label className="label">{a.l}</label><input type="number" min={-2} max={maxAtr} value={f.atributos[a.k]} onChange={(e) => updAtributo(a.k, Number(e.target.value))} /></div>)}
       </div>
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title">Bônus de Ataque</div>
       <div className="grid2" style={{ marginBottom: 10 }}>
         <div><label className="label">Ataque Corpo-a-corpo</label><input type="number" value={f.atributos.luta} disabled /></div>
         <div><label className="label">Ataque à Distância</label><input type="number" value={f.atributos.destreza} disabled /></div>
       </div>
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title">Defesas</div>
-      <div className="readonly-grid">
+      <div className="readonly-grid ed-defesas">
         <div className="ro-row"><span>Aparar</span><b>{f.atributos.luta >= 0 ? "+" : ""}{f.atributos.luta}</b></div>
         <div className="ro-row"><span>Esquiva</span><b>{f.atributos.destreza >= 0 ? "+" : ""}{f.atributos.destreza}</b></div>
         <div className="ro-row"><span>Fortitude</span><b>{f.atributos.vigor >= 0 ? "+" : ""}{f.atributos.vigor}</b></div>
@@ -5230,7 +5601,8 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         <div className="ro-row"><span>Deslocamento</span><b>{desloc}</b></div>
       </div>
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title">Perícias (máx. {maxPer} ponto(s) cada)</div>
       <div className="pericias-grid" style={{ marginBottom: 10 }}>
         {PERICIAS.map((p) => (
@@ -5242,14 +5614,15 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         ))}
       </div>
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title">Vantagens</div>
       {(f.vantagens || []).map((v, i) => {
         const info = VANTAGENS.find((x) => x.nome === v.nome);
         const max = info?.graduacaoMax || 5;
         const semLimite = max >= 999;
         return (
-          <div key={v.id}>
+          <div key={v.id} className="ed-vant">
             <div className="vantagem-row">
               <SearchableSelect value={v.nome} onChange={(e) => mudarVantagemNome(i, e.target.value)}>{VANTAGENS.map((opt) => <option key={opt.nome} value={opt.nome}>{opt.nome}</option>)}</SearchableSelect>
               {max > 1 && <input type="number" min={1} max={semLimite ? undefined : max} value={v.graduacoes} onChange={(e) => updVantagem(i, "graduacoes", Math.max(1, semLimite ? Number(e.target.value) : Math.min(max, Number(e.target.value))))} />}
@@ -5290,12 +5663,17 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       })}
       <button className="btn btn-ghost btn-sm" onClick={addVantagem}>+ Vantagem</button>
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title">Pontos de Poder</div>
-      <div className={"pp-box" + (excedido ? " excedido" : "")}><span>Gastos / Máximo</span><span className="pp-val">{ppGastos} / {ppMax}</span></div>
+      <div className={"pp-box" + (excedido ? " excedido" : "")}>
+        <span>Gastos / Máximo</span><span className="pp-val">{ppGastos} / {ppMax}</span>
+        <div className="ed-pp-trilho"><div className="ed-pp-fill" style={{ width: Math.min(100, ppMax > 0 ? (ppGastos / ppMax) * 100 : (ppGastos > 0 ? 100 : 0)) + "%" }} /></div>
+      </div>
       {eqMax > 0 && <div className={"pp-box" + (eqExcedido ? " excedido" : "")}><span>Equipamento gasto / máximo</span><span className="pp-val">{eqGastos} / {eqMax}</span></div>}
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title colapsavel" onClick={() => setComplicOpen((s) => !s)} style={{ cursor: "pointer" }}>
         Complicações {complicOpen ? "▾" : "▸"}
       </div>
@@ -5309,7 +5687,8 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         </div>
       )}
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title">Habilidades</div>
       {f.ataques.map((a, i) => <AtaqueForm key={a.id} ataque={a} onMudar={(novo) => updAtaque(i, novo)} onRemover={() => rmAtaque(i)} onCriarArremesso={addAtaqueArremesso}
         variaveis={f.variaveis || []}
@@ -5317,9 +5696,11 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         onMudarVariavel={(id, patch) => upd("variaveis", (f.variaveis || []).map((v) => (v.id === id ? { ...v, ...patch } : v)))}
         onExcluirVariavel={(id) => { upd("variaveis", (f.variaveis || []).filter((v) => v.id !== id)); upd("ataques", f.ataques.map((a) => ({ ...a, usoVariaveis: (a.usoVariaveis || []).filter((u) => u.variavelId !== id) }))); }}
         onSubir={i > 0 ? () => moverAtaque(i, -1) : null} onDescer={i < f.ataques.length - 1 ? () => moverAtaque(i, 1) : null} />)}
-      <button className="btn btn-ghost btn-sm" onClick={addAtaque}>+ Habilidade</button>
+      {f.ataques.length === 0 && <div className="ed-vazio">Nenhuma habilidade ainda.</div>}
+      <button className="btn btn-accent btn-sm" onClick={addAtaque}>+ Habilidade</button>
 
-      <div className="divider" />
+      </section>
+      <section className="ed-sec">
       <div className="section-title colapsavel" onClick={() => setFundamentosOpen((s) => !s)} style={{ cursor: "pointer" }}>
         Fundamentos {fundamentosOpen ? "▾" : "▸"}
       </div>
@@ -5342,6 +5723,8 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
           })}
         </div>
       )}
+
+      </section>
 
       <div style={{ height: 70 }} />
       <div className="ficha-footer-fixa">
@@ -5569,23 +5952,32 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
   const alternarPassiva = (ataque) => {
     if (!onAtualizarCampo) return;
     const novoAtivo = !passivaEstaAtiva(ataque);
-    // Ativar uma passiva com "Exigir Teste" precisa passar num teste primeiro.
+    // Ativar uma passiva com "Exigir Teste": cada efeito testa; quem falha perde só aquele efeito (a ação é gasta).
     if (novoAtivo) {
-      let falhou = false;
+      const falhos = [];
+      const avisos = [];
       for (const it of exigirTestesDe(ataque)) {
         const r = rolarExigirTeste(e, it.cfg);
         if (registrar) {
           registrar({
             tipo: "rolagem",
             desc: `${e.nome} testa Exigir Teste (${ataque.nome || "Passiva"} — ${it.rotulo})`,
-            detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${fmtMods(notasCondicoesGerais(e))}`,
-            total: r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões)` : "Falhou — não ativou"),
+            detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}${fmtMods(notasCondicoesGerais(e))}`,
+            total: textoResultadoExigirTeste(r),
             tipoClasse: r.sucesso ? "hs" : "hw",
           });
         }
-        if (!r.sucesso) falhou = true;
+        if (!r.sucesso) { falhos.push(it.id); avisos.push({ id: uid(), texto: `${it.rotulo} de "${ataque.nome || "Passiva"}" foi perdido: ${e.nome} falhou no Exigir Teste.` }); }
       }
-      if (falhou) { gastarAcao(onAtualizarCampo, e.id, acaoDaHabilidade(ataque)); return; } // efeito não funciona, mas a ação foi gasta
+      const itensPassiva = passivosDe(ataque);
+      onAtualizarCampo(e.id, "efeitosPerdidos", (p) => {
+        const n = { ...(p || {}) };
+        itensPassiva.forEach((i) => { delete n[i.id]; }); // ativar de novo = novo teste
+        falhos.forEach((id) => { if (id !== "legado") n[id] = true; });
+        return n;
+      });
+      if (avisos.length) onAtualizarCampo(e.id, "avisosPerdidos", (l) => [...(l || []), ...avisos]);
+      if (falhos.includes("legado")) { gastarAcao(onAtualizarCampo, e.id, acaoDaHabilidade(ataque)); return; } // falha antiga (da habilidade inteira): não ativa, ação gasta
     }
     if (novoAtivo) {
       // Variáveis (Munição/Carga): se não aguentar o custo, não ativa. Desgastante vale na ativação.
@@ -5602,6 +5994,11 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
   const abrirAcao = (acao) => onAbrirAcao({ origem: e, acao });
   const pvMax = pvMaxCalc(e), nenMax = nenMaxCalc(e);
   const passivos = modificadoresPassivos(e);
+  const rap = rapidezDe(e);
+  const manterAgarrao = () => {
+    if (registrar) registrar({ tipo: "rolagem", desc: `${e.nome} mantém o agarrão`, detalhe: rap.carente ? "Carente: manter o agarrão não exige ação livre" : "Manter o agarrão exige uma ação livre", total: rap.carente ? "Sem custo de ação" : "Ação livre gasta", tipoClasse: "hs" });
+    if (!rap.carente) gastarAcao(onAtualizarCampo, e.id, "Ação Livre");
+  };
 
   /* ----- ações de descanso ----- */
   const [descansoAberto, setDescansoAberto] = useState(false);
@@ -5736,13 +6133,24 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
 
           <div className="acoes-bolinhas" style={{ marginBottom: editavel ? 12 : 0 }}>
             <span className="ab-label">Ações</span>
-            {ACOES_TIPOS.map((t) => {
+            {acoesVisiveis(e).map((t) => {
               const gasta = !!(e.acoesGastas || {})[t.k];
               return (
                 <button key={t.k} type="button" className={"acao-bolinha" + (gasta ? " gasta" : "") + (editavel ? " pode" : "")} style={{ "--ab-cor": t.cor }}
                   title={`${t.nome} — ${gasta ? "já usada neste turno" : "disponível"}${editavel ? " (clique para alternar)" : ""}`}
                   aria-label={`${t.nome}: ${gasta ? "usada" : "disponível"}`}
                   onClick={() => { if (editavel) onAtualizarCampo(e.id, "acoesGastas", (g) => ({ ...(g || {}), [t.k]: !(g || {})[t.k] })); }} />
+              );
+            })}
+            {RAPIDEZ_GRATIS.filter((g) => rap[g.id]).map((g) => {
+              const usada = !!(e.rapidezUsos || {})[g.id];
+              const sufixo = g.id === "maquinaPalavras" ? ` (${MANOBRAS_MAQUINA_PALAVRAS[rap.maquinaPalavras] || "Fintar"})` : "";
+              return (
+                <span key={g.id} className="info-chip" role="button" style={{ marginLeft: 6, cursor: editavel ? "pointer" : "default", opacity: usada ? 0.45 : 1 }}
+                  title={`${g.nome}: primeiro uso do turno sem custo de ação — ${usada ? "já usado neste turno" : "disponível"}${editavel ? " (clique para alternar)" : ""}`}
+                  onClick={() => { if (editavel) onAtualizarCampo(e.id, "rapidezUsos", (u) => ({ ...(u || {}), [g.id]: !(u || {})[g.id] })); }}>
+                  {g.nome}{sufixo} <b>{usada ? "usado" : "grátis"}</b>
+                </span>
               );
             })}
           </div>
@@ -5821,7 +6229,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
 
           <div className="subcard" style={{ marginBottom: 8 }}>
             <div style={{ marginBottom: 8 }}><b>Tratamento</b><div className="field-note">Cura Vida de outro personagem = sua Inteligência + Nível ({attr(e, "inteligencia") + (e.nivel || 1)}).</div></div>
-            <SearchableSelect value={tratamentoAlvoId} onChange={(ev) => setTratamentoAlvoId(ev.target.value)} style={{ marginBottom: 8 }}>
+            <SearchableSelect listaCheia value={tratamentoAlvoId} onChange={(ev) => setTratamentoAlvoId(ev.target.value)} style={{ marginBottom: 8 }}>
               <option value="">Selecione um jogador…</option>
               {jogadoresDisponiveis.map((j) => <option key={j.id} value={j.id}>{j.nome}</option>)}
             </SearchableSelect>
@@ -5830,7 +6238,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
 
           <div className="subcard">
             <div style={{ marginBottom: 8 }}><b>Treinamento</b><div className="field-note">Você e o jogador escolhido ganham um checkbox de +2 no próximo teste de ataque, até o próximo descanso.</div></div>
-            <SearchableSelect value={treinoAlvoId} onChange={(ev) => setTreinoAlvoId(ev.target.value)} style={{ marginBottom: 8 }}>
+            <SearchableSelect listaCheia value={treinoAlvoId} onChange={(ev) => setTreinoAlvoId(ev.target.value)} style={{ marginBottom: 8 }}>
               <option value="">Selecione um jogador…</option>
               {jogadoresDisponiveis.map((j) => <option key={j.id} value={j.id}>{j.nome}</option>)}
             </SearchableSelect>
@@ -5959,6 +6367,9 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
                   {a.nome}<span className="acao-tipo">{rotuloAcaoCurto(a.tag)}</span>
                 </button>
               ))}
+              <button className="stat-chip acao-chip" onClick={manterAgarrao} title={rap.carente ? "Carente: manter o agarrão não gasta ação livre" : "Gasta uma ação livre"}>
+                Manter Agarrão<span className="acao-tipo">{rap.carente ? "grátis" : "livre"}</span>
+              </button>
             </div>
           )}
         </div>
