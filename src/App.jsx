@@ -262,6 +262,74 @@ const GlobalStyle = () => (
     .mm3 .acoes-header .arrow { color:var(--muted); font-size:0.7rem; transition: transform 0.15s; }
     .mm3 .acoes-header .arrow.open { transform: rotate(90deg); }
     .mm3 .acao-chip { background:var(--surface3); }
+    .mm3 .ent-item.arrastavel .ent-collapsed { cursor:grab; }
+    /* ---- ficha em modo leitura: cabeçalho com retrato ---- */
+    .mm3 .ficha-hero { position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--border); margin:-6px -6px 14px; background:var(--surface); }
+    .mm3 .ficha-hero .hero-bg { position:absolute; inset:-24px; background-size:cover; background-position:center; filter:blur(24px) saturate(1.2); opacity:0.42; transform:scale(1.15); z-index:0; }
+    .mm3 .ficha-hero::after { content:""; position:absolute; inset:0; background:linear-gradient(180deg, rgba(14,14,18,0.10) 0%, rgba(14,14,18,0.88) 100%); z-index:0; pointer-events:none; }
+    .mm3 .ficha-hero .hero-conteudo { position:relative; z-index:1; padding:16px; }
+    .mm3 .hero-linha { display:flex; flex-wrap:wrap; gap:14px; align-items:flex-start; margin-bottom:14px; }
+    @media (max-width:560px) { .mm3 .hero-retrato { width:84px; height:84px; border-radius:16px; } .mm3 .ent-item .ficha-hero .nome { font-size:1.7rem; } .mm3 .hero-acoes { width:100%; } .mm3 .ficha-hero .hero-conteudo { padding:12px; } }
+    .mm3 .hero-retrato { flex-shrink:0; width:108px; height:108px; border-radius:20px; overflow:hidden; border:2px solid var(--accent); box-shadow:0 0 0 4px var(--accent-soft), 0 10px 26px rgba(0,0,0,0.5); background:var(--surface3); display:flex; align-items:center; justify-content:center; cursor:pointer; }
+    .mm3 .hero-retrato img { width:100%; height:100%; object-fit:cover; display:block; }
+    .mm3 .hero-retrato span { font-family:'Bebas Neue',sans-serif; font-size:3.2rem; color:var(--accent); }
+    .mm3 .hero-info { flex:1; min-width:140px; }
+    .mm3 .ent-item .ficha-hero .nome { font-size:2.1rem; line-height:1; display:block; text-shadow:0 2px 10px rgba(0,0,0,0.6); }
+    .mm3 .ficha-hero .rotulo { margin-top:4px; }
+    .mm3 .hero-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+    .mm3 .hero-acoes { display:flex; gap:6px; flex-shrink:0; }
+    .mm3 .tag-cond { border-radius:999px; padding:3px 11px; font-size:0.8rem; border:1px solid; cursor:default; font-family:'DM Sans',sans-serif; }
+    .mm3 .tag-cond.pode { cursor:pointer; }
+    .mm3 .tag-cond.dano { color:#ff8f8f; background:rgba(232,90,90,0.16); border-color:rgba(232,90,90,0.45); }
+    .mm3 .tag-cond.controle { color:#caa6ff; background:rgba(176,123,224,0.16); border-color:rgba(176,123,224,0.45); }
+    .mm3 .tag-cond.fraqueza { color:#ffbb70; background:rgba(255,160,70,0.15); border-color:rgba(255,160,70,0.42); }
+    .mm3 .tag-cond.neutro { color:#92d8ea; background:rgba(90,169,230,0.15); border-color:rgba(90,169,230,0.42); }
+    .mm3 .tag-cond.status { color:var(--accent); background:var(--accent-soft); border-color:rgba(232,200,74,0.4); }
+    .mm3 .barra-vital { margin-bottom:10px; }
+    .mm3 .barra-vital .bv-topo { display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:5px; font-size:0.95rem; }
+    .mm3 .barra-vital .bv-nome { text-transform:uppercase; letter-spacing:0.1em; font-size:0.74rem; color:var(--muted); }
+    .mm3 .barra-vital .bv-num b { color:var(--text); font-size:1.05rem; }
+    .mm3 .barra-vital .bv-num { color:var(--muted); }
+    .mm3 .barra-vital .bv-num input[type="number"] { width:64px; padding:3px 6px; font-size:0.95rem; display:inline-block; }
+    .mm3 .bv-trilho { position:relative; height:16px; border-radius:999px; background:rgba(255,255,255,0.07); overflow:hidden; border:1px solid var(--border); }
+    .mm3 .bv-trilho .bv-seg { position:absolute; top:0; bottom:0; border-radius:999px; transition:width .6s cubic-bezier(.2,.8,.2,1), left .6s cubic-bezier(.2,.8,.2,1); }
+    .mm3 .bv-vida .bv-seg.principal { left:0; background:linear-gradient(90deg,#a82b2b,#e85a5a); box-shadow:0 0 12px rgba(232,90,90,0.5); }
+    .mm3 .bv-vida.baixa .bv-seg.principal { animation:bv-pulso 1.3s ease-in-out infinite; }
+    .mm3 .bv-vida .bv-seg.temp { background:linear-gradient(90deg,#3fae9a,#86e8d0); }
+    .mm3 .bv-nen .bv-seg.principal { left:0; background:linear-gradient(90deg,#2b72b8,#5cc3f5); box-shadow:0 0 12px rgba(92,195,245,0.45); }
+    @keyframes bv-pulso { 0%,100% { filter:brightness(1); } 50% { filter:brightness(1.5); } }
+    .mm3 .info-chips { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
+    .mm3 .info-chip { font-size:0.82rem; color:var(--muted); background:rgba(255,255,255,0.06); border:1px solid var(--border); border-radius:999px; padding:3px 11px; display:inline-flex; align-items:center; gap:6px; }
+    .mm3 .info-chip b { color:var(--text); }
+    .mm3 .info-chip input[type="number"] { width:56px; padding:2px 5px; font-size:0.85rem; display:inline-block; }
+    .mm3 .cartoes-stat { margin-bottom:14px; display:grid; grid-template-columns:repeat(auto-fill,minmax(92px,1fr)); gap:8px; }
+    .mm3 .cartao-stat { background:var(--surface3); border:1px solid var(--border); border-radius:12px; padding:10px 6px 9px; text-align:center; cursor:pointer; color:var(--text); font-family:'DM Sans',sans-serif; transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+    .mm3 .cartao-stat:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 18px rgba(0,0,0,0.35); }
+    .mm3 .cartao-stat .cs-valor { display:block; font-family:'Bebas Neue',sans-serif; font-size:2.1rem; line-height:1; color:var(--accent); }
+    .mm3 .cartao-stat .cs-rot { display:block; margin-top:5px; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    .mm3 .cartao-stat.def { border-top:3px solid #5aa9e6; }
+    .mm3 .cartao-stat.def .cs-valor { color:#8cc8f5; }
+    .mm3 .cartao-stat.neg .cs-valor { color:var(--danger); }
+    .mm3 .hab-grid { margin-bottom:14px; display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:10px; }
+    .mm3 .hab-card { position:relative; display:flex; flex-direction:column; text-align:left; padding:0; overflow:hidden; background:var(--surface3); border:1px solid var(--border); border-radius:12px; cursor:pointer; color:var(--text); font-family:'DM Sans',sans-serif; transition:border-color .15s ease, transform .15s ease, box-shadow .15s ease; }
+    .mm3 .hab-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.38); }
+    .mm3 .hab-card:disabled { cursor:default; transform:none; }
+    .mm3 .hab-card .hab-img { width:100%; height:104px; object-fit:cover; object-position:center 25%; display:block; }
+    .mm3 .hab-card .hab-faixa { height:4px; background:linear-gradient(90deg,var(--accent),transparent); }
+    .mm3 .hab-card.passiva .hab-faixa { background:linear-gradient(90deg,#5aa9e6,transparent); }
+    .mm3 .hab-card .hab-corpo { padding:10px 12px 12px; }
+    .mm3 .hab-card .hab-nome { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:0.03em; line-height:1.1; }
+    .mm3 .hab-card .hab-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:7px; }
+    .mm3 .hab-tag { font-size:0.68rem; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,0.07); color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; display:inline-flex; align-items:center; gap:5px; }
+    .mm3 .hab-tag .hab-dot { width:7px; height:7px; border-radius:50%; background:var(--hab-cor); }
+    .mm3 .hab-tag.nen { color:#7fd0f7; background:rgba(92,195,245,0.13); }
+    .mm3 .hab-tag.vida { color:#ff9a9a; background:rgba(232,90,90,0.13); }
+    .mm3 .hab-tag.ligada { color:#0e0e12; background:var(--accent); font-weight:700; }
+    .mm3 .hab-card.passiva.ativo { border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset, 0 0 16px var(--accent-soft); }
+    .mm3 .hab-card.item-quebrado { opacity:0.55; }
+    .mm3 .ent-item .secao-titulo { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:8px 12px; }
+    .mm3 .ent-item .secao-titulo:hover { border-color:rgba(232,200,74,0.4); }
+    .mm3 .hab-img-modal { width:100%; max-height:190px; object-fit:cover; border-radius:12px; margin-bottom:12px; display:block; }
     .mm3 .acoes-bolinhas { display:flex; align-items:center; gap:10px; margin:0 0 10px; flex-wrap:wrap; }
     .mm3 .acoes-bolinhas .ab-label { font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
     .mm3 .acao-bolinha { width:20px; height:20px; border-radius:50%; border:2px solid var(--ab-cor); background:var(--ab-cor); box-shadow:0 0 8px var(--ab-cor); padding:0; transition:background .2s ease, box-shadow .2s ease, opacity .2s ease, transform .15s ease; cursor:default; }
@@ -429,20 +497,23 @@ const GlobalStyle = () => (
 
 const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4);
 
-function resizeImageFile(file) {
+function lerComoDataUrl(file) {
+  return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = (e) => resolve(e.target.result); r.onerror = reject; r.readAsDataURL(file); });
+}
+function resizeImageFile(file, maxDimParam = 300, qualidade = 0.72) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new Image();
       img.onload = () => {
-        const maxDim = 300;
+        const maxDim = maxDimParam;
         let w = img.width, h = img.height;
         if (w > h) { if (w > maxDim) { h = Math.round((h * maxDim) / w); w = maxDim; } }
         else { if (h > maxDim) { w = Math.round((w * maxDim) / h); h = maxDim; } }
         const canvas = document.createElement("canvas");
         canvas.width = w; canvas.height = h;
         canvas.getContext("2d").drawImage(img, 0, 0, w, h);
-        resolve(canvas.toDataURL("image/jpeg", 0.72));
+        resolve(canvas.toDataURL("image/jpeg", qualidade));
       };
       img.onerror = reject;
       img.src = e.target.result;
@@ -546,7 +617,7 @@ const VANTAGENS = [
   { nome: "Avaliação", desc: "Escolha um alvo que possa perceber e faça um teste de Intuição como uma ação livre, oposto pelo teste de Enganação do alvo. Se você vencer, peça ao mestre o atributo que deseja descobrir com exatidão ou o tipo de Nen do alvo. A cada grau de sucesso adicional, você descobre um atributo a mais do alvo ou o tipo de Nen caso não tenha sido escolhido anteriormente. Se perder o teste oposto, você não descobre nada.", graduacaoMax: 1 },
   { nome: "Bem Informado", desc: "Quando encontrar um indivíduo ou organização pela primeira vez, você pode fazer um teste das perícias Investigação ou Persuasão para ver se seu personagem já ouviu alguma coisa sobre o alvo. Use as diretrizes para obter informações na descrição da perícia Investigação para determinar o nível de informação que você obtém. Você recebe apenas um teste por alvo na primeira vez que o encontrar." },
   { nome: "Benefício", desc: "Você possui um benefício, escolha entre uma das 6 opções. Graduações adicionais nessa vantagem permite você escolher o benefício adicional.\nAmbidestria: você é igualmente apto com as duas mãos, e não sofre penalidades de circunstância por usar sua mão inepta." },
-  { nome: "Crítico Aprimorado", desc: "Escolha uma habilidade específica sua (ao editar esta vantagem). Cada graduação aumenta a ameaça de crítico dessa habilidade em 1, até um máximo de ameaça 16-20 com 4 graduações. A rolagem de ataque dessa habilidade passa a considerar crítico automaticamente.", graduacaoMax: 4, pedeHabilidade: true },
+  { nome: "Crítico Aprimorado", desc: "Escolha uma habilidade sua que faça jogada de ataque, ou uma perícia (ao editar esta vantagem). Cada graduação aumenta a ameaça de crítico em 1, até um máximo de ameaça 16-20 com 4 graduações. Em habilidade, a rolagem de ataque passa a considerar crítico. Em perícia, todo teste com ela que atingir a ameaça soma +5 no resultado (não é sucesso automático).", graduacaoMax: 4, pedeHabilidade: true },
   { nome: "De Pé", desc: "Você passa de caído para de pé sem custo de ação sem a necessidade de um teste da perícia Acrobacia.", graduacaoMax: 1 },
   { nome: "Defesa Aprimorada", desc: "Quando usa a ação defender-se e rolar um teste de resistência e tirar um resultado abaixo de 10 no d20, o resultado se torna a 10.", graduacaoMax: 1 },
   { nome: "Derrubar Aprimorado", desc: "Quando acerta um ataque desarmado, você pode fazer um teste de derrubar imediatamente contra o alvo como uma ação livre. Seu ataque desarmado causa dano normal e conta como o teste de ataque inicial exigido para derrubar seu oponente.", graduacaoMax: 1 },
@@ -737,6 +808,32 @@ function aplicarAjusteDefesa(valor, ajustes) {
   return v;
 }
 function condicaoAtiva(ent, nome) { return !!(ent?.condicoes && ent.condicoes[nome]); }
+/* Exigir Teste agora é falha de cada efeito (como Efeito Colateral). Habilidades antigas, que tinham
+   a falha na habilidade inteira, continuam funcionando (e são migradas ao editar a ficha). */
+function exigirTestesDe(ataque) {
+  const itens = ataque?.tipo === "passiva" ? passivosDe(ataque) : (ataque?.efeitos || []);
+  const out = itens.filter((i) => i?.exigirTeste?.ativo).map((i) => ({ id: i.id, cfg: i.exigirTeste, rotulo: i.categoria || (PODERES_PASSIVOS.find((p) => p.id === i.tipoId)?.nome) || "efeito" }));
+  if (ataque?.exigirTeste?.ativo) out.push({ id: "legado", cfg: ataque.exigirTeste, rotulo: "habilidade" });
+  return out;
+}
+function migrarFalhasLegado(a) {
+  if (!a || (!a.exigirTeste?.ativo && !a.peculiaridade?.ativo)) return a;
+  const { exigirTeste, peculiaridade, ...resto } = a;
+  if (a.tipo === "passiva") {
+    return { ...resto, passivos: passivosDe(a).map((it) => ({ ...it, ...(exigirTeste?.ativo && !it.exigirTeste ? { exigirTeste } : {}) })) };
+  }
+  return { ...resto, efeitos: (a.efeitos || []).map((it) => ({ ...it, ...(exigirTeste?.ativo && !it.exigirTeste ? { exigirTeste } : {}), ...(peculiaridade?.ativo && !it.peculiaridade ? { peculiaridade } : {}) })) };
+}
+/* Crítico Aprimorado em perícia: o alvo da vantagem é "pericia:Nome". Ao tirar no dado o limiar ou mais, soma +5 no resultado (não é sucesso automático). */
+function limiarCriticoPericia(ent, nomePericia) {
+  const v = (ent?.vantagens || []).find((x) => x.nome === "Crítico Aprimorado" && x.alvoId === `pericia:${nomePericia}`);
+  if (!v) return 99;
+  return Math.max(16, 20 - (v.graduacoes || 1));
+}
+function bonusCriticoPericia(ent, nomePericia, dado) { return nomePericia && dado >= limiarCriticoPericia(ent, nomePericia) ? 5 : 0; }
+function melhorPericiaDe(ent, nomes) {
+  return nomes.reduce((m, n) => (bonusPericia(ent, n) > bonusPericia(ent, m) ? n : m), nomes[0]);
+}
 function limiarCritico(ent, ataqueId) {
   if (!ataqueId) return 20;
   const v = (ent?.vantagens || []).find((x) => x.nome === "Crítico Aprimorado" && x.alvoId === ataqueId);
@@ -778,7 +875,7 @@ const PODERES_PASSIVOS = [
     campoEscolha: { chave: "atributo", label: "Atributo aumentado", opcoes: ATRIBUTOS.map((a) => a.k), rotulos: ATRIBUTOS },
     extras: [
       { chave: "explosao", label: "Explosão (+3 no atributo até o início do próximo turno; ao acabar, no começo do próximo turno, fica Fatigado automaticamente — ligue no botão que aparece na ficha)", custoPorGrad: 1 },
-      { chave: "brutal", label: "Brutal (+2 na CD ao acertar um crítico com este atributo)", custoPorGrad: 1 },
+      { chave: "brutal", label: "Brutal (+2 na CD por ponto ao acertar um crítico de ataque com este atributo)", custoPorGrad: 1, pontos: true },
     ], falhas: [],
     temBotaoExplosao: true,
     aplicar1(ent, inst, acc) {
@@ -1025,7 +1122,7 @@ function custoPassivo(inst, def) {
   (def.extras || []).forEach((ex) => {
     if (!inst?.extrasAtivos?.[ex.chave]) return;
     if (ex.custoFixo) total += ex.custoFixo;
-    else if (ex.custoPorGrad) total += ex.custoPorGrad * g;
+    else if (ex.custoPorGrad) total += ex.custoPorGrad * g * (ex.pontos ? Math.max(1, inst?.extrasPontos?.[ex.chave] || 1) : 1);
   });
   (def.falhas || []).forEach((fa) => {
     if (!inst?.extrasAtivos?.[fa.chave]) return;
@@ -1315,6 +1412,23 @@ function cdDefesa(ent, key) {
   // Lubridiar já reduz o bônus de Enganação pela metade se estiver Vulnerável: não corta duas vezes.
   return aj.includes("metade") && !ent?.lubridiando ? Math.floor(cd / 2) : cd;
 }
+/* Brutal (extra de Característica Aumentada): cada ponto soma +2 na CD quando um ATAQUE acerta crítico.
+   Vale se o atributo da característica é o do teste de ataque (Luta corpo-a-corpo, Destreza à distância)
+   ou o atributo do "Dano Baseado Em" do efeito. */
+function bonusBrutal(ent, ataque, efeito) {
+  const attrs = new Set();
+  if (ataque?.tipoAcerto === "corpo") attrs.add("luta");
+  if (ataque?.tipoAcerto === "distancia") attrs.add("destreza");
+  if (efeito?.baseadoAtivo !== false && efeito?.atributoBase) attrs.add(efeito.atributoBase);
+  let total = 0;
+  instanciasPassivasAtivas(ent).forEach(({ ataque: a, inst }) => {
+    if (a?.equipamento && itemQuebrado(a)) return;
+    if (inst.tipoId !== "caracteristica" || !inst.extrasAtivos?.brutal) return;
+    if (!attrs.has(inst.campos?.atributo)) return;
+    total += 2 * Math.max(1, inst.extrasPontos?.brutal || 1);
+  });
+  return total;
+}
 /* ---------- resumo de bônus/penalidades pro histórico ---------- */
 function fmtMods(notas) { const l = (notas || []).filter(Boolean); return l.length ? ` · Mods: ${l.join(", ")}` : ""; }
 function notasCondicoesGerais(ent) {
@@ -1439,20 +1553,20 @@ function efeitoPadrao(categoria) {
   if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, resistenciaAlternativa: false, cumulativo: false, recuperacaoInstantanea: false, graus: 3, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
   if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 5, caracteristica: "" };
   if (categoria === "Camuflagem") return { categoria, salvamento: "Fortitude", graduacao: 5, sentidos: [] };
-  if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5 };
+  if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5, salvamento: "Vontade" };
   if (categoria === "Leitura Mental") return { categoria, graduacao: 5 };
   if (categoria === "Outros") return { categoria, texto: "" };
   if (categoria === "Mover Objetos") return { categoria, graduacao: 0, concentracao: false, objetos: [] };
   return { categoria };
 }
-function dadosEfeito(efeito, oponente, critico) {
-  const bonusCrit = critico ? 5 : 0;
+function dadosEfeito(efeito, oponente, critico, brutal = 0) {
+  const bonusCrit = critico ? 5 + brutal : 0;
   if (efeito.categoria === "Dano") return { bonus: statDefesa(oponente, "resistencia"), cd: 15 + (efeito.graduacao || 0) + bonusCrit, salvLabel: "Resistência" };
   if (efeito.categoria === "Cura") return { bonus: efeito.graduacao || 0, cd: 10, salvLabel: "Cura (CD 10)", quemRolaAtacante: true };
   if (efeito.categoria === "Aflição") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
   if (efeito.categoria === "Enfraquecer") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
   if (efeito.categoria === "Camuflagem") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 15 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
-  if (efeito.categoria === "Nulificar") return { bonus: efeito.graduacaoNulificar || 0, cd: 10 + statDefesa(oponente, "vontade"), salvLabel: "Vontade do alvo", quemRolaAtacante: true };
+  if (efeito.categoria === "Nulificar") { const sv = efeito.salvamento === "Fortitude" ? "Fortitude" : "Vontade"; return { bonus: efeito.graduacaoNulificar || 0, cd: 10 + statDefesa(oponente, sv.toLowerCase()), salvLabel: `${sv} do alvo`, quemRolaAtacante: true }; }
   if (efeito.categoria === "Leitura Mental") return { bonus: salvBonus(oponente, "Vontade"), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: "Vontade" };
   return { bonus: 0, cd: 10 };
 }
@@ -1521,7 +1635,7 @@ function textoLeituraMental(graus) {
   return LEITURA_MENTAL_GRAUS[nivel - 1];
 }
 function textoNulificar(graus) {
-  if (graus <= 0) return "Sem efeito — não superou a Vontade do alvo";
+  if (graus <= 0) return "Sem efeito — não superou a defesa do alvo";
   if (graus === 1) return "1 grau: reduz a graduação de uma habilidade pela metade";
   if (graus === 2) return "2 graus: nulifica uma habilidade do alvo";
   if (graus === 3) return "3 graus: nulifica todas as habilidades de um tipo de Nen escolhido";
@@ -2029,7 +2143,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [agarraoR, setAgarraoR] = useState(null);
   const [usarBonusDescanso, setUsarBonusDescanso] = useState(false);
   const [usarBonusTreino, setUsarBonusTreino] = useState(false);
-  const [exigirTesteR, setExigirTesteR] = useState(null);
+  const [exigirTesteR, setExigirTesteR] = useState({});
   const [esquivaArea, setEsquivaArea] = useState({});
   const [desgastanteR, setDesgastanteR] = useState(null);
   const [pfAberto, setPfAberto] = useState(() => contexto.tipo === "ataque" && !!contexto.ataque?.pontoFraco?.ativo);
@@ -2044,6 +2158,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const origemAtual = entidades.find((e) => e.id === contexto.origem.id) || contexto.origem;
   const oponente = entidades.find((e) => e.id === oponenteId);
   const ehAtaque = contexto.tipo === "ataque";
+  const fotoAtq = (ehAtaque && contexto.ataque?.imagem) || origemAtual.foto; // a imagem da habilidade substitui o retrato na animação
   const isArea = ehAtaque && contexto.ataque?.tipoAcerto === "area";
   const alvosArea = entidades.filter((e) => e.id !== origemAtual.id && oponentesArea[e.id]);
   const fechar = () => onFechar();
@@ -2070,23 +2185,24 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     return n;
   };
   const rolarSimples = (bonus, cd, alvoRolagem) => {
-    const bonusFinal = bonus + (ajudaAtiva ? ajudaAtiva.bonus : 0);
     const dado = rolarD20();
-    const r = montarTeste(dado, bonusFinal, cd);
+    const critP = contexto.tipo === "pericia" ? bonusCriticoPericia(origemAtual, contexto.chave, dado) : 0;
+    const bonusFinal = bonus + (ajudaAtiva ? ajudaAtiva.bonus : 0) + critP;
+    const r = montarTeste(dado, bonusFinal, cd, critP ? limiarCriticoPericia(origemAtual, contexto.chave) : 20);
     setResultado(r);
     setUltimoRoll({ tipo: "simples", bonus: bonusFinal, cd, alvoRolagem });
     consumirAjudaSeHouver();
     registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} testa ${contexto.label}`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""} = ${r.total} vs CD ${cd}${fmtMods(notasSimples(alvoRolagem))}`,
+      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""} = ${r.total} vs CD ${cd}${fmtMods([...notasSimples(alvoRolagem), ...(critP ? ["Crítico aprimorado +5"] : [])])}`,
       total: r.grauTexto, tipoClasse: r.tipoClasse,
     });
     if (animar) {
       if (alvoRolagem) {
-        animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: alvoRolagem.nome, fotoAlvo: alvoRolagem.foto, dado, bonus: bonusFinal, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.grauTexto });
+        animar({ modo: "cd", nome: origemAtual.nome, foto: fotoAtq, nomeAlvo: alvoRolagem.nome, fotoAlvo: alvoRolagem.foto, dado, bonus: bonusFinal, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.grauTexto });
       } else {
-        animar({ modo: "simples", nome: `${origemAtual.nome} — ${contexto.label}`, foto: origemAtual.foto, dado, bonus: bonusFinal, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.grauTexto });
+        animar({ modo: "simples", nome: `${origemAtual.nome} — ${contexto.label}`, foto: fotoAtq, dado, bonus: bonusFinal, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.grauTexto });
       }
     }
   };
@@ -2112,22 +2228,36 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     atualizarCampo(origemAtual.id, "descansoAtivos", { ...(origemAtual.descansoAtivos || {}), treinar: false });
   };
 
-  const rolarExigirTesteAtaque = () => {
-    const exigirTeste = contexto.ataque?.exigirTeste;
-    if (!exigirTeste?.ativo) return;
-    const r = rolarExigirTeste(origemAtual, exigirTeste);
-    setExigirTesteR(r);
+  const testesExigidos = ehAtaque ? exigirTestesDe(contexto.ataque) : [];
+  const rolarExigirTesteAtaque = (it) => {
+    const r = rolarExigirTeste(origemAtual, it.cfg);
+    setExigirTesteR((m) => ({ ...m, [it.id]: r }));
     registrar({
       tipo: "rolagem",
-      desc: `${origemAtual.nome} testa Exigir Teste (${contexto.ataque.nome || "Habilidade"})`,
-      detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}`,
+      desc: `${origemAtual.nome} testa Exigir Teste (${contexto.ataque.nome || "Habilidade"} — ${it.rotulo})`,
+      detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${fmtMods(notasCondicoesGerais(origemAtual))}`,
       total: r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões)` : "Falhou — efeito não funciona"),
       tipoClasse: r.sucesso ? "hs" : "hw",
     });
     if (animar) {
-      animar({ modo: "simples", nome: `${origemAtual.nome} — Exigir Teste`, foto: origemAtual.foto, dado: r.dado, bonus: r.bonus, total: r.total, cd: r.cd, sucesso: r.sucesso, ehCrit: false, grauTexto: r.falhaAutomatica ? "Falha automática" : (r.sucesso ? `Libera ${r.graduacoesLiberadas} grad.` : "Falhou") });
+      animar({ modo: "simples", nome: `${origemAtual.nome} — Exigir Teste`, foto: fotoAtq, dado: r.dado, bonus: r.bonus, total: r.total, cd: r.cd, sucesso: r.sucesso, ehCrit: false, grauTexto: r.falhaAutomatica ? "Falha automática" : (r.sucesso ? `Libera ${r.graduacoesLiberadas} grad.` : "Falhou") });
     }
   };
+  const renderExigirTestes = (mb) => testesExigidos.map((it) => {
+    const r = exigirTesteR[it.id];
+    return (
+      <div key={it.id} className="subcard2" style={{ marginBottom: mb }}>
+        <div className="section-title">Exigir Teste — {it.rotulo}</div>
+        {!r && <button className="btn btn-ghost btn-block" onClick={() => rolarExigirTesteAtaque(it)}>⚄ Rolar Teste (Exigir Teste)</button>}
+        {r && (
+          <div className={"grau-card " + (r.sucesso ? "success" : "warn")}>
+            <div className="gl">d20({r.dado}) {fmtBonus(r.bonus)} = {r.total} vs CD {r.cd}</div>
+            <div className="gn">{r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões) do efeito` : "Falhou — o efeito não funciona")}</div>
+          </div>
+        )}
+      </div>
+    );
+  });
   const notasAcerto = (info) => {
     const n = [];
     if (origemAtual.mirando) n.push("Mirar +10");
@@ -2169,7 +2299,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""}${bonusTreinoValor ? " (com bônus de Treinamento)" : ""} = ${r.total} vs ${info.defLabel} ${defVal}${fmtMods(notasAcerto(info))}`,
       total: r.sucesso ? "Acertou" : "Errou", tipoClasse: r.tipoClasse,
     });
-    if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus: bonusFinal, total: r.total, cd: defVal, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Acertou!" : "Errou" });
+    if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: fotoAtq, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus: bonusFinal, total: r.total, cd: defVal, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Acertou!" : "Errou" });
   };
 
   /* pontos de sorte: refaz a ÚLTIMA rolagem de d20 (mesmo bônus/CD) e fica com o maior dos dois totais */
@@ -2201,21 +2331,23 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
      decide onde guardar o resultado. Isso permite reaproveitar a mesma lógica tanto no fluxo normal
      quanto no Multiataque (vários alvos/ataques) e no Dividido (efeito com graduação repartida). */
   const rolarEfeitoGenerico = (efeito, alvo, aplicarProtecaoLimitada, critico, cdMetade = false) => {
+    const efeitoOriginal = efeito;
     // Dano Baseado Em: a graduação vem do atributo (+ dano adicional) do atacante, ao vivo.
     if (efeito.categoria === "Dano") efeito = { ...efeito, graduacao: graduacaoEfetiva(efeito, origemAtual), baseadoAtivo: false };
-    const dados = dadosEfeito(efeito, alvo, critico);
+    const brutal = critico ? bonusBrutal(origemAtual, contexto.ataque, efeitoOriginal) : 0;
+    const dados = dadosEfeito(efeito, alvo, critico, brutal);
     const notasRes = [];
     if (!dados.quemRolaAtacante) {
       notasRes.push(...notasModsDefesa(alvo, CHAVE_SALV[dados.salvLabel] || "resistencia"));
-      if (critico) notasRes.push("Crítico: CD +5");
-      const pec = contexto.ataque?.peculiaridade;
+      if (critico) notasRes.push(brutal ? `Crítico: CD +5, Brutal +${brutal}` : "Crítico: CD +5");
+      const pec = efeito.peculiaridade || contexto.ataque?.peculiaridade;
       if (pec?.ativo && alvo.ultimoDanoTurno !== undefined && alvo.ultimoDanoTurno === chaveTurnoAnterior(iniciativa)) {
         const b = Number(pec.bonus) || 2;
         dados.bonus += b;
         notasRes.push(`⚠ Peculiaridade ativada: ${alvo.nome} sofreu dano no turno anterior, ${fmtBonus(b)} para resistir`);
       }
     } else if (efeito.categoria === "Nulificar") {
-      notasRes.push(...notasModsDefesa(alvo, "vontade").map((t) => `alvo: ${t}`));
+      notasRes.push(...notasModsDefesa(alvo, efeito.salvamento === "Fortitude" ? "fortitude" : "vontade").map((t) => `alvo: ${t}`));
     }
     if (dados.quemRolaAtacante) {
       const dado = rolarD20();
@@ -2229,7 +2361,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           detalhe: `d20(${dado}) ${fmtBonus(dados.bonus)} = ${r.total} vs CD ${dados.cd}`,
           total: cura > 0 ? `Curou ${cura} PV` : "Sem efeito", tipoClasse: r.tipoClasse,
         });
-        if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: cura > 0 ? `Curou ${cura} PV` : "Sem efeito" });
+        if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: fotoAtq, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: cura > 0 ? `Curou ${cura} PV` : "Sem efeito" });
         return { r, cura, texto: cura > 0 ? `Curou ${cura} PV` : "Sem efeito" };
       }
       registrar({
@@ -2238,7 +2370,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${fmtMods(notasRes)}`,
         total: r.sucesso ? r.grauTexto : "Sem efeito", tipoClasse: r.tipoClasse,
       });
-      if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? r.grauTexto : "Sem efeito" });
+      if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: fotoAtq, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? r.grauTexto : "Sem efeito" });
       return { r, texto: textoNulificar(r.graus) };
     }
     // Esquivou do efeito em área: a CD do teste de resistência cai pela metade.
@@ -2426,7 +2558,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)} = ${r.total} vs ${info.defLabel} ${defVal}`,
       total: r.sucesso ? "Acertou" : "Errou", tipoClasse: r.tipoClasse,
     });
-    if (animar) animar({ modo: "cd", nome: `${origemAtual.nome} (Multiataque)`, foto: origemAtual.foto, nomeAlvo: alvoMA.nome, fotoAlvo: alvoMA.foto, dado, bonus: bonusFinal, total: r.total, cd: defVal, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Acertou!" : "Errou" });
+    if (animar) animar({ modo: "cd", nome: `${origemAtual.nome} (Multiataque)`, foto: fotoAtq, nomeAlvo: alvoMA.nome, fotoAlvo: alvoMA.foto, dado, bonus: bonusFinal, total: r.total, cd: defVal, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Acertou!" : "Errou" });
     setMultiAlvoEscolha("");
   };
 
@@ -2597,6 +2729,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}>
       <div className="modal-box">
         <div className="modal-head"><span className="mt">{contexto.label}</span><button className="modal-close" onClick={fechar}>×</button></div>
+        {ehAtaque && contexto.ataque?.imagem && <img className="hab-img-modal" src={contexto.ataque.imagem} alt="" />}
         {desgastanteR && (
           <div className="subcard2" style={{ marginBottom: 12 }}>
             <div className="section-title">Desgastante</div>
@@ -2675,18 +2808,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                 })}
               </div>
             ))}
-            {contexto.ataque?.exigirTeste?.ativo && (
-              <div className="subcard2" style={{ marginBottom: 10 }}>
-                <div className="section-title">Exigir Teste</div>
-                {!exigirTesteR && <button className="btn btn-ghost btn-block" onClick={rolarExigirTesteAtaque}>⚄ Rolar Teste (Exigir Teste)</button>}
-                {exigirTesteR && (
-                  <div className={"grau-card " + (exigirTesteR.sucesso ? "success" : "warn")}>
-                    <div className="gl">d20({exigirTesteR.dado}) {fmtBonus(exigirTesteR.bonus)} = {exigirTesteR.total} vs CD {exigirTesteR.cd}</div>
-                    <div className="gn">{exigirTesteR.falhaAutomatica ? "Falha automática (1 natural)" : (exigirTesteR.sucesso ? `Sucesso — libera até ${exigirTesteR.graduacoesLiberadas} graduação(ões) do efeito` : "Falhou — o efeito não funciona")}</div>
-                  </div>
-                )}
-              </div>
-            )}
+            {renderExigirTestes(10)}
           </>
         )}
 
@@ -2745,18 +2867,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                   );
                 })}
 
-                {contexto.ataque?.exigirTeste?.ativo && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (
-                  <div className="subcard2" style={{ marginBottom: 12 }}>
-                    <div className="section-title">Exigir Teste</div>
-                    {!exigirTesteR && <button className="btn btn-ghost btn-block" onClick={rolarExigirTesteAtaque}>⚄ Rolar Teste (Exigir Teste)</button>}
-                    {exigirTesteR && (
-                      <div className={"grau-card " + (exigirTesteR.sucesso ? "success" : "warn")}>
-                        <div className="gl">d20({exigirTesteR.dado}) {fmtBonus(exigirTesteR.bonus)} = {exigirTesteR.total} vs CD {exigirTesteR.cd}</div>
-                        <div className="gn">{exigirTesteR.falhaAutomatica ? "Falha automática (1 natural)" : (exigirTesteR.sucesso ? `Sucesso — libera até ${exigirTesteR.graduacoesLiberadas} graduação(ões) do efeito` : "Falhou — o efeito não funciona")}</div>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {(ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && renderExigirTestes(12)}
 
                 {temDividido && usarDividido && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (
                   <div className="subcard2" style={{ marginBottom: 12 }}>
@@ -3037,7 +3148,8 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
     if (alvo) n.push(...notasModsDefesa(alvo, defKey).map((t) => `alvo: ${t}`));
     return n;
   };
-  const nDescanso = () => (bonusDescansoAcaoValor ? ["Bônus de descanso +2"] : []);
+  let critNota = 0; // preenchido por cada rolagem de perícia que teve Crítico Aprimorado
+  const nDescanso = () => [...(bonusDescansoAcaoValor ? ["Bônus de descanso +2"] : []), ...(critNota ? ["Crítico aprimorado +5"] : [])];
 
   /* ----- oposto: agarrar / derrubar ----- */
   const rolarAtaqueOposto = () => {
@@ -3054,8 +3166,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
   };
   const rolarOpostoContestado = () => {
     if (!oponente) return;
-    const bAt = melhorDe(origemAtual, acao.periciaOposta) + bonusDescansoAcaoValor, bDef = melhorDe(oponente, acao.periciaOposta);
+    const bAt0 = melhorDe(origemAtual, acao.periciaOposta) + bonusDescansoAcaoValor, bDef = melhorDe(oponente, acao.periciaOposta);
     const dAt = rolarD20(), dDef = rolarD20();
+    critNota = bonusCriticoPericia(origemAtual, melhorPericiaDe(origemAtual, acao.periciaOposta), dAt);
+    const bAt = bAt0 + critNota;
     const totalAt = dAt + bAt, totalDef = dDef + bDef;
     const diff = totalAt - totalDef, vitoria = diff > 0;
     const graus = vitoria ? calcGraus(diff) : 0;
@@ -3155,8 +3269,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
   const rolarSimplesAcao = () => {
     const bonusBase = periciaUsada === "inteligencia" ? attr(origemAtual, "inteligencia") : bonusPericia(origemAtual, periciaUsada);
     const ajudaBonus = consumirAjuda(origemAtual, periciaUsada);
-    const bonus = bonusBase + ajudaBonus + bonusDescansoAcaoValor;
+    let bonus = bonusBase + ajudaBonus + bonusDescansoAcaoValor;
     const dado = rolarD20();
+    critNota = periciaUsada !== "inteligencia" ? bonusCriticoPericia(origemAtual, periciaUsada, dado) : 0;
+    bonus += critNota;
     const res = montarTeste(dado, bonus, Number(cd) || 10);
     setR1(res);
     if (acao.id === "escapar" && res.sucesso) {
@@ -3180,8 +3296,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
   const rolarLevantamento = () => {
     const bonusBase = bonusPericia(origemAtual, "Atletismo");
     const ajudaBonus = consumirAjuda(origemAtual, "Atletismo");
-    const bonus = bonusBase + ajudaBonus + bonusDescansoAcaoValor;
+    let bonus = bonusBase + ajudaBonus + bonusDescansoAcaoValor;
     const dado = rolarD20();
+    critNota = bonusCriticoPericia(origemAtual, "Atletismo", dado);
+    bonus += critNota;
     const res = montarTeste(dado, bonus, cdLevantamento);
     setR1(res);
     registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Levantamento (até ${pesoAlvoLevantamento}kg)`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cdLevantamento}${fmtMods([...notasPericiaEnt(origemAtual, "Atletismo"), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : []), ...(gradMassa ? [`Massa extra: CD +${gradMassa}`] : [])])}`, total: res.grauTexto, tipoClasse: res.tipoClasse });
@@ -3193,8 +3311,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
   const rolarFuga = () => {
     const bonusBase = bonusPericia(origemAtual, "Furtividade");
     const ajudaBonus = consumirAjuda(origemAtual, "Furtividade");
-    const bonus = bonusBase + ajudaBonus + bonusDescansoAcaoValor;
+    let bonus = bonusBase + ajudaBonus + bonusDescansoAcaoValor;
     const dado = rolarD20();
+    critNota = bonusCriticoPericia(origemAtual, "Furtividade", dado);
+    bonus += critNota;
     const total = dado + bonus;
     const selecionados = outros.filter((o) => oponentesMulti[o.id]);
     const resultados = selecionados.map((o) => { const cdP = valorAlvoComoCD(o, "Percepção"); return { id: o.id, nome: o.nome, cd: cdP, sucesso: total >= cdP }; });
@@ -3209,8 +3329,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
   const rolarAjuda = () => {
     if (!aliado || !chaveAjuda) return;
     const infoChave = AJUDA_CHAVES.find((c) => c.v === chaveAjuda);
-    const bonus = (infoChave.tipo === "ataque" ? Math.max(attr(origemAtual, "luta"), attr(origemAtual, "destreza")) : computeBonusBase(origemAtual, infoChave.tipo, chaveAjuda)) + bonusDescansoAcaoValor;
+    let bonus = (infoChave.tipo === "ataque" ? Math.max(attr(origemAtual, "luta"), attr(origemAtual, "destreza")) : computeBonusBase(origemAtual, infoChave.tipo, chaveAjuda)) + bonusDescansoAcaoValor;
     const dado = rolarD20();
+    critNota = infoChave.tipo === "pericia" ? bonusCriticoPericia(origemAtual, chaveAjuda, dado) : 0;
+    bonus += critNota;
     const res = montarTeste(dado, bonus, 10);
     setR1(res);
     if (res.sucesso) {
@@ -3230,9 +3352,11 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
   /* ----- manobras: desmoralizar / fintar ----- */
   const rolarOposicaoCondicao = () => {
     if (!oponente) return;
-    const bAt = (fintaAgilAtiva ? melhorDe(origemAtual, [acao.pericia, "Acrobacia"]) : bonusPericia(origemAtual, acao.pericia)) + bonusDescansoAcaoValor;
+    const bAt0 = (fintaAgilAtiva ? melhorDe(origemAtual, [acao.pericia, "Acrobacia"]) : bonusPericia(origemAtual, acao.pericia)) + bonusDescansoAcaoValor;
     const bDef = Math.max(bonusPericia(oponente, acao.pericia), statDefesa(oponente, "vontade"));
     const dAt = rolarD20(), dDef = rolarD20();
+    critNota = bonusCriticoPericia(origemAtual, fintaAgilAtiva ? melhorPericiaDe(origemAtual, [acao.pericia, "Acrobacia"]) : acao.pericia, dAt);
+    const bAt = bAt0 + critNota;
     const totalAt = dAt + bAt, totalDef = dDef + bDef;
     const vitoria = totalAt > totalDef;
     setR2({ dAt, bAt, totalAt, dDef, bDef, totalDef, vitoria });
@@ -3262,8 +3386,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
 
   /* ----- manobra: planejar (criação do plano) ----- */
   const rolarPlano = () => {
-    const bonus = bonusPericia(origemAtual, "Investigação") + bonusDescansoAcaoValor;
+    let bonus = bonusPericia(origemAtual, "Investigação") + bonusDescansoAcaoValor;
     const dado = rolarD20();
+    critNota = bonusCriticoPericia(origemAtual, "Investigação", dado);
+    bonus += critNota;
     const res = montarTeste(dado, bonus, 10);
     setR1(res);
     if (res.sucesso) atualizarCampo(origemAtual.id, "plano", { acoes: Math.max(1, res.graus) });
@@ -4161,7 +4287,7 @@ function TelaIdentidade({ onEscolher }) {
 /* ---------- efeito (form) ---------- */
 function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
   const upd = (campo, valor) => onMudar({ ...efeito, [campo]: valor });
-  const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat), colateral: efeito.colateral });
+  const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat), colateral: efeito.colateral, exigirTeste: efeito.exigirTeste, peculiaridade: efeito.peculiaridade });
   const addSentido = () => upd("sentidos", [...(efeito.sentidos || []), ""]);
   const updSentido = (i, v) => { const arr = [...efeito.sentidos]; arr[i] = v; upd("sentidos", arr); };
   const rmSentido = (i) => upd("sentidos", efeito.sentidos.filter((_, idx) => idx !== i));
@@ -4268,7 +4394,12 @@ function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
       )}
       {efeito.categoria === "Nulificar" && (
         <>
-          <div className="field-note">CD: 10 + Vontade do alvo</div>
+          <label className="label">Teste de resistência do alvo</label>
+          <SearchableSelect value={efeito.salvamento || "Vontade"} onChange={(e) => upd("salvamento", e.target.value)}>
+            <option value="Vontade">Vontade</option>
+            <option value="Fortitude">Fortitude</option>
+          </SearchableSelect>
+          <div className="field-note">CD: 10 + {efeito.salvamento || "Vontade"} do alvo</div>
           <label className="label">Graduação de Nulificar</label>
           <input type="number" value={efeito.graduacaoNulificar} onChange={(e) => upd("graduacaoNulificar", Number(e.target.value))} />
         </>
@@ -4295,8 +4426,68 @@ function EfeitoForm({ efeito, onMudar, onRemover, onCriarArremesso }) {
         </>
       )}
       <div className="divider" />
-      <ColateralEditor colateral={efeito.colateral} onMudar={(c) => upd("colateral", c)} graduacao={efeito.graduacao ?? efeito.graduacaoNulificar} />
+      <FalhasEfeito item={efeito} onMudar={onMudar} graduacao={efeito.graduacao ?? efeito.graduacaoNulificar} mostrarPeculiaridade={CATEGORIAS_COM_RESISTENCIA.includes(efeito.categoria)} />
     </div>
+  );
+}
+
+/* ---------- Falhas de um efeito/poder: Exigir Teste, Peculiaridade e Efeito Colateral ---------- */
+function ExigirTesteEditor({ valor, onMudar }) {
+  const v = valor || {};
+  const upd = (c, x) => onMudar({ atributo: "luta", graduacoes: 0, ...v, [c]: x });
+  return (
+    <>
+      <label className="checkbox-row"><input type="checkbox" checked={!!v.ativo} onChange={(e) => upd("ativo", e.target.checked)} />Exigir Teste</label>
+      {v.ativo && (
+        <>
+          <div className="field-note" style={{ marginBottom: 8 }}>
+            Ao usar este poder, rola um teste de atributo contra CD 10 + graduações em Exigir Teste. Se falhar, o poder não funciona (mas a ação é gasta). Um 1 natural sempre falha. Cada ponto acima da CD libera 1 graduação.
+          </div>
+          <div className="grid2">
+            <div>
+              <label className="label">Atributo do teste</label>
+              <SearchableSelect value={v.atributo || "luta"} onChange={(e) => upd("atributo", e.target.value)}>
+                {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
+              </SearchableSelect>
+            </div>
+            <div>
+              <label className="label">Graduações em Exigir Teste</label>
+              <input type="number" min={0} value={v.graduacoes || 0} onChange={(e) => upd("graduacoes", Math.max(0, Number(e.target.value)))} />
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+function PeculiaridadeEditor({ valor, onMudar }) {
+  const v = valor || {};
+  return (
+    <>
+      <label className="checkbox-row"><input type="checkbox" checked={!!v.ativo} onChange={(e) => onMudar({ bonus: 2, ...v, ativo: e.target.checked })} />Peculiaridade</label>
+      {v.ativo && (
+        <>
+          <div className="field-note" style={{ marginBottom: 8 }}>
+            Se a ficha afetada tiver sofrido dano no turno anterior, ela ganha o bônus abaixo para resistir a este poder. O histórico avisa quando isso acontece.
+          </div>
+          <SearchableSelect value={String(v.bonus || 2)} onChange={(e) => onMudar({ ...v, bonus: Number(e.target.value) })}>
+            <option value="2">+2 para resistir</option>
+            <option value="5">+5 para resistir</option>
+          </SearchableSelect>
+        </>
+      )}
+    </>
+  );
+}
+const CATEGORIAS_COM_RESISTENCIA = ["Dano", "Aflição", "Enfraquecer", "Camuflagem", "Leitura Mental"];
+function FalhasEfeito({ item, onMudar, graduacao, mostrarPeculiaridade }) {
+  return (
+    <>
+      <div className="section-title" style={{ marginTop: 4 }}>Falhas</div>
+      <ExigirTesteEditor valor={item.exigirTeste} onMudar={(x) => onMudar({ ...item, exigirTeste: x })} />
+      {mostrarPeculiaridade && <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />}
+      <ColateralEditor colateral={item.colateral} onMudar={(c) => onMudar({ ...item, colateral: c })} graduacao={graduacao} />
+    </>
   );
 }
 
@@ -4409,7 +4600,7 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
   const upd = (campo, valor) => onMudar({ ...passivo, [campo]: valor });
   const updCampo = (chave, valor) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), [chave]: valor } });
   const toggleExtra = (chave) => onMudar({ ...passivo, extrasAtivos: { ...(passivo.extrasAtivos || {}), [chave]: !passivo.extrasAtivos?.[chave] } });
-  const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, colateral: passivo?.colateral });
+  const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, colateral: passivo?.colateral, exigirTeste: passivo?.exigirTeste });
   return (
     <div className="subcard2" style={{ marginBottom: 10 }}>
       <div className="row-inline">
@@ -4457,6 +4648,11 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
                 <label className="checkbox-row" key={ex.chave}>
                   <input type="checkbox" checked={!!passivo.extrasAtivos?.[ex.chave]} onChange={() => toggleExtra(ex.chave)} />
                   {ex.label}
+                  {ex.pontos && passivo.extrasAtivos?.[ex.chave] && (
+                    <input type="number" min={1} title="Pontos (cada ponto = +2 na CD no crítico)" value={passivo.extrasPontos?.[ex.chave] || 1} style={{ width: 64, marginLeft: 8 }}
+                      onClick={(e) => e.stopPropagation()}
+                      onChange={(e) => onMudar({ ...passivo, extrasPontos: { ...(passivo.extrasPontos || {}), [ex.chave]: Math.max(1, Math.round(Number(e.target.value) || 1)) } })} />
+                  )}
                 </label>
               ))}
             </div>
@@ -4473,7 +4669,7 @@ function PassivoInstanceEditor({ passivo, onMudar, onRemover }) {
             </div>
           )}
           <div className="divider" />
-          <ColateralEditor colateral={passivo.colateral} onMudar={(c) => upd("colateral", c)} graduacao={passivo.graduacao} />
+          <FalhasEfeito item={passivo} onMudar={onMudar} graduacao={passivo.graduacao} mostrarPeculiaridade={false} />
         </>
       )}
     </div>
@@ -4766,6 +4962,24 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
           Sustentado
         </label>
       </div>
+      <div className="foto-upload-row">
+        {ataque.imagem ? <img src={ataque.imagem} alt="" className="foto-preview" /> : <div className="foto-preview" />}
+        <div>
+          <label className="label">Imagem ou GIF da habilidade</label>
+          <input type="file" accept="image/*" onChange={async (ev) => {
+            const file = ev.target.files[0]; ev.target.value = "";
+            if (!file) return;
+            try {
+              if (file.type === "image/gif") {
+                if (file.size > 350 * 1024) { alert("Esse GIF é grande demais (máximo ~350 KB). Reduza o tamanho/duração e tente de novo."); return; }
+                upd("imagem", await lerComoDataUrl(file));
+              } else upd("imagem", await resizeImageFile(file, 480, 0.7));
+            } catch (err) { alert("Não foi possível ler essa imagem."); }
+          }} />
+          {ataque.imagem && <button className="btn btn-ghost btn-sm" style={{ marginTop: 6 }} onClick={() => upd("imagem", null)}>Remover imagem</button>}
+          <div className="field-note">Aparece no cartão da habilidade e na rolagem quando ela é usada. GIFs animados até ~350 KB.</div>
+        </div>
+      </div>
       <div className="grid2" style={{ marginBottom: 10 }}>
         <div>
           <label className="label">Ação para usar</label>
@@ -4829,30 +5043,6 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
       </div>
       {exigirTesteAberto && (
         <div className="subcard2" style={{ marginBottom: 10 }}>
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!!ataque.exigirTeste?.ativo}
-              onChange={(e) => upd("exigirTeste", { atributo: ataque.exigirTeste?.atributo || "luta", graduacoes: ataque.exigirTeste?.graduacoes || 0, ...ataque.exigirTeste, ativo: e.target.checked })} />
-            Exigir Teste
-          </label>
-          <div className="field-note" style={{ marginBottom: 10 }}>
-            Um efeito com esta falha exige um teste de um atributo à escolha, com CD igual a 10 + graduações em Exigir Teste. Se o teste falhar, o efeito não funciona (mas a ação é gasta). Um 1 natural falha automaticamente. Se for bem-sucedido, o personagem ganha o uso de 1 graduação do efeito por ponto que o teste superar a CD. Reduz -1 ponto por graduação do custo desta habilidade (ajuste o custo manualmente).
-          </div>
-          {ataque.exigirTeste?.ativo && (
-            <div className="grid2">
-              <div>
-                <label className="label">Atributo do teste</label>
-                <SearchableSelect value={ataque.exigirTeste?.atributo || "luta"} onChange={(e) => upd("exigirTeste", { ...ataque.exigirTeste, atributo: e.target.value })}>
-                  {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
-                </SearchableSelect>
-              </div>
-              <div>
-                <label className="label">Graduações em Exigir Teste</label>
-                <input type="number" min={0} value={ataque.exigirTeste?.graduacoes || 0} onChange={(e) => upd("exigirTeste", { ...ataque.exigirTeste, graduacoes: Math.max(0, Number(e.target.value)) })} />
-              </div>
-            </div>
-          )}
-
-          <div className="divider" />
           <DesgastanteEditor desgastante={ataque.desgastante} onMudar={(d) => upd("desgastante", d)} />
 
           <div className="divider" />
@@ -4867,20 +5057,6 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
             <textarea className="outros-textarea" rows={3} value={ataque.pontoFraco?.texto || ""} onChange={(e) => upd("pontoFraco", { ...ataque.pontoFraco, texto: e.target.value })} placeholder="Texto do ponto fraco (aparece para quem passar no teste)…" />
           )}
 
-          <div className="divider" />
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!!ataque.peculiaridade?.ativo} onChange={(e) => upd("peculiaridade", { bonus: 2, ...(ataque.peculiaridade || {}), ativo: e.target.checked })} />
-            Peculiaridade
-          </label>
-          <div className="field-note" style={{ marginBottom: 10 }}>
-            Se a ficha afetada tiver sofrido dano no turno anterior, ela ganha o bônus abaixo para resistir aos efeitos desta habilidade. O histórico avisa quando isso acontece.
-          </div>
-          {ataque.peculiaridade?.ativo && (
-            <SearchableSelect value={String(ataque.peculiaridade?.bonus || 2)} onChange={(e) => upd("peculiaridade", { ...ataque.peculiaridade, bonus: Number(e.target.value) })}>
-              <option value="2">+2 para resistir</option>
-              <option value="5">+5 para resistir</option>
-            </SearchableSelect>
-          )}
         </div>
       )}
 
@@ -4921,9 +5097,9 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       // (lista, permitindo vários efeitos passivos na mesma habilidade) — silenciosamente,
       // sem exigir nenhuma ação manual; ao salvar a ficha já grava no formato novo.
       ataques: (inicial.ataques || []).map((a) => {
-        if (!a || (!a.passivo && !a.passivos)) return a;
+        if (!a || (!a.passivo && !a.passivos)) return migrarFalhasLegado(a);
         const { passivo, ...resto } = a;
-        return { ...resto, ativo: passivaEstaAtiva(a), passivos: passivosDe(a) };
+        return migrarFalhasLegado({ ...resto, ativo: passivaEstaAtiva(a), passivos: passivosDe(a) });
       }),
     };
   });
@@ -5104,8 +5280,9 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
             )}
             {info?.pedeHabilidade && (
               <SearchableSelect value={v.alvoId || ""} onChange={(e) => updVantagem(i, "alvoId", e.target.value)} style={{ marginBottom: 8 }}>
-                <option value="">Habilidade afetada…</option>
-                {(f.ataques || []).filter((a) => a.nome.trim()).map((a) => <option key={a.id} value={a.id}>{a.nome}</option>)}
+                <option value="">{info.nome === "Crítico Aprimorado" ? "Habilidade ou perícia…" : "Habilidade afetada…"}</option>
+                {(f.ataques || []).filter((a) => a.nome.trim() && (info.nome !== "Crítico Aprimorado" || (a.tipo !== "passiva" && (a.tipoAcerto === "corpo" || a.tipoAcerto === "distancia")))).map((a) => <option key={a.id} value={a.id}>{info.nome === "Crítico Aprimorado" ? `Habilidade: ${a.nome}` : a.nome}</option>)}
+                {info.nome === "Crítico Aprimorado" && PERICIAS.map((p) => <option key={p.nome} value={`pericia:${p.nome}`}>Perícia: {p.nome}</option>)}
               </SearchableSelect>
             )}
           </div>
@@ -5184,6 +5361,8 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   const [criandoPasta, setCriandoPasta] = useState(false);
   const [nomeNovaPasta, setNomeNovaPasta] = useState("");
   const [pastaParaExcluir, setPastaParaExcluir] = useState(null);
+  const [arrastandoId, setArrastandoId] = useState(null);
+  const [alvoDrop, setAlvoDrop] = useState(null);
   const [busca, setBusca] = useState("");
   const [vantagemCtx, setVantagemCtx] = useState(null);
   const ehMestre = identidade.papel === "mestre";
@@ -5248,7 +5427,23 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
     fs.forEach((e) => atualizarCampo(e.id, "oponente", !todasEngajadas));
     registrar({ tipo: "sistema", desc: `${identidade.nome} ${todasEngajadas ? "tirou do combate" : "engajou no combate"} a pasta "${p.nome}"`, detalhe: `${fs.length} ficha(s)`, total: todasEngajadas ? "Desengajadas" : "Engajadas", tipoClasse: todasEngajadas ? "hw" : "hd" });
   };
-  const renderItem = (e) => <EntidadeItem key={e.id} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
+  /* arrastar e soltar: ficha -> pasta (entra), ficha -> "Sem pasta" (sai) */
+  const iniciarArrasto = (ev, ficha) => { ev.dataTransfer.setData("text/plain", ficha.id); ev.dataTransfer.effectAllowed = "move"; setArrastandoId(ficha.id); };
+  const fimArrasto = () => { setArrastandoId(null); setAlvoDrop(null); };
+  const soltarEm = (ev, pastaId) => {
+    ev.preventDefault();
+    const id = ev.dataTransfer.getData("text/plain") || arrastandoId;
+    const ficha = meusTodos.find((x) => x.id === id);
+    if (ficha && (ficha.pasta || null) !== (pastaId || null)) atualizarCampo(ficha.id, "pasta", pastaId || null);
+    if (pastaId) setPastasAbertas((x) => ({ ...x, [pastaId]: true }));
+    fimArrasto();
+  };
+  const zonaDrop = (chave, pastaId) => ({
+    onDragOver: (ev) => { if (arrastandoId) { ev.preventDefault(); ev.dataTransfer.dropEffect = "move"; if (alvoDrop !== chave) setAlvoDrop(chave); } },
+    onDragLeave: (ev) => { if (!ev.currentTarget.contains(ev.relatedTarget) && alvoDrop === chave) setAlvoDrop(null); },
+    onDrop: (ev) => soltarEm(ev, pastaId),
+  });
+  const renderItem = (e) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
     pastas={pastas} onMoverPasta={(id) => atualizarCampo(e.id, "pasta", id || null)} />;
 
   return (
@@ -5262,7 +5457,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
         const aberta = !!pastasAbertas[p.id] || (busca.trim() && visiveis.length > 0);
         const engajadas = todos.length > 0 && todos.every((e) => e.oponente);
         return (
-          <div key={p.id} className="subcard2" style={{ marginBottom: 10 }}>
+          <div key={p.id} className="subcard2" style={{ marginBottom: 10, ...(alvoDrop === p.id ? { outline: "2px dashed var(--accent)", background: "var(--accent-soft)" } : {}) }} {...zonaDrop(p.id, p.id)}>
             <div className="row-inline" style={{ justifyContent: "space-between", alignItems: "center" }}>
               <div className="acoes-header" style={{ flex: 1 }} onClick={() => setPastasAbertas((x) => ({ ...x, [p.id]: !x[p.id] }))}>
                 <div className="stat-group-label" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.25rem", letterSpacing: "0.03em", textTransform: "none", color: "var(--text)" }}>📁 {p.nome} ({todos.length}{todos.some((e) => e.oponente) ? ` · ${todos.filter((e) => e.oponente).length} engajada(s)` : ""})</div>
@@ -5272,13 +5467,15 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
               <button className="small-btn" title="Excluir pasta (as fichas voltam para 'Sem pasta')" onClick={() => setPastaParaExcluir(p)}>×</button>
             </div>
             {aberta && (visiveis.length === 0
-              ? <div className="field-note">Pasta vazia. Abra uma ficha e escolha esta pasta no campo "Pasta".</div>
+              ? <div className="field-note">Pasta vazia. Arraste uma ficha (com ela fechada) para cá.</div>
               : <div style={{ marginTop: 8 }}>{visiveis.map(renderItem)}</div>)}
           </div>
         );
       })}
-      {pastas.length > 0 && semPasta.length > 0 && <div className="stat-group-label" style={{ marginBottom: 6 }}>Sem pasta</div>}
-      {semPasta.map(renderItem)}
+      <div {...zonaDrop("__fora", null)} style={{ borderRadius: 8, minHeight: arrastandoId && pastas.length > 0 ? 56 : 0, marginBottom: 6, ...(alvoDrop === "__fora" ? { outline: "2px dashed var(--accent)", background: "var(--accent-soft)" } : {}) }}>
+        {pastas.length > 0 && (semPasta.length > 0 || arrastandoId) && <div className="stat-group-label" style={{ marginBottom: 6 }}>Sem pasta{arrastandoId ? " — solte aqui para tirar da pasta" : ""}</div>}
+        {semPasta.map(renderItem)}
+      </div>
       <div className="grid2" style={{ marginBottom: 20 }}>
         <button className="btn btn-accent btn-block" onClick={() => setEditando("novo")}>+ Nova ficha</button>
         {!criandoPasta && <button className="btn btn-ghost btn-block" onClick={() => setCriandoPasta(true)}>+ Nova pasta</button>}
@@ -5309,15 +5506,50 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   );
 }
 
+const CONDICAO_TOM = {
+  "Em Chamas": "dano", "Sangrando": "dano", "Envenenado": "dano", "Morrendo": "dano", "Morto": "dano", "Sufocando": "dano",
+  "Atordoado": "controle", "Compelido": "controle", "Controlado": "controle", "Imóvel": "controle", "Impedido": "controle", "Agarrado": "controle",
+  "Amarrado": "controle", "Caído": "controle", "Incapacitado": "controle", "Paralisado": "controle", "Transe": "controle", "Tonto": "controle",
+  "Surdo": "controle", "Cego": "controle", "Zetsu": "controle",
+  "Adoecido": "fraqueza", "Debilitado": "fraqueza", "Prejudicado": "fraqueza", "Vulnerável": "fraqueza", "Indefeso": "fraqueza",
+  "Exausto": "fraqueza", "Fatigado": "fraqueza", "Machucado": "fraqueza", "Surpreso": "fraqueza",
+};
+function tomCondicao(nome) { return CONDICAO_TOM[nome] || "neutro"; }
+function CartaoStat({ rotulo, valor, onClick, tipo }) {
+  return (
+    <button type="button" className={"cartao-stat" + (tipo === "def" ? " def" : "") + (valor < 0 ? " neg" : "")} onClick={onClick}>
+      <span className="cs-valor">{valor >= 0 ? "+" : ""}{valor}</span>
+      <span className="cs-rot">{rotulo}</span>
+    </button>
+  );
+}
+function BarraVital({ tipo, nome, atual, max, temp = 0, entrada, extra }) {
+  const escala = Math.max(1, max, (atual > 0 ? atual : 0) + temp);
+  const pctAtual = Math.max(0, Math.min(100, (Math.max(0, atual) / escala) * 100));
+  const pctTemp = Math.max(0, Math.min(100 - pctAtual, (temp / escala) * 100));
+  const baixa = tipo === "vida" && max > 0 && atual / max <= 0.25;
+  return (
+    <div className={"barra-vital bv-" + tipo + (baixa ? " baixa" : "")}>
+      <div className="bv-topo">
+        <span className="bv-nome">{nome}</span>
+        <span className="bv-num">{entrada || <b>{atual}</b>} / <b>{max}</b>{temp ? <span style={{ color: "#86e8d0" }}> (+{temp})</span> : null}{extra}</span>
+      </div>
+      <div className="bv-trilho">
+        <div className="bv-seg principal" style={{ width: pctAtual + "%" }} />
+        {temp > 0 && <div className="bv-seg temp" style={{ left: pctAtual + "%", width: pctTemp + "%" }} />}
+      </div>
+    </div>
+  );
+}
 function StatChip({ label, value, onClick }) {
   return <button className="stat-chip" onClick={onClick}>{label} <b>{value >= 0 ? "+" : ""}{value}</b></button>;
 }
 
-function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta }) {
+function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta }) {
   const [aberto, setAberto] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const confirmarExclusao = () => { setConfirmandoExclusao(false); onExcluir(); };
-  const [secoes, setSecoes] = useState({ acoes: false, manobras: false, ataques: false, defesas: false, atributos: false, pericias: false, condicoes: false });
+  const [secoes, setSecoes] = useState({ acoes: false, manobras: false, ataques: true, defesas: false, atributos: false, pericias: false, condicoes: false });
   const toggleSecao = (k) => setSecoes((s) => ({ ...s, [k]: !s[k] }));
   const abrirStat = (tipo, chave, label) => onAbrirRolagem({ origem: e, tipo, chave, label: `${e.nome} · ${label}` });
   const abrirAtaque = (ataque) => {
@@ -5338,18 +5570,22 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
     if (!onAtualizarCampo) return;
     const novoAtivo = !passivaEstaAtiva(ataque);
     // Ativar uma passiva com "Exigir Teste" precisa passar num teste primeiro.
-    if (novoAtivo && ataque.exigirTeste?.ativo) {
-      const r = rolarExigirTeste(e, ataque.exigirTeste);
-      if (registrar) {
-        registrar({
-          tipo: "rolagem",
-          desc: `${e.nome} testa Exigir Teste (${ataque.nome || "Passiva"})`,
-          detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}`,
-          total: r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões)` : "Falhou — não ativou"),
-          tipoClasse: r.sucesso ? "hs" : "hw",
-        });
+    if (novoAtivo) {
+      let falhou = false;
+      for (const it of exigirTestesDe(ataque)) {
+        const r = rolarExigirTeste(e, it.cfg);
+        if (registrar) {
+          registrar({
+            tipo: "rolagem",
+            desc: `${e.nome} testa Exigir Teste (${ataque.nome || "Passiva"} — ${it.rotulo})`,
+            detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${fmtMods(notasCondicoesGerais(e))}`,
+            total: r.falhaAutomatica ? "Falha automática (1 natural)" : (r.sucesso ? `Sucesso — libera até ${r.graduacoesLiberadas} graduação(ões)` : "Falhou — não ativou"),
+            tipoClasse: r.sucesso ? "hs" : "hw",
+          });
+        }
+        if (!r.sucesso) falhou = true;
       }
-      if (!r.sucesso) return; // efeito não funciona, mas a ação foi gasta (não ativa a passiva)
+      if (falhou) { gastarAcao(onAtualizarCampo, e.id, acaoDaHabilidade(ataque)); return; } // efeito não funciona, mas a ação foi gasta
     }
     if (novoAtivo) {
       // Variáveis (Munição/Carga): se não aguentar o custo, não ativa. Desgastante vale na ativação.
@@ -5428,7 +5664,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
 
   if (!aberto) {
     return (
-      <div className="ent-item">
+      <div className={"ent-item" + (onArrastarFicha ? " arrastavel" : "")} draggable={!!onArrastarFicha} onDragStart={(ev) => { if (onArrastarFicha) onArrastarFicha(ev, e); }} onDragEnd={() => { if (onArrastarFichaFim) onArrastarFichaFim(); }} title={onArrastarFicha ? "Arraste para uma pasta" : undefined}>
         <div className="ent-collapsed" onClick={() => setAberto(true)}>
           <div className="nome-row">
             {e.foto && <img src={e.foto} alt="" className="foto-thumb" style={{ width: 26, height: 26 }} />}
@@ -5455,87 +5691,88 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
 
   return (
     <div className="ent-item">
-      <div className="head">
-        <div className="head-left">
-          {e.foto && <img src={e.foto} alt="" className="foto-thumb" style={{ width: 52, height: 52 }} />}
-          <div>
-            <span className="nome nome-clicavel" onClick={() => setAberto(false)}>{e.nome}</span>
-            <div className="rotulo">{e.rotulo} · Nv.{e.nivel} · {e.tipoNen} · {e.dono}</div>
+      <div className="ficha-hero">
+        {e.foto && <div className="hero-bg" style={{ backgroundImage: `url(${e.foto})` }} />}
+        <div className="hero-conteudo">
+          <div className="hero-linha">
+            <div className="hero-retrato" onClick={() => setAberto(false)} title="Recolher ficha">
+              {e.foto ? <img src={e.foto} alt={e.nome} /> : <span>{(e.nome || "?").trim().charAt(0).toUpperCase()}</span>}
+            </div>
+            <div className="hero-info">
+              <span className="nome nome-clicavel" onClick={() => setAberto(false)}>{e.nome}</span>
+              <div className="rotulo">{e.rotulo} · Nv.{e.nivel} · {e.tipoNen} · {e.dono}</div>
+              <div className="hero-tags">
+                {e.oponente && <span className="tag-cond status">Engajado</span>}
+                {e.defendendo && <span className={"tag-cond status" + (editavel ? " pode" : "")} onClick={() => editavel && onAtualizarCampo(e.id, "defendendo", false)}>Defendendo{editavel ? " ×" : ""}</span>}
+                {e.mirando && <span className={"tag-cond status" + (editavel ? " pode" : "")} onClick={() => editavel && onAtualizarCampo(e.id, "mirando", false)}>Mirando{editavel ? " ×" : ""}</span>}
+                {(e.ataques || []).filter((a) => a.tipo !== "passiva" && a.sustentando).map((a) => <span key={a.id} className={"tag-cond status" + (editavel ? " pode" : "")} onClick={() => editavel && pararSustentacao(a)}>Sustentando: {a.nome || "habilidade"}{editavel ? " ×" : ""}</span>)}
+                {Object.entries(e.condicoes || {}).map(([nome, qtd]) => (
+                  <button key={nome} type="button" className={"tag-cond " + tomCondicao(nome) + (editavel ? " pode" : "")} title={CONDICOES_LISTA.find((c) => c.nome === nome)?.desc}
+                    onClick={() => { if (!editavel) return; if (CONDICOES_LISTA.find((c) => c.nome === nome)?.stackable) ajustarMachucado(-1); else toggleCondicao(nome); }}>
+                    {nome}{qtd > 1 ? ` ×${qtd}` : ""}{nome === "Morrendo" ? ` · ${e.morrendoContador ?? 3} turno(s)` : ""}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {editavel && <div className="hero-acoes"><button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button><button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button></div>}
           </div>
+
+          <BarraVital tipo="vida" nome="Vida" atual={e.pvAtual || 0} max={pvMax} temp={e.pvTemp || 0}
+            entrada={editavel ? <input className="in-vida" type="number" value={e.pvAtual || 0} onChange={(ev) => onAtualizarCampo(e.id, "pvAtual", Number(ev.target.value))} /> : null} />
+          <BarraVital tipo="nen" nome="Nen" atual={e.nenAtual || 0} max={nenMax}
+            entrada={editavel ? <input className="in-nen" type="number" value={e.nenAtual || 0} onChange={(ev) => onAtualizarCampo(e.id, "nenAtual", Number(ev.target.value))} /> : null} />
+
+          <div className="info-chips">
+            {(e.variaveis || []).map((v) => (
+              <span key={v.id} className="info-chip">{v.nome || "Variável"}{" "}
+                {editavel ? <input className="in-nen" type="number" min={0} value={valorVariavel(e, v)} onChange={(ev) => ajustarVariavel(v, ev.target.value)} /> : <b>{valorVariavel(e, v)}</b>}
+                {v.tipo === "municao" && <>/ <b>{maxVariavel(e, v)}</b></>}
+              </span>
+            ))}
+            <span className="info-chip">Deslocamento <b>{deslocamentoTexto(e)}</b></span>
+            <span className="info-chip">PP <b>{pontosPoderGastos(e)}/{pontosPoderMax(e)}</b></span>
+            {pontosEquipamentoMax(e) > 0 && <span className="info-chip">Equip <b>{pontosEquipamentoGastos(e)}/{pontosEquipamentoMax(e)}</b></span>}
+          </div>
+
+          <div className="acoes-bolinhas" style={{ marginBottom: editavel ? 12 : 0 }}>
+            <span className="ab-label">Ações</span>
+            {ACOES_TIPOS.map((t) => {
+              const gasta = !!(e.acoesGastas || {})[t.k];
+              return (
+                <button key={t.k} type="button" className={"acao-bolinha" + (gasta ? " gasta" : "") + (editavel ? " pode" : "")} style={{ "--ab-cor": t.cor }}
+                  title={`${t.nome} — ${gasta ? "já usada neste turno" : "disponível"}${editavel ? " (clique para alternar)" : ""}`}
+                  aria-label={`${t.nome}: ${gasta ? "usada" : "disponível"}`}
+                  onClick={() => { if (editavel) onAtualizarCampo(e.id, "acoesGastas", (g) => ({ ...(g || {}), [t.k]: !(g || {})[t.k] })); }} />
+              );
+            })}
+          </div>
+
+          {(podeMarcarOponente || editavel) && (
+            <div className="status-toggle-row" style={{ marginBottom: editavel ? 10 : 0 }}>
+              {podeMarcarOponente && (
+                <label className={"status-toggle status-toggle-danger" + (e.oponente ? " ativo" : "")}>
+                  <input type="checkbox" checked={!!e.oponente} onChange={(ev) => onAtualizarCampo(e.id, "oponente", ev.target.checked)} />
+                  <span className="status-toggle-dot" />
+                  Engajado no combate
+                </label>
+              )}
+              {editavel && (
+                <label className={"status-toggle status-toggle-crit" + (e.sustentado ? " ativo" : "")}>
+                  <input type="checkbox" checked={!!e.sustentado} onChange={(ev) => onAtualizarCampo(e.id, "sustentado", ev.target.checked)} />
+                  <span className="status-toggle-dot" />
+                  Sustentando
+                </label>
+              )}
+            </div>
+          )}
+          {editavel && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
+              <button className="btn btn-ghost btn-sm" onClick={() => onRolarIniciativa(e)}>⚄ Iniciativa</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setDescansoAberto((s) => !s)}>Ações de descanso</button>
+            </div>
+          )}
         </div>
-        {editavel && <div className="actions"><button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button><button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button></div>}
       </div>
-
-      <div className="status-toggle-row">
-        {podeMarcarOponente && (
-          <label className={"status-toggle status-toggle-danger" + (e.oponente ? " ativo" : "")}>
-            <input type="checkbox" checked={!!e.oponente} onChange={(ev) => onAtualizarCampo(e.id, "oponente", ev.target.checked)} />
-            <span className="status-toggle-dot" />
-            Engajado no combate
-          </label>
-        )}
-        {editavel && (
-          <label className={"status-toggle status-toggle-crit" + (e.sustentado ? " ativo" : "")}>
-            <input type="checkbox" checked={!!e.sustentado} onChange={(ev) => onAtualizarCampo(e.id, "sustentado", ev.target.checked)} />
-            <span className="status-toggle-dot" />
-            Sustentando
-          </label>
-        )}
-      </div>
-
-      {editavel && onMoverPasta && (pastas || []).length > 0 && (
-        <div style={{ marginBottom: 10 }}>
-          <label className="label">Pasta</label>
-          <SearchableSelect value={e.pasta || ""} onChange={(ev) => onMoverPasta(ev.target.value)}>
-            <option value="">Sem pasta</option>
-            {pastas.map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-          </SearchableSelect>
-        </div>
-      )}
-
-      <div className="vitals">
-        <span>Vida{" "}
-          {editavel ? <input className="in-vida" type="number" value={e.pvAtual || 0} onChange={(ev) => onAtualizarCampo(e.id, "pvAtual", Number(ev.target.value))} /> : <b>{e.pvAtual || 0}</b>}
-          {" "}/ <b>{pvMax}</b>{e.pvTemp ? ` (+${e.pvTemp})` : ""}
-        </span>
-        <span>Nen{" "}
-          {editavel ? <input className="in-nen" type="number" value={e.nenAtual || 0} onChange={(ev) => onAtualizarCampo(e.id, "nenAtual", Number(ev.target.value))} /> : <b>{e.nenAtual || 0}</b>}
-          {" "}/ <b>{nenMax}</b>
-        </span>
-        {(e.variaveis || []).map((v) => (
-          <span key={v.id}>{v.nome || "Variável"}{" "}
-            {editavel ? <input className="in-nen" type="number" min={0} value={valorVariavel(e, v)} onChange={(ev) => ajustarVariavel(v, ev.target.value)} /> : <b>{valorVariavel(e, v)}</b>}
-            {v.tipo === "municao" && <>{" "}/ <b>{maxVariavel(e, v)}</b></>}
-          </span>
-        ))}
-        <span>Deslocamento <b>{deslocamentoTexto(e)}</b></span>
-        <span>PP <b>{pontosPoderGastos(e)}/{pontosPoderMax(e)}</b></span>
-        {pontosEquipamentoMax(e) > 0 && <span>Equip <b>{pontosEquipamentoGastos(e)}/{pontosEquipamentoMax(e)}</b></span>}
-      </div>
-
-      <div className="acoes-bolinhas">
-        <span className="ab-label">Ações</span>
-        {ACOES_TIPOS.map((t) => {
-          const gasta = !!(e.acoesGastas || {})[t.k];
-          return (
-            <button key={t.k} type="button" className={"acao-bolinha" + (gasta ? " gasta" : "") + (editavel ? " pode" : "")} style={{ "--ab-cor": t.cor }}
-              title={`${t.nome} — ${gasta ? "já usada neste turno" : "disponível"}${editavel ? " (clique para alternar)" : ""}`}
-              aria-label={`${t.nome}: ${gasta ? "usada" : "disponível"}`}
-              onClick={() => { if (editavel) onAtualizarCampo(e.id, "acoesGastas", (g) => ({ ...(g || {}), [t.k]: !(g || {})[t.k] })); }} />
-          );
-        })}
-      </div>
-
-      {editavel && (
-        <div style={{ marginBottom: 10, display: "flex", flexWrap: "wrap", gap: 6, alignItems: "center" }}>
-          <button className="btn btn-ghost btn-sm" onClick={() => onRolarIniciativa(e)}>⚄ Iniciativa</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setDescansoAberto((s) => !s)}>Ações de descanso</button>
-          {e.defendendo && <span className="badge-status" onClick={() => onAtualizarCampo(e.id, "defendendo", false)}>Defendendo ×</span>}
-          {e.mirando && <span className="badge-status" onClick={() => onAtualizarCampo(e.id, "mirando", false)}>Mirando ×</span>}
-          {condicaoAtiva(e, "Morrendo") && <span className="badge-status">Morrendo: {e.morrendoContador ?? 3} turno(s)</span>}
-          {(e.ataques || []).filter((a) => a.tipo !== "passiva" && a.sustentando).map((a) => <span key={a.id} className="badge-status" onClick={() => pararSustentacao(a)}>Sustentando: {a.nome || "habilidade"} ×</span>)}
-        </div>
-      )}
 
       {editavel && descansoAberto && (
         <div className="subcard2" style={{ marginBottom: 10 }}>
@@ -5602,18 +5839,57 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
         </div>
       )}
 
-      {Object.keys(e.condicoes || {}).length > 0 && (
+      {(e.ataques || []).length > 0 && (
         <div className="stat-group">
-          <div className="stat-group-label">Condições ativas</div>
-          <div className="chip-row">
-            {Object.entries(e.condicoes || {}).map(([nome, qtd]) => (
-              <button key={nome} className="stat-chip vantagem-chip ativo" onClick={() => toggleCondicao(nome)}>
-                {nome}{qtd > 1 ? <b> ×{qtd}</b> : null}
-              </button>
-            ))}
+          <div className="acoes-header secao-titulo" onClick={() => toggleSecao("ataques")} style={{ marginBottom: secoes.ataques ? 8 : 0 }}>
+            <div className="stat-group-label" style={{ marginBottom: 0 }}>Habilidades</div>
+            <span className={"arrow" + (secoes.ataques ? " open" : "")}>▶</span>
           </div>
+          {secoes.ataques && (
+            <div className="hab-grid">
+              {e.ataques.map((a) => {
+                const passiva = a.tipo === "passiva";
+                const ativa = passiva && passivaEstaAtiva(a);
+                const k = chaveAcaoDeNome(acaoDaHabilidade(a));
+                const corAcao = ACOES_TIPOS.find((t) => t.k === k)?.cor || "var(--muted)";
+                return (
+                  <button key={a.id} type="button" className={"hab-card" + (passiva ? " passiva" : "") + (ativa ? " ativo" : "") + (itemQuebrado(a) ? " item-quebrado" : "")}
+                    disabled={passiva && !editavel} onClick={() => (passiva ? (editavel ? alternarPassiva(a) : null) : abrirAtaque(a))}
+                    title={passiva ? (editavel ? (ativa ? "Clique para desativar" : "Clique para ativar") : "") : "Clique para usar"}>
+                    {a.imagem ? <img className="hab-img" src={a.imagem} alt="" /> : <div className="hab-faixa" />}
+                    <div className="hab-corpo">
+                      <div className="hab-nome">{a.nome || "(sem nome)"}</div>
+                      <div className="hab-tags">
+                        {passiva ? <span className="hab-tag">{rotuloPassivos(a)}</span> : <span className="hab-tag">{TIPOS_ACERTO.find((t) => t.v === a.tipoAcerto)?.l}</span>}
+                        {passiva && <span className={"hab-tag" + (ativa ? " ligada" : "")}>{ativa ? "Ativa" : "Desligada"}</span>}
+                        <span className="hab-tag" style={{ "--hab-cor": corAcao }}><span className="hab-dot" />{rotuloAcaoCurto(acaoDaHabilidade(a))}</span>
+                        {Number(a.custoNen) > 0 && <span className="hab-tag nen">{a.custoNen} Nen</span>}
+                        {Number(a.custoVida) > 0 && <span className="hab-tag vida">{a.custoVida} PV</span>}
+                        {a.sustentado && <span className="hab-tag">Sustentada{a.acaoSustentar && a.acaoSustentar !== "Nenhuma" ? ` · ${rotuloAcaoCurto(a.acaoSustentar)}` : ""}</span>}
+                        {itemQuebrado(a) && <span className="hab-tag vida">Quebrado</span>}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </div>
       )}
+
+      <div className="stat-group">
+        <div className="stat-group-label">Defesas</div>
+        <div className="cartoes-stat">
+          {DEFESAS_OPCOES.map((d) => <CartaoStat key={d.key} tipo="def" rotulo={d.label} valor={statDefesa(e, d.key)} onClick={() => abrirStat("defesa", d.key, d.label)} />)}
+        </div>
+      </div>
+
+      <div className="stat-group">
+        <div className="stat-group-label">Atributos</div>
+        <div className="cartoes-stat">
+          {ATRIBUTOS.map((a) => <CartaoStat key={a.k} rotulo={a.l} valor={attr(e, a.k)} onClick={() => abrirStat("atributo", a.k, a.l)} />)}
+        </div>
+      </div>
 
       {(e.duracoes || []).length > 0 && (
         <div className="stat-group">
@@ -5672,7 +5948,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
 
       {editavel && (
         <div className="stat-group">
-          <div className="acoes-header" onClick={() => toggleSecao("acoes")}>
+          <div className="acoes-header secao-titulo" onClick={() => toggleSecao("acoes")}>
             <div className="stat-group-label">Ações</div>
             <span className={"arrow" + (secoes.acoes ? " open" : "")}>▶</span>
           </div>
@@ -5690,7 +5966,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
 
       {editavel && (
         <div className="stat-group">
-          <div className="acoes-header" onClick={() => toggleSecao("manobras")}>
+          <div className="acoes-header secao-titulo" onClick={() => toggleSecao("manobras")}>
             <div className="stat-group-label">Manobras</div>
             <span className={"arrow" + (secoes.manobras ? " open" : "")}>▶</span>
           </div>
@@ -5706,59 +5982,8 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
         </div>
       )}
 
-      {(e.ataques || []).length > 0 && (
-        <div className="stat-group">
-          <div className="acoes-header" onClick={() => toggleSecao("ataques")}>
-            <div className="stat-group-label">Habilidades</div>
-            <span className={"arrow" + (secoes.ataques ? " open" : "")}>▶</span>
-          </div>
-          {secoes.ataques && (
-            <div className="chip-row">
-              {e.ataques.map((a) => (
-                a.tipo === "passiva" ? (
-                  <button key={a.id} className={"stat-chip passiva-chip" + (passivaEstaAtiva(a) ? " ativo" : "")} onClick={() => (editavel ? alternarPassiva(a) : null)} disabled={!editavel} title={editavel ? (passivaEstaAtiva(a) ? "Clique pra desativar" : "Clique pra ativar") : undefined}>
-                    <span className="passiva-chip-dot" />
-                    {a.nome || "(sem nome)"} <b>{rotuloPassivos(a)}</b><span className="acao-tipo">{rotuloAcaoCurto(acaoDaHabilidade(a))}</span>
-                  </button>
-                ) : (
-                  <button key={a.id} className={"stat-chip ataque-chip" + (itemQuebrado(a) ? " item-quebrado" : "")} onClick={() => abrirAtaque(a)}>
-                    {a.nome || "(sem nome)"} <b>{TIPOS_ACERTO.find((t) => t.v === a.tipoAcerto)?.l}</b>
-                    {itemQuebrado(a) && <b style={{ color: "var(--danger, #e05a5a)" }}> · Quebrado</b>}
-                    <span className="acao-tipo">{rotuloAcaoCurto(acaoDaHabilidade(a))}{a.sustentado && a.acaoSustentar && a.acaoSustentar !== "Nenhuma" ? ` · sustenta: ${rotuloAcaoCurto(a.acaoSustentar)}` : ""}</span>
-                  </button>
-                )
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       <div className="stat-group">
-        <div className="acoes-header" onClick={() => toggleSecao("defesas")}>
-          <div className="stat-group-label">Defesas</div>
-          <span className={"arrow" + (secoes.defesas ? " open" : "")}>▶</span>
-        </div>
-        {secoes.defesas && (
-          <div className="chip-row">
-            {DEFESAS_OPCOES.map((d) => <StatChip key={d.key} label={d.label} value={statDefesa(e, d.key)} onClick={() => abrirStat("defesa", d.key, d.label)} />)}
-          </div>
-        )}
-      </div>
-
-      <div className="stat-group">
-        <div className="acoes-header" onClick={() => toggleSecao("atributos")}>
-          <div className="stat-group-label">Atributos</div>
-          <span className={"arrow" + (secoes.atributos ? " open" : "")}>▶</span>
-        </div>
-        {secoes.atributos && (
-          <div className="chip-row">
-            {ATRIBUTOS.map((a) => <StatChip key={a.k} label={a.l} value={attr(e, a.k)} onClick={() => abrirStat("atributo", a.k, a.l)} />)}
-          </div>
-        )}
-      </div>
-
-      <div className="stat-group">
-        <div className="acoes-header" onClick={() => toggleSecao("pericias")}>
+        <div className="acoes-header secao-titulo" onClick={() => toggleSecao("pericias")}>
           <div className="stat-group-label">Perícias</div>
           <span className={"arrow" + (secoes.pericias ? " open" : "")}>▶</span>
         </div>
@@ -5840,7 +6065,7 @@ function EntidadeItem({ e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtua
 
       {editavel && (
         <div className="stat-group">
-          <div className="acoes-header" onClick={() => toggleSecao("condicoes")}>
+          <div className="acoes-header secao-titulo" onClick={() => toggleSecao("condicoes")}>
             <div className="stat-group-label">Condições</div>
             <span className={"arrow" + (secoes.condicoes ? " open" : "")}>▶</span>
           </div>
