@@ -316,6 +316,85 @@ const GlobalStyle = () => (
     .mm3 .ed-colapso-head:hover { border-color:var(--accent); }
     .mm3 .ed-efeito { border-left:3px solid var(--danger-border); background:var(--surface3); }
     @media (max-width:560px) { .mm3 .ficha-edit { padding:0.7rem; } .mm3 .ed-sec { padding:12px 10px 6px; } .mm3 .ed-hero input.ed-nome { font-size:1.6rem; } .mm3 .ed-sec .pericias-grid { grid-template-columns:1fr; } }
+
+    /* ---- ajuste de imagem ---- */
+    .mm3 .aj-img { width:100%; }
+    .mm3 .aj-caixa { position:relative; width:100%; overflow:hidden; border-radius:14px; border:2px solid var(--accent); background:var(--surface3); cursor:grab; touch-action:none; user-select:none; }
+    .mm3 .aj-caixa:active { cursor:grabbing; }
+    .mm3 .aj-caixa img { width:100%; height:100%; object-fit:cover; display:block; pointer-events:none; }
+    .mm3 .aj-grade { position:absolute; inset:0; pointer-events:none; background:linear-gradient(to right,transparent 33%,rgba(255,255,255,0.18) 33%,rgba(255,255,255,0.18) calc(33% + 1px),transparent calc(33% + 1px),transparent 66%,rgba(255,255,255,0.18) 66%,rgba(255,255,255,0.18) calc(66% + 1px),transparent calc(66% + 1px)), linear-gradient(to bottom,transparent 33%,rgba(255,255,255,0.18) 33%,rgba(255,255,255,0.18) calc(33% + 1px),transparent calc(33% + 1px),transparent 66%,rgba(255,255,255,0.18) 66%,rgba(255,255,255,0.18) calc(66% + 1px),transparent calc(66% + 1px)); }
+    .mm3 .aj-controles { display:flex; align-items:center; gap:8px; margin:10px 0 4px; max-width:380px; }
+    .mm3 .aj-controles input[type="range"] { flex:1; accent-color:var(--accent); }
+    .mm3 .ed-foto-botoes { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+    .mm3 .ed-hab-prev { overflow:hidden; padding:0; }
+    .mm3 .ed-hab-prev img { width:100%; height:100%; object-fit:cover; display:block; }
+    .mm3 .hero-retrato img { width:100%; height:100%; object-fit:cover; display:block; }
+    .mm3 .hab-card .hab-img-wrap { height:104px; overflow:hidden; }
+    .mm3 .hab-card .hab-img-wrap .hab-img { height:100%; }
+    .mm3 .hab-img-modal-wrap { width:100%; aspect-ratio:5 / 2; max-height:190px; overflow:hidden; border-radius:12px; margin-bottom:12px; }
+    .mm3 .hab-img-modal-wrap .hab-img-modal { width:100%; height:100%; max-height:none; margin:0; border-radius:0; }
+    .mm3 .foto-thumb-wrap { display:inline-block; overflow:hidden; border-radius:8px; flex-shrink:0; vertical-align:middle; }
+    /* ---- dashboard ---- */
+    .mm3 .dash { display:flex; flex-direction:column; gap:14px; padding-bottom:8px; }
+    .mm3 .dash-tiles { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:8px; }
+    .mm3 .dash-tile { background:var(--surface); border:1px solid var(--border); border-top:3px solid var(--tile,var(--accent)); border-radius:12px; padding:10px 12px; display:flex; flex-direction:column; gap:2px; }
+    .mm3 .dash-tile-rot { font-size:0.66rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); }
+    .mm3 .dash-tile-val { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; color:var(--tile,var(--accent)); }
+    .mm3 .dash-tile-sub { font-size:0.72rem; color:var(--muted); }
+    .mm3 .dash-destaque { background:var(--accent-soft); border:1px solid rgba(232,200,74,0.3); border-radius:12px; padding:10px 14px; font-size:0.9rem; }
+    .mm3 .dash-destaque b { color:var(--accent); }
+    .mm3 .dash-bloco { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px 14px; }
+    .mm3 .dash-titulo { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; letter-spacing:0.05em; margin-bottom:10px; }
+    .mm3 .dash-chips { display:flex; flex-wrap:wrap; gap:8px; }
+    .mm3 .dash-chip { display:inline-flex; align-items:center; gap:8px; background:var(--surface3); border:1px solid var(--border); color:var(--text); border-radius:999px; padding:6px 12px; font-size:0.85rem; cursor:pointer; font-family:'DM Sans',sans-serif; transition:opacity .15s, border-color .15s; }
+    .mm3 .dash-chip small { color:var(--muted); font-size:0.72rem; }
+    .mm3 .dash-chip:hover { border-color:var(--accent); }
+    .mm3 .dash-chip.off { opacity:0.42; text-decoration:line-through; }
+    .mm3 .dash-chip.off small { text-decoration:none; }
+    .mm3 .dash-dot { display:inline-block; width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-right:6px; vertical-align:middle; }
+    .mm3 .dash-chip .dash-dot { margin-right:0; }
+    .mm3 .dash-acoes { display:flex; gap:6px; margin-top:10px; }
+    .mm3 .dash-svg { width:100%; height:auto; display:block; }
+    .mm3 .dash-grade { stroke:var(--border); stroke-width:1; }
+    .mm3 .dash-eixo { fill:var(--muted); font-size:10.5px; font-family:'DM Sans',sans-serif; }
+    .mm3 .dash-legenda { display:flex; flex-wrap:wrap; gap:6px 14px; font-size:0.78rem; color:var(--muted); margin-top:6px; }
+    .mm3 .dash-legenda.vertical { flex-direction:column; gap:6px; margin:0; font-size:0.85rem; color:var(--text); }
+    .mm3 .dash-legenda i { display:inline-block; width:10px; height:10px; border-radius:3px; margin-right:6px; vertical-align:middle; }
+    .mm3 .dash-barra-pilha { display:flex; height:16px; border-radius:8px; overflow:hidden; background:var(--surface3); gap:2px; }
+    .mm3 .dash-barra-pilha span { height:100%; min-width:2px; }
+    .mm3 .dash-barra-pilha.grau { height:12px; }
+    .mm3 .dash-tabela-wrap { overflow-x:auto; }
+    .mm3 .dash-tabela { width:100%; border-collapse:collapse; font-size:0.84rem; }
+    .mm3 .dash-tabela th { text-align:left; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
+    .mm3 .dash-tabela td { padding:8px; border-bottom:1px solid var(--border); vertical-align:middle; }
+    .mm3 .dash-tabela tr.off td { opacity:0.45; }
+    .mm3 .dash-mini { font-size:0.7rem; color:var(--muted); }
+    .mm3 .dash-celula-acao { white-space:nowrap; text-align:right; }
+    .mm3 .dash-usos { display:inline-flex; align-items:center; gap:3px; color:var(--muted); margin-right:6px; }
+    .mm3 .dash-usos input { width:44px; padding:4px 6px; font-size:0.82rem; }
+    .mm3 .dash-bloco .field-note { margin-top:10px; }
+    .mm3 .dash-lista { display:flex; flex-direction:column; gap:6px; }
+    .mm3 .dash-linha { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:8px 12px; font-size:0.86rem; line-height:1.45; }
+    .mm3 .dash-linha.dano { border-left:3px solid var(--danger); }
+    .mm3 .dash-linha.cura { border-left:3px solid var(--success); }
+    .mm3 .dash-aq { display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+    .mm3 .dash-aq span { background:var(--surface3); border:1px solid var(--border); border-radius:8px; min-width:30px; text-align:center; padding:3px 8px; font-family:'Bebas Neue',sans-serif; font-size:1.05rem; }
+    .mm3 .dash-aq span.pronto { background:var(--accent); color:#0e0e12; border-color:var(--accent); }
+    .mm3 .dash-pp { display:flex; flex-wrap:wrap; align-items:center; gap:18px; margin-bottom:12px; }
+    .mm3 .dash-rosca { width:150px; height:150px; flex-shrink:0; }
+    .mm3 .dash-rosca-num { fill:var(--text); font-family:'Bebas Neue',sans-serif; font-size:22px; }
+    .mm3 .dash-hbars { display:flex; flex-direction:column; gap:7px; }
+    .mm3 .dash-hbar { display:grid; grid-template-columns:minmax(80px,170px) 1fr 54px; gap:10px; align-items:center; font-size:0.84rem; }
+    .mm3 .dash-hbar-nome { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .mm3 .dash-hbar-trilho { height:10px; border-radius:6px; background:var(--surface3); overflow:hidden; display:block; }
+    .mm3 .dash-hbar-trilho span { display:block; height:100%; border-radius:6px; }
+    .mm3 .dash-hbar b { text-align:right; }
+    .mm3 .dash-efeito-topo { font-size:0.85rem; margin-bottom:5px; }
+    .mm3 .dash-efeito-topo small { color:var(--muted); }
+    .mm3 .dash-duplo { display:grid; grid-template-columns:minmax(220px,300px) 1fr; gap:14px; align-items:center; }
+    .mm3 .dash-radar { width:100%; max-width:300px; height:auto; margin:0 auto; }
+    @media (max-width:640px) { .mm3 .dash-duplo { grid-template-columns:1fr; } .mm3 .dash-hbar { grid-template-columns:90px 1fr 46px; } }
+    .mm3 .ed-dash > .section-title { color:var(--accent); }
     /* ---- ficha em modo leitura: cabeçalho com retrato ---- */
     .mm3 .ficha-hero { position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--border); margin:-6px -6px 14px; background:var(--surface); }
     .mm3 .ficha-hero .hero-bg { position:absolute; inset:-24px; background-size:cover; background-position:center; filter:blur(24px) saturate(1.2); opacity:0.42; transform:scale(1.15); z-index:0; }
@@ -346,9 +425,9 @@ const GlobalStyle = () => (
     .mm3 .barra-vital .bv-num input[type="number"] { width:64px; padding:3px 6px; font-size:0.95rem; display:inline-block; }
     .mm3 .bv-trilho { position:relative; height:16px; border-radius:999px; background:rgba(255,255,255,0.07); overflow:hidden; border:1px solid var(--border); }
     .mm3 .bv-trilho .bv-seg { position:absolute; top:0; bottom:0; border-radius:999px; transition:width .6s cubic-bezier(.2,.8,.2,1), left .6s cubic-bezier(.2,.8,.2,1); }
-    .mm3 .bv-vida .bv-seg.principal { left:0; background:linear-gradient(90deg,#a82b2b,#e85a5a); box-shadow:0 0 12px rgba(232,90,90,0.5); }
+    .mm3 .bv-vida .bv-seg.principal { left:0; background:linear-gradient(90deg,#2f8f55,#4cba7a); box-shadow:0 0 12px rgba(76,186,122,0.5); }
     .mm3 .bv-vida.baixa .bv-seg.principal { animation:bv-pulso 1.3s ease-in-out infinite; }
-    .mm3 .bv-vida .bv-seg.temp { background:linear-gradient(90deg,#3fae9a,#86e8d0); }
+    .mm3 .bv-vida .bv-seg.temp { background:linear-gradient(90deg,#3f8fae,#86c8e8); }
     .mm3 .bv-nen .bv-seg.principal { left:0; background:linear-gradient(90deg,#2b72b8,#5cc3f5); box-shadow:0 0 12px rgba(92,195,245,0.45); }
     @keyframes bv-pulso { 0%,100% { filter:brightness(1); } 50% { filter:brightness(1.5); } }
     .mm3 .info-chips { display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
@@ -1380,6 +1459,8 @@ function mutarColateral(e, itemId, nome, ligar) {
     if (!def?.stackable && c[nome]) return e; // já tinha por outra fonte: não mexe
     c[nome] = def?.stackable ? (c[nome] || 0) + 1 : 1;
     rastro[itemId] = nome;
+    // Em Chamas por Efeito Colateral é poder de Nen: dano por turno igual ao nível da ficha.
+    if (nome === "Em Chamas") return { ...e, condicoes: c, colateraisAplicados: rastro, condOrigem: { ...(e.condOrigem || {}), "Em Chamas": Math.max(1, e.nivel || 1) } };
   } else {
     const n = rastro[itemId];
     if (!n) return e;
@@ -2962,7 +3043,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}>
       <div className="modal-box">
         <div className="modal-head"><span className="mt">{contexto.label}</span><button className="modal-close" onClick={fechar}>×</button></div>
-        {ehAtaque && contexto.ataque?.imagem && <img className="hab-img-modal" src={contexto.ataque.imagem} alt="" />}
+        {ehAtaque && contexto.ataque?.imagem && <div className="hab-img-modal-wrap"><ImgAj className="hab-img-modal" src={contexto.ataque.imagem} aj={contexto.ataque.imagemAj} /></div>}
         {desgastanteR && (
           <div className="subcard2" style={{ marginBottom: 12 }}>
             <div className="section-title">Desgastante</div>
@@ -5217,6 +5298,7 @@ function VariaveisUsoEditor({ usos, variaveis, onMudarUsos, onCriarVariavel, onM
 function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onDescer, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
   const [extrasAberto, setExtrasAberto] = useState(false);
   const [exigirTesteAberto, setExigirTesteAberto] = useState(false);
+  const [ajImgAberto, setAjImgAberto] = useState(false);
   const colapsado = !!ataque.colapsado;
   const setColapsado = (fnOuValor) => {
     const novo = typeof fnOuValor === "function" ? fnOuValor(colapsado) : fnOuValor;
@@ -5319,7 +5401,7 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
         </label>
       </div>
       <div className="foto-upload-row ed-hab-img">
-        {ataque.imagem ? <img src={ataque.imagem} alt="" className="foto-preview" /> : <div className="foto-preview" />}
+        {ataque.imagem ? <div className="foto-preview ed-hab-prev"><ImgAj src={ataque.imagem} aj={ataque.imagemAj} /></div> : <div className="foto-preview" />}
         <div>
           <label className="label">Imagem ou GIF da habilidade</label>
           <input type="file" accept="image/*" onChange={async (ev) => {
@@ -5328,13 +5410,19 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
             try {
               if (file.type === "image/gif") {
                 if (file.size > 350 * 1024) { alert("Esse GIF é grande demais (máximo ~350 KB). Reduza o tamanho/duração e tente de novo."); return; }
-                upd("imagem", await lerComoDataUrl(file));
-              } else upd("imagem", await resizeImageFile(file, 480, 0.7));
+                onMudar({ ...ataque, imagem: await lerComoDataUrl(file), imagemAj: null });
+              } else onMudar({ ...ataque, imagem: await resizeImageFile(file, 560, 0.75), imagemAj: null });
             } catch (err) { alert("Não foi possível ler essa imagem."); }
           }} />
-          {ataque.imagem && <button className="btn btn-ghost btn-sm" style={{ marginTop: 6 }} onClick={() => upd("imagem", null)}>Remover imagem</button>}
+          {ataque.imagem && (
+            <div className="ed-foto-botoes">
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAjImgAberto((s) => !s)}>{ajImgAberto ? "Fechar ajuste" : "✥ Ajustar enquadramento"}</button>
+              <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMudar({ ...ataque, imagem: null, imagemAj: null })}>Remover imagem</button>
+            </div>
+          )}
           <div className="field-note">Aparece no cartão da habilidade e na rolagem quando ela é usada. GIFs animados até ~350 KB.</div>
         </div>
+        {ataque.imagem && ajImgAberto && <div style={{ flexBasis: "100%" }}><AjusteImagem src={ataque.imagem} ajuste={ataque.imagemAj} onMudar={(v) => upd("imagemAj", v)} proporcao="5 / 2" maxLargura={380} /></div>}
       </div>
       <div className="grid2" style={{ marginBottom: 10 }}>
         <div>
@@ -5424,6 +5512,536 @@ function AtaqueForm({ ataque, onMudar, onRemover, onCriarArremesso, onSubir, onD
   );
 }
 
+/* ---------- imagens com enquadramento (zoom + posição) ---------- */
+function estiloAjuste(aj) {
+  const z = Math.max(1, Math.min(4, aj?.z || 1));
+  return { transform: `translate(${aj?.x || 0}%, ${aj?.y || 0}%) scale(${z})`, transformOrigin: "center center" };
+}
+function ImgAj({ src, aj, className, alt = "", style }) {
+  return <img src={src} alt={alt} className={className} style={{ ...style, ...estiloAjuste(aj) }} draggable={false} />;
+}
+function AjusteImagem({ src, ajuste, onMudar, proporcao = "1 / 1", maxLargura = 260 }) {
+  const caixa = useRef(null);
+  const arrasto = useRef(null);
+  const aj = { z: 1, x: 0, y: 0, ...(ajuste || {}) };
+  const fixa = (n) => {
+    const z = Math.max(1, Math.min(4, n.z));
+    const l = (z - 1) * 50;
+    return { z, x: Math.max(-l, Math.min(l, n.x)), y: Math.max(-l, Math.min(l, n.y)) };
+  };
+  const aoPressionar = (e) => {
+    e.currentTarget.setPointerCapture?.(e.pointerId);
+    arrasto.current = { px: e.clientX, py: e.clientY, x: aj.x, y: aj.y };
+  };
+  const aoMover = (e) => {
+    const a = arrasto.current;
+    if (!a || !caixa.current) return;
+    const r = caixa.current.getBoundingClientRect();
+    onMudar(fixa({ ...aj, x: a.x + ((e.clientX - a.px) / r.width) * 100, y: a.y + ((e.clientY - a.py) / r.height) * 100 }));
+  };
+  const soltar = () => { arrasto.current = null; };
+  return (
+    <div className="aj-img">
+      <div ref={caixa} className="aj-caixa" style={{ aspectRatio: proporcao, maxWidth: maxLargura }}
+        onPointerDown={aoPressionar} onPointerMove={aoMover} onPointerUp={soltar} onPointerCancel={soltar}>
+        <ImgAj src={src} aj={aj} />
+        <span className="aj-grade" />
+      </div>
+      <div className="aj-controles">
+        <button type="button" className="small-btn" title="Diminuir zoom" onClick={() => onMudar(fixa({ ...aj, z: aj.z - 0.2 }))}>−</button>
+        <input type="range" min={1} max={4} step={0.05} value={aj.z} onChange={(e) => onMudar(fixa({ ...aj, z: Number(e.target.value) }))} />
+        <button type="button" className="small-btn" title="Aumentar zoom" onClick={() => onMudar(fixa({ ...aj, z: aj.z + 0.2 }))}>+</button>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMudar(null)}>Centralizar</button>
+      </div>
+      <div className="field-note">Arraste a imagem para posicionar e use o zoom para aproximar ({Math.round(aj.z * 100)}%).</div>
+    </div>
+  );
+}
+
+/* ---------- Dashboard da ficha (edição) ---------- */
+const PAL_DASH = ["#e8c84a", "#5cc3f5", "#4cba7a", "#c084fc", "#e8964a", "#f08fb0", "#3fae9a", "#a3b4ff", "#d9d36b", "#ff8f70"];
+function pct(n) { return Math.round(Math.max(0, Math.min(1, n)) * 100); }
+function chanceMinD20(necessario) { return Math.max(0, Math.min(1, (21 - necessario) / 20)); } // P(d20 >= necessario)
+function fmtNum(n, d = 1) { return Number.isInteger(n) ? String(n) : n.toFixed(d).replace(".", ","); }
+function danoPorTurnoCondicao(cond, ficha) {
+  if (cond === "Em Chamas") return Math.max(1, ficha?.nivel || 1);
+  if (cond === "Sangrando") return Math.max(1, Math.round(pvMaxCalc(ficha) * 0.1));
+  return 0;
+}
+function GraficoLinha({ series, xMax, yMax, rotuloY = "" }) {
+  const W = 640, H = 230, ml = 40, mr = 14, mt = 12, mb = 28;
+  const x = (t) => ml + (t / Math.max(1, xMax)) * (W - ml - mr);
+  const y = (v) => mt + (1 - Math.max(0, v) / Math.max(1, yMax)) * (H - mt - mb);
+  const passoX = xMax > 16 ? 5 : xMax > 8 ? 2 : 1;
+  const ticksY = [0, 0.25, 0.5, 0.75, 1].map((p) => Math.round(p * yMax));
+  return (
+    <svg className="dash-svg" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`Gráfico de ${rotuloY} por turno`}>
+      {ticksY.map((v, i) => (
+        <g key={i}>
+          <line x1={ml} x2={W - mr} y1={y(v)} y2={y(v)} className="dash-grade" />
+          <text x={ml - 6} y={y(v) + 4} textAnchor="end" className="dash-eixo">{v}</text>
+        </g>
+      ))}
+      {Array.from({ length: Math.floor(xMax / passoX) + 1 }, (_, i) => i * passoX).map((t) => (
+        <text key={t} x={x(t)} y={H - 8} textAnchor="middle" className="dash-eixo">{t}</text>
+      ))}
+      <text x={W - mr} y={H - 8} textAnchor="end" className="dash-eixo">turno</text>
+      {series.map((s) => {
+        const pts = s.pontos.map((v, t) => [x(t), y(v)]);
+        const d = pts.map((p, i) => (i ? "L" : "M") + p[0].toFixed(1) + " " + p[1].toFixed(1)).join(" ");
+        const area = s.area ? `${d} L${pts[pts.length - 1][0].toFixed(1)} ${y(0)} L${pts[0][0].toFixed(1)} ${y(0)} Z` : null;
+        return (
+          <g key={s.nome}>
+            {area && <path d={area} fill={s.cor} opacity="0.14" />}
+            <path d={d} fill="none" stroke={s.cor} strokeWidth="2.4" strokeLinejoin="round" strokeLinecap="round" strokeDasharray={s.tracejado ? "5 5" : undefined} opacity={s.tracejado ? 0.6 : 1} />
+            {!s.tracejado && pts.map((p, i) => <circle key={i} cx={p[0]} cy={p[1]} r="3" fill={s.cor} />)}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+function Rosca({ fatias, total, centro, sub }) {
+  const R = 54, C = 2 * Math.PI * R;
+  let acum = 0;
+  return (
+    <svg className="dash-rosca" viewBox="0 0 140 140" role="img" aria-label="Distribuição dos pontos de poder">
+      <circle cx="70" cy="70" r={R} fill="none" stroke="var(--surface3)" strokeWidth="18" />
+      {fatias.filter((s) => s.v > 0).map((s) => {
+        const len = (s.v / Math.max(1, total)) * C;
+        const el = <circle key={s.nome} cx="70" cy="70" r={R} fill="none" stroke={s.cor} strokeWidth="18" strokeDasharray={`${Math.max(0, len - 1.5)} ${C}`} strokeDashoffset={-acum} transform="rotate(-90 70 70)" />;
+        acum += len;
+        return el;
+      })}
+      <text x="70" y="68" textAnchor="middle" className="dash-rosca-num">{centro}</text>
+      <text x="70" y="86" textAnchor="middle" className="dash-eixo">{sub}</text>
+    </svg>
+  );
+}
+function Radar({ itens, max }) {
+  const n = itens.length, cx = 120, cy = 118, R = 80;
+  const ang = (i) => (Math.PI * 2 * i) / n - Math.PI / 2;
+  const pt = (i, v) => { const r = (Math.max(0, v + 2) / Math.max(1, max + 2)) * R; return [cx + Math.cos(ang(i)) * r, cy + Math.sin(ang(i)) * r]; };
+  const poly = itens.map((it, i) => pt(i, it.v).map((n2) => n2.toFixed(1)).join(",")).join(" ");
+  return (
+    <svg className="dash-radar" viewBox="0 0 240 236" role="img" aria-label="Radar de atributos">
+      {[0.25, 0.5, 0.75, 1].map((k) => (
+        <polygon key={k} points={itens.map((_, i) => [cx + Math.cos(ang(i)) * R * k, cy + Math.sin(ang(i)) * R * k].map((n2) => n2.toFixed(1)).join(",")).join(" ")} fill="none" stroke="var(--border)" />
+      ))}
+      {itens.map((_, i) => <line key={i} x1={cx} y1={cy} x2={cx + Math.cos(ang(i)) * R} y2={cy + Math.sin(ang(i)) * R} stroke="var(--border)" />)}
+      <polygon points={poly} fill="rgba(232,200,74,0.22)" stroke="var(--accent)" strokeWidth="2" />
+      {itens.map((it, i) => {
+        const [px, py] = pt(i, it.v);
+        const lx = cx + Math.cos(ang(i)) * (R + 17), ly = cy + Math.sin(ang(i)) * (R + 15);
+        return (
+          <g key={it.l}>
+            <circle cx={px} cy={py} r="3" fill="var(--accent)" />
+            <text x={lx} y={ly + 3} textAnchor="middle" className="dash-eixo">{it.l.slice(0, 4)} {it.v}</text>
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+function PainelFicha({ f }) {
+  const [off, setOff] = useState({});
+  const [usos, setUsos] = useState({});
+  const [defAlvo, setDefAlvo] = useState(3);
+  const [resAlvo, setResAlvo] = useState(3);
+  const [mostrarPericias, setMostrarPericias] = useState(false);
+
+  const nenMax = nenMaxCalc(f), pvMax = pvMaxCalc(f), pvTemp = Number(f.pvTemp) || 0;
+  const ataques = f.ataques || [];
+  const habs = ataques.map((a, i) => {
+    const passiva = a.tipo === "passiva";
+    const sust = !!a.sustentado;
+    const lista = passiva ? passivosDe(a) : (a.efeitos || []);
+    const custoNen = Number(a.custoNen) || 0;
+    const custoVida = Number(a.custoVida) || 0;
+    const nUsos = (!sust && !passiva) ? (usos[a.id] ?? 1) : 1;
+    const nenTurno = passiva ? (sust ? custoNen : 0) : (sust ? custoNen : custoNen * nUsos);
+    const nenUnico = passiva && !sust ? custoNen : 0;
+    const vidaTurno = passiva ? (sust ? custoVida : 0) : (sust ? custoVida : custoVida * nUsos);
+    const vidaUnica = passiva && !sust ? custoVida : 0;
+    const ativoPorTurno = sust || passiva; // condições do Efeito Colateral ficam enquanto a habilidade segue ligada
+    let regen = 0, danoCondTurno = 0;
+    const colaterais = [];
+    const aquecimentos = [];
+    const testes = [];
+    const alvoCond = [];
+    lista.forEach((it) => {
+      if (passiva && it.tipoId === "regeneracao") regen += it.graduacao || 0;
+      const c = it?.colateral;
+      if (c?.ativo && c.condicao) {
+        const dano = danoPorTurnoCondicao(c.condicao, f);
+        let pFalha = 1;
+        if (c.comTeste && c.salvamento) {
+          const cd = 10 + (it.graduacao || it.graduacaoNulificar || 0);
+          pFalha = 1 - chanceMinD20(cd - salvBonus(f, c.salvamento));
+        }
+        colaterais.push({ cond: c.condicao, dano, comTeste: !!c.comTeste, pFalha });
+        if (ativoPorTurno) danoCondTurno += dano * pFalha;
+      }
+      if (it?.aquecimento?.ativo && !it?.exigirTeste?.ativo) {
+        const G = Math.floor(it.graduacao ?? it.graduacaoNulificar ?? 0);
+        const N = Number(it.aquecimento.turnos) || 3;
+        const seq = [];
+        for (let c2 = 0; c2 < 60; c2++) { const g = graduacaoAquecida(G, N, c2); seq.push(g); if (g >= G) break; }
+        aquecimentos.push({ nome: it.categoria || (PODERES_PASSIVOS.find((p) => p.id === it.tipoId)?.nome) || "Efeito", G, N, seq, turnos: seq.length - 1 });
+      }
+      if (it?.exigirTeste?.ativo) {
+        const et = it.exigirTeste;
+        const pontos = Math.max(1, Number(et.graduacoes) || 1);
+        const base = et.pericia ? bonusBasePericia(f, et.pericia) : attrBase(f, et.atributo || "luta");
+        const bonus = et.pericia ? bonusPericia(f, et.pericia) : attr(f, et.atributo || "luta");
+        const cd = 10 + (pontos - 1) + base;
+        const need = Math.max(2, cd - bonus);
+        testes.push({ nome: it.categoria || (PODERES_PASSIVOS.find((p) => p.id === it.tipoId)?.nome) || "Efeito", cd, bonus, p: chanceMinD20(need), pericia: et.pericia || et.atributo || "" });
+      }
+      if (it?.categoria === "Aflição") {
+        ["grau1", "grau1b", "grau2", "grau2b", "grau3", "grau3b"].forEach((k) => {
+          const v = String(it[k] || "");
+          if (/em chamas/i.test(v)) alvoCond.push({ cond: "Em Chamas", dano: Math.max(1, f.nivel || 1) });
+          if (/sangrando/i.test(v)) alvoCond.push({ cond: "Sangrando", dano: "10% da vida máx. do alvo" });
+        });
+      }
+    });
+    const vars = (a.usoVariaveis || []).filter((u) => u.variavelId && u.delta).map((u) => {
+      const v = (f.variaveis || []).find((x) => x.id === u.variavelId);
+      return v ? { v, delta: u.delta } : null;
+    }).filter(Boolean);
+    return { a, i, cor: PAL_DASH[i % PAL_DASH.length], passiva, sust, nenTurno, nenUnico, vidaTurno, vidaUnica, regen, danoCondTurno, colaterais, aquecimentos, testes, alvoCond, vars, nUsos, custoNen, custoVida };
+  });
+
+  const ligadas = habs.filter((h) => !off[h.a.id]);
+  const soma = (lista, k) => lista.reduce((s, h) => s + h[k], 0);
+  function simular(lista) {
+    const nenTurno = soma(lista, "nenTurno"), nenUnico = soma(lista, "nenUnico");
+    const vidaTurno = soma(lista, "vidaTurno") + soma(lista, "danoCondTurno");
+    const regen = soma(lista, "regen");
+    const vidaLiq = vidaTurno - regen;
+    const vidaUnica = soma(lista, "vidaUnica");
+    const nenDispo = nenMax - nenUnico;
+    const durNen = nenTurno > 0 ? Math.max(0, Math.floor(nenDispo / nenTurno)) : Infinity;
+    const pvTotal = pvMax + pvTemp - vidaUnica;
+    const durVida = vidaLiq > 0 ? Math.max(0, Math.ceil(pvTotal / vidaLiq) - 1) : Infinity;
+    return { nenTurno, nenUnico, vidaTurno, regen, vidaLiq, vidaUnica, durNen, durVida, dur: Math.min(durNen, durVida) };
+  }
+  const sel = simular(ligadas);
+  const todas = simular(habs);
+  const horizonte = (() => {
+    const bases = [sel.durNen, sel.durVida, todas.durNen, todas.durVida].filter((x) => Number.isFinite(x));
+    return Math.max(6, Math.min(30, (bases.length ? Math.max(...bases) : 6) + 2));
+  })();
+  const curva = (s, max, tipo) => Array.from({ length: horizonte + 1 }, (_, t) => {
+    if (tipo === "nen") return Math.max(0, max - s.nenUnico - t * s.nenTurno);
+    return Math.max(0, max - s.vidaUnica - t * s.vidaLiq);
+  });
+  const mostrarVida = sel.vidaLiq !== 0 || todas.vidaLiq !== 0 || sel.vidaUnica > 0;
+  const mudouSelecao = ligadas.length !== habs.length;
+  const txtDur = (n) => (Number.isFinite(n) ? `${n} turno${n === 1 ? "" : "s"}` : "∞");
+  const gastosPP = pontosPoderGastos(f), ppMax = pontosPoderMax(f);
+
+  // pontos de poder
+  const ppAtr = Object.values(f.atributos || {}).reduce((s, v) => s + (v || 0), 0) * 2;
+  const ppPer = Object.values(f.periciaPontos || {}).reduce((s, v) => s + (v || 0), 0);
+  const ppVan = (f.vantagens || []).reduce((s, v) => s + (v.graduacoes || 1), 0);
+  const ppHabs = ataques.reduce((s, a) => s + custoAtaque(a), 0);
+  const ppLivre = Math.max(0, ppMax - gastosPP);
+  const fatias = [
+    { nome: "Atributos", v: ppAtr, cor: PAL_DASH[1] }, { nome: "Perícias", v: ppPer, cor: PAL_DASH[2] },
+    { nome: "Vantagens", v: ppVan, cor: PAL_DASH[3] }, { nome: "Habilidades", v: ppHabs, cor: PAL_DASH[0] },
+    { nome: "Livres", v: ppLivre, cor: "rgba(255,255,255,0.18)" },
+  ];
+  const totalRosca = Math.max(ppMax, gastosPP);
+  const maiorHabPP = Math.max(1, ...ataques.map((a) => custoAtaque(a)));
+
+  // dados
+  const bAtqC = attr(f, "luta"), bAtqD = attr(f, "destreza");
+  const linhasRolagem = [
+    { n: "Ataque corpo a corpo", b: bAtqC }, { n: "Ataque à distância", b: bAtqD },
+    ...[["aparar", "Aparar"], ["esquiva", "Esquiva"], ["fortitude", "Fortitude"], ["vontade", "Vontade"], ["resistencia", "Resistência"]].map(([k, l]) => ({ n: l, b: statDefesa(f, k) })),
+  ];
+  const periciasOrd = PERICIAS.map((p) => ({ n: p.nome, b: bonusPericia(f, p.nome) })).sort((a, b) => b.b - a.b);
+  const linhasPericias = mostrarPericias ? periciasOrd : periciasOrd.slice(0, 4);
+  const cdDefAlvo = 10 + defAlvo;
+  const ataquesAtivos = habs.filter((h) => !h.passiva && ["corpo", "distancia"].includes(h.a.tipoAcerto));
+  function distribuicao(cd, bonusAlvo) {
+    // chances de o alvo passar e de falhar em 1, 2, 3, 4+ graus
+    const out = { passa: 0, g1: 0, g2: 0, g3: 0, g4: 0 };
+    for (let d = 1; d <= 20; d++) {
+      const diff = d + bonusAlvo - cd;
+      if (diff >= 0) { out.passa += 0.05; continue; }
+      const g = Math.floor((-diff - 1) / 5) + 1;
+      out["g" + Math.min(4, g)] += 0.05;
+    }
+    return out;
+  }
+  const efeitosDano = [];
+  ataques.forEach((a, i) => {
+    if (a.tipo === "passiva") return;
+    (a.efeitos || []).forEach((ef) => {
+      const g = ef.graduacao ?? ef.graduacaoNulificar ?? 0;
+      let cd = null;
+      if (ef.categoria === "Dano") cd = 15 + g + (ef.danoAdicional || 0);
+      else if (["Aflição", "Enfraquecer", "Leitura Mental"].includes(ef.categoria)) cd = 10 + g;
+      else if (ef.categoria === "Camuflagem") cd = 15 + g;
+      if (cd != null) efeitosDano.push({ hab: a.nome || "(sem nome)", cor: PAL_DASH[i % PAL_DASH.length], cat: ef.categoria, g, cd, dist: distribuicao(cd, resAlvo) });
+    });
+  });
+  const vantCrit = (f.vantagens || []).filter((v) => v.nome === "Crítico Aprimorado");
+  const passivosCalc = modificadoresPassivos(f);
+  const varsResumo = {};
+  habs.forEach((h) => h.vars.forEach(({ v, delta }) => {
+    if (!varsResumo[v.id]) varsResumo[v.id] = { v, porTurno: 0, usos: [] };
+    const ligadoNoGrafico = !off[h.a.id];
+    if (ligadoNoGrafico) varsResumo[v.id].porTurno += delta * (h.passiva || h.sust ? 1 : h.nUsos);
+    varsResumo[v.id].usos.push(h.a.nome || "(sem nome)");
+  }));
+
+  const alternar = (id) => setOff((o) => ({ ...o, [id]: !o[id] }));
+  const soEste = (id) => setOff(Object.fromEntries(habs.filter((h) => h.a.id !== id).map((h) => [h.a.id, true])));
+  const radarMax = atributoMax(f.nivel);
+
+  const Tile = ({ rot, val, sub, cor }) => (
+    <div className="dash-tile" style={cor ? { "--tile": cor } : undefined}>
+      <span className="dash-tile-rot">{rot}</span>
+      <span className="dash-tile-val">{val}</span>
+      {sub && <span className="dash-tile-sub">{sub}</span>}
+    </div>
+  );
+
+  return (
+    <div className="dash">
+      <div className="dash-tiles">
+        <Tile rot="Nen por turno" val={fmtNum(sel.nenTurno)} sub={sel.nenUnico > 0 ? `+${fmtNum(sel.nenUnico)} de ativação única` : `de ${nenMax} de Nen`} cor="#5cc3f5" />
+        <Tile rot="Duração (Nen)" val={txtDur(sel.durNen)} sub={mudouSelecao ? `com a seleção (${ligadas.length}/${habs.length})` : "com tudo ligado"} cor="#5cc3f5" />
+        <Tile rot="Vida por turno" val={sel.vidaLiq === 0 ? "0" : (sel.vidaLiq > 0 ? "−" : "+") + fmtNum(Math.abs(sel.vidaLiq))} sub={sel.regen > 0 ? `regeneração +${sel.regen}` : "custos e condições"} cor="#4cba7a" />
+        <Tile rot="Duração (Vida)" val={txtDur(sel.durVida)} sub={`de ${pvMax}${pvTemp ? ` (+${pvTemp})` : ""} PV`} cor="#4cba7a" />
+        <Tile rot="Pontos de Poder" val={`${gastosPP}/${ppMax}`} sub={gastosPP > ppMax ? "excedido!" : `${ppLivre} livres`} cor="#e8c84a" />
+      </div>
+      {Number.isFinite(sel.dur) && <div className="dash-destaque">Com a seleção atual, a ficha aguenta <b>{txtDur(sel.dur)}</b> de combate {sel.dur === sel.durNen && sel.dur !== sel.durVida ? "(o Nen acaba primeiro)" : sel.dur === sel.durVida && sel.dur !== sel.durNen ? "(a Vida acaba primeiro)" : ""}.</div>}
+      {!Number.isFinite(sel.dur) && <div className="dash-destaque">Nenhuma habilidade selecionada drena Nen ou Vida por turno — a seleção atual dura indefinidamente.</div>}
+
+      <div className="dash-bloco">
+        <div className="dash-titulo">Habilidades no gráfico</div>
+        <div className="dash-chips">
+          {habs.length === 0 && <span className="field-note">Crie habilidades para vê-las aqui.</span>}
+          {habs.map((h) => (
+            <button key={h.a.id} type="button" className={"dash-chip" + (off[h.a.id] ? " off" : "")} aria-pressed={!off[h.a.id]} onClick={() => alternar(h.a.id)} title="Ligar/desligar no gráfico">
+              <span className="dash-dot" style={{ background: h.cor }} />{h.a.nome || "(sem nome)"}
+              <small>{h.nenTurno > 0 ? `${fmtNum(h.nenTurno)} Nen/t` : h.nenUnico > 0 ? `${h.nenUnico} Nen (1×)` : "sem custo"}</small>
+            </button>
+          ))}
+        </div>
+        {habs.length > 0 && (
+          <div className="dash-acoes">
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOff({})}>Ligar todas</button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOff(Object.fromEntries(habs.map((h) => [h.a.id, true])))}>Desligar todas</button>
+          </div>
+        )}
+      </div>
+
+      <div className="dash-bloco">
+        <div className="dash-titulo">Nen restante por turno</div>
+        <GraficoLinha xMax={horizonte} yMax={nenMax} rotuloY="Nen"
+          series={[
+            ...(mudouSelecao ? [{ nome: "Tudo ligado", cor: "#8a8a92", pontos: curva(todas, nenMax, "nen"), tracejado: true }] : []),
+            { nome: "Seleção", cor: "#5cc3f5", pontos: curva(sel, nenMax, "nen"), area: true },
+            ...(mostrarVida ? [{ nome: "Vida", cor: "#4cba7a", pontos: curva(sel, pvMax + pvTemp, "vida").map((v) => (v / Math.max(1, pvMax + pvTemp)) * nenMax) }] : []),
+          ]} />
+        <div className="dash-legenda">
+          <span><i style={{ background: "#5cc3f5" }} />Nen (seleção)</span>
+          {mudouSelecao && <span><i style={{ background: "#8a8a92" }} />Nen com tudo ligado</span>}
+          {mostrarVida && <span><i style={{ background: "#4cba7a" }} />Vida (em escala do Nen)</span>}
+        </div>
+        <div className="field-note">Cada habilidade sustentada paga o custo na ativação e de novo no começo de cada turno. Habilidades ativas não sustentadas pagam a cada uso (ajuste os usos por turno abaixo).</div>
+      </div>
+
+      <div className="dash-bloco">
+        <div className="dash-titulo">Para onde vai o Nen, por habilidade</div>
+        {sel.nenTurno > 0 ? (
+          <>
+            <div className="dash-barra-pilha">
+              {ligadas.filter((h) => h.nenTurno > 0).map((h) => <span key={h.a.id} style={{ width: (h.nenTurno / sel.nenTurno) * 100 + "%", background: h.cor }} title={`${h.a.nome}: ${fmtNum(h.nenTurno)} Nen/turno`} />)}
+            </div>
+            <div className="dash-legenda">
+              {ligadas.filter((h) => h.nenTurno > 0).map((h) => <span key={h.a.id}><i style={{ background: h.cor }} />{h.a.nome || "(sem nome)"} · {fmtNum(h.nenTurno)} ({pct(h.nenTurno / sel.nenTurno)}%)</span>)}
+            </div>
+          </>
+        ) : <div className="field-note">Nenhuma habilidade selecionada gasta Nen por turno.</div>}
+      </div>
+
+      <div className="dash-bloco">
+        <div className="dash-titulo">Cada poder, isolado</div>
+        <div className="dash-tabela-wrap">
+          <table className="dash-tabela">
+            <thead><tr><th>Habilidade</th><th>Ação</th><th>Nen/turno</th><th>Dura (Nen)</th><th>Vida/turno</th><th>PP</th><th /></tr></thead>
+            <tbody>
+              {habs.map((h) => {
+                const s = simular([h]);
+                return (
+                  <tr key={h.a.id} className={off[h.a.id] ? "off" : ""}>
+                    <td><span className="dash-dot" style={{ background: h.cor }} />{h.a.nome || "(sem nome)"}<div className="dash-mini">{h.passiva ? "Passiva" : "Ativa"}{h.sust ? " · Sustentada" : ""}{h.a.equipamento ? " · Equipamento" : ""}</div></td>
+                    <td>{acaoDaHabilidade(h.a)}</td>
+                    <td>{fmtNum(h.nenTurno)}{h.nenUnico > 0 ? ` (+${h.nenUnico})` : ""}</td>
+                    <td>{txtDur(s.durNen)}</td>
+                    <td>{s.vidaLiq === 0 ? "—" : (s.vidaLiq > 0 ? "−" : "+") + fmtNum(Math.abs(s.vidaLiq))}</td>
+                    <td>{h.a.equipamento ? "eq. " : ""}{h.a.pp || 0}</td>
+                    <td className="dash-celula-acao">
+                      {!h.passiva && !h.sust && <span className="dash-usos" title="Usos por turno">×<input type="number" min={0} max={9} value={usos[h.a.id] ?? 1} onChange={(e) => setUsos((u) => ({ ...u, [h.a.id]: Math.max(0, Math.min(9, Number(e.target.value) || 0)) }))} /></span>}
+                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => soEste(h.a.id)}>Só este</button>
+                    </td>
+                  </tr>
+                );
+              })}
+              {habs.length === 0 && <tr><td colSpan={7} className="dash-mini">Sem habilidades.</td></tr>}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {(habs.some((h) => h.colaterais.length || h.alvoCond.length || h.vidaTurno > 0 || h.regen > 0 || h.vidaUnica > 0) || Object.keys(varsResumo).length > 0) && (
+        <div className="dash-bloco">
+          <div className="dash-titulo">Vida, condições e variáveis</div>
+          <div className="dash-lista">
+            {habs.map((h) => h.colaterais.map((c, k) => (
+              <div key={h.a.id + "c" + k} className="dash-linha dano"><span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> deixa você <b>{c.cond}</b>{c.comTeste ? ` (com teste, ${pct(c.pFalha)}% de falhar)` : ""}{c.dano > 0 ? <> — <b>−{c.dano} PV</b> por turno{c.comTeste ? ` (esperado −${fmtNum(c.dano * c.pFalha)})` : ""}</> : " — sem dano direto"}{!(h.sust || h.passiva) && c.dano > 0 ? " (só enquanto durar, não é sustentada)" : ""}.</div>
+            )))}
+            {habs.map((h) => h.vidaTurno > 0 && <div key={h.a.id + "v"} className="dash-linha dano"><span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> custa <b>{h.custoVida} PV</b> {h.sust ? "por turno (sustentada)" : `por uso (${h.nUsos}×/turno)`}.</div>)}
+            {habs.map((h) => h.vidaUnica > 0 && <div key={h.a.id + "vu"} className="dash-linha dano"><span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> custa <b>{h.vidaUnica} PV</b> uma vez, ao ativar.</div>)}
+            {habs.map((h) => h.regen > 0 && <div key={h.a.id + "r"} className="dash-linha cura"><span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> regenera <b>+{h.regen} PV</b> por turno.</div>)}
+            {habs.map((h) => h.alvoCond.map((c, k) => <div key={h.a.id + "a" + k} className="dash-linha"><span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> pode aplicar <b>{c.cond}</b> no alvo — {typeof c.dano === "number" ? `${c.dano} PV` : c.dano} por turno.</div>))}
+            {Object.values(varsResumo).map(({ v, porTurno, usos: nomes }) => {
+              const max = v.tipo === "municao" ? maxVariavel(f, v) : null;
+              const gasto = v.tipo === "municao" ? -porTurno : porTurno;
+              return (
+                <div key={v.id} className="dash-linha"><b>{v.nome || "Variável"}</b> ({v.tipo === "municao" ? `munição, máx. ${max}` : "carga, começa em 0"}) — usada por {nomes.join(", ")}. {gasto !== 0 ? (v.tipo === "municao" ? (gasto > 0 ? `Gasta ${gasto} por turno e acaba em ${Math.floor(max / gasto)} turno(s).` : `Recupera ${-gasto} por turno.`) : `${porTurno > 0 ? "Acumula" : "Reduz"} ${Math.abs(porTurno)} por turno.`) : "Sem variação por turno na seleção."}</div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {habs.some((h) => h.aquecimentos.length) && (
+        <div className="dash-bloco">
+          <div className="dash-titulo">Aquecimento</div>
+          <div className="dash-lista">
+            {habs.map((h) => h.aquecimentos.map((aq, k) => (
+              <div key={h.a.id + "q" + k} className="dash-linha">
+                <span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> · {aq.nome} (Aquecimento {aq.N}): pronto em <b>{aq.turnos} turno{aq.turnos === 1 ? "" : "s"}</b>
+                <div className="dash-aq">{aq.seq.map((g, n) => <span key={n} className={n === aq.seq.length - 1 ? "pronto" : ""}>{g}</span>)}</div>
+              </div>
+            )))}
+          </div>
+          <div className="field-note">A sequência mostra a graduação usada em cada turno (ou uso) até chegar à graduação total.</div>
+        </div>
+      )}
+
+      {habs.some((h) => h.testes.length) && (
+        <div className="dash-bloco">
+          <div className="dash-titulo">Exigir Teste</div>
+          <div className="dash-lista">
+            {habs.map((h) => h.testes.map((t, k) => (
+              <div key={h.a.id + "t" + k} className="dash-linha">
+                <span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> · {t.nome}: CD <b>{t.cd}</b>, seu bônus {fmtBonus(t.bonus)} ({t.pericia || "—"}) → <b>{pct(t.p)}%</b> de passar por teste.
+                {(h.sust || h.passiva) && <> Chance de manter por 3 turnos: <b>{pct(Math.pow(t.p, 3))}%</b>, por 5: <b>{pct(Math.pow(t.p, 5))}%</b>{t.p < 1 ? <> · dura em média <b>{fmtNum(t.p / (1 - t.p))}</b> turno(s) a mais.</> : "."}</>}
+              </div>
+            )))}
+          </div>
+        </div>
+      )}
+
+      <div className="dash-bloco">
+        <div className="dash-titulo">Para onde vão os pontos de poder</div>
+        <div className="dash-pp">
+          <Rosca fatias={fatias} total={totalRosca} centro={`${gastosPP}/${ppMax}`} sub="PP gastos" />
+          <div className="dash-legenda vertical">
+            {fatias.map((s) => <span key={s.nome}><i style={{ background: s.cor }} />{s.nome} · <b>{s.v}</b> ({pct(s.v / Math.max(1, totalRosca))}%)</span>)}
+          </div>
+        </div>
+        {ataques.length > 0 && (
+          <div className="dash-hbars">
+            {ataques.map((a, i) => (
+              <div key={a.id} className="dash-hbar">
+                <span className="dash-hbar-nome">{a.nome || "(sem nome)"}</span>
+                <span className="dash-hbar-trilho"><span style={{ width: (custoAtaque(a) / maiorHabPP) * 100 + "%", background: PAL_DASH[i % PAL_DASH.length] }} /></span>
+                <b>{a.equipamento ? `eq. ${a.pp || 0}` : custoAtaque(a)}</b>
+              </div>
+            ))}
+          </div>
+        )}
+        {pontosEquipamentoMax(f) > 0 && <div className="field-note">Equipamento: {pontosEquipamentoGastos(f)} de {pontosEquipamentoMax(f)} pontos (não gasta PP).</div>}
+      </div>
+
+      <div className="dash-bloco">
+        <div className="dash-titulo">Atributos</div>
+        <div className="dash-duplo">
+          <Radar itens={ATRIBUTOS.map((a) => ({ l: a.l, v: attrBase(f, a.k) }))} max={radarMax} />
+          <div className="dash-lista">
+            <div className="dash-linha">PP em atributos: <b>{ppAtr}</b> (2 por ponto). Máximo por atributo no nível {f.nivel || 1}: <b>{radarMax}</b>.</div>
+            <div className="dash-linha">Vida máx. <b>{pvMax}</b> = (5 + Vigor) × nível · Nen máx. <b>{nenMax}</b> = (3 + Prontidão) × nível.</div>
+            <div className="dash-linha">Deslocamento: <b>{deslocamentoTexto(f)}</b>{passivosCalc.reducaoDano > 0 ? <> · Proteção: <b>−{passivosCalc.reducaoDano}</b> de dano</> : null}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="dash-bloco">
+        <div className="dash-titulo">Médias de dados</div>
+        <div className="field-note">Um d20 rende em média 10,5. Veja o total médio de cada teste e a chance de alcançar uma CD.</div>
+        <div className="dash-tabela-wrap">
+          <table className="dash-tabela">
+            <thead><tr><th>Teste</th><th>Bônus</th><th>Média</th><th>Faixa</th><th>CD 10</th><th>CD 15</th><th>CD 20</th></tr></thead>
+            <tbody>
+              {[...linhasRolagem, ...linhasPericias].map((l) => (
+                <tr key={l.n}><td>{l.n}</td><td>{fmtBonus(l.b)}</td><td><b>{fmtNum(10.5 + l.b)}</b></td><td>{1 + l.b}–{20 + l.b}</td><td>{pct(chanceMinD20(10 - l.b))}%</td><td>{pct(chanceMinD20(15 - l.b))}%</td><td>{pct(chanceMinD20(20 - l.b))}%</td></tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setMostrarPericias((s) => !s)} style={{ marginTop: 8 }}>{mostrarPericias ? "Mostrar só as 4 melhores perícias" : "Mostrar todas as perícias"}</button>
+      </div>
+
+      <div className="dash-bloco">
+        <div className="dash-titulo">Simulador contra um alvo</div>
+        <div className="grid2" style={{ marginBottom: 10 }}>
+          <div><label className="label">Defesa do alvo (Aparar/Esquiva)</label><input type="number" value={defAlvo} onChange={(e) => setDefAlvo(Number(e.target.value) || 0)} /></div>
+          <div><label className="label">Resistência/Fort./Vontade do alvo</label><input type="number" value={resAlvo} onChange={(e) => setResAlvo(Number(e.target.value) || 0)} /></div>
+        </div>
+        {ataquesAtivos.length > 0 && (
+          <div className="dash-lista">
+            {ataquesAtivos.map((h) => {
+              const b = h.a.tipoAcerto === "corpo" ? bAtqC : bAtqD;
+              const lim = limiarCritico(f, h.a.id);
+              return (
+                <div key={h.a.id} className="dash-linha"><span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> ({h.a.tipoAcerto === "corpo" ? "corpo a corpo" : "distância"} {fmtBonus(b)}) contra CD {cdDefAlvo}: acerta em <b>{pct(chanceMinD20(cdDefAlvo - b))}%</b> · crítico em <b>{pct((21 - lim) / 20)}%</b> (ameaça {lim}–20).</div>
+              );
+            })}
+          </div>
+        )}
+        {efeitosDano.length > 0 ? (
+          <div className="dash-hbars" style={{ marginTop: 10 }}>
+            {efeitosDano.map((e, i) => (
+              <div key={i} className="dash-efeito">
+                <div className="dash-efeito-topo"><span className="dash-dot" style={{ background: e.cor }} /><b>{e.hab}</b> · {e.cat} {e.g} · CD {e.cd} <small>(alvo {fmtBonus(resAlvo)}): resiste {pct(e.dist.passa)}%</small></div>
+                <div className="dash-barra-pilha grau">
+                  <span style={{ width: e.dist.passa * 100 + "%", background: "var(--success)" }} title="Alvo resiste" />
+                  <span style={{ width: e.dist.g1 * 100 + "%", background: "#e8c84a" }} title="Falha 1 grau" />
+                  <span style={{ width: e.dist.g2 * 100 + "%", background: "#e8964a" }} title="Falha 2 graus" />
+                  <span style={{ width: e.dist.g3 * 100 + "%", background: "#e85a5a" }} title="Falha 3 graus" />
+                  <span style={{ width: e.dist.g4 * 100 + "%", background: "#c084fc" }} title="Falha 4+ graus" />
+                </div>
+              </div>
+            ))}
+            <div className="dash-legenda"><span><i style={{ background: "var(--success)" }} />Resiste</span><span><i style={{ background: "#e8c84a" }} />Falha 1 grau</span><span><i style={{ background: "#e8964a" }} />2 graus</span><span><i style={{ background: "#e85a5a" }} />3 graus</span><span><i style={{ background: "#c084fc" }} />4+ graus</span></div>
+          </div>
+        ) : <div className="field-note">Adicione efeitos de Dano, Aflição ou Enfraquecer para ver as chances contra o alvo.</div>}
+        {vantCrit.length > 0 && <div className="field-note">Crítico Aprimorado já está considerado nos cálculos de crítico acima.</div>}
+      </div>
+    </div>
+  );
+}
+
 /* ---------- ficha (form) ---------- */
 function fichaPadrao(rotulos) {
   return {
@@ -5462,6 +6080,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   const [erro, setErro] = useState("");
   const [complicOpen, setComplicOpen] = useState(false);
   const [fundamentosOpen, setFundamentosOpen] = useState(false);
+  const [ajFotoAberto, setAjFotoAberto] = useState(false);
   const toggleFundamento = (fund) => {
     const jaTem = f.ataques.some((a) => a.fundamento === fund.id);
     upd("ataques", jaTem ? f.ataques.filter((a) => a.fundamento !== fund.id) : [...f.ataques, construirFundamento(fund)]);
@@ -5512,8 +6131,8 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   const handleFoto = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const url = await resizeImageFile(file);
-    upd("foto", url);
+    const url = await resizeImageFile(file, 480, 0.8);
+    setF((s) => ({ ...s, foto: url, fotoAj: null }));
   };
 
   const pvMax = pvMaxCalc(f), nenMax = nenMaxCalc(f), desloc = deslocamentoTexto(f);
@@ -5540,16 +6159,22 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         <div className="hero-conteudo">
           <div className="hero-linha" style={{ marginBottom: 0 }}>
             <label className="hero-retrato ed-retrato" title="Trocar foto">
-              {f.foto ? <img src={f.foto} alt="Foto da ficha" /> : <span>{(f.nome || "?").trim().charAt(0).toUpperCase() || "?"}</span>}
+              {f.foto ? <ImgAj src={f.foto} aj={f.fotoAj} alt="Foto da ficha" /> : <span>{(f.nome || "?").trim().charAt(0).toUpperCase() || "?"}</span>}
               <em className="ed-retrato-dica">📷 Trocar</em>
               <input type="file" accept="image/*" onChange={handleFoto} style={{ display: "none" }} />
             </label>
             <div className="hero-info ed-hero-info">
               <label className="label">Nome</label>
               <input type="text" className="ed-nome" placeholder="Nome do personagem" value={f.nome} onChange={(e) => upd("nome", e.target.value)} />
-              {f.foto && <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 8 }} onClick={() => upd("foto", null)}>Remover foto</button>}
+              {f.foto && (
+                <div className="ed-foto-botoes">
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => setAjFotoAberto((s) => !s)}>{ajFotoAberto ? "Fechar ajuste" : "✥ Ajustar enquadramento"}</button>
+                  <button type="button" className="btn btn-ghost btn-sm" onClick={() => { upd("foto", null); upd("fotoAj", null); }}>Remover foto</button>
+                </div>
+              )}
             </div>
           </div>
+          {f.foto && ajFotoAberto && <div style={{ marginTop: 12 }}><AjusteImagem src={f.foto} ajuste={f.fotoAj} onMudar={(v) => upd("fotoAj", v)} proporcao="1 / 1" maxLargura={220} /></div>}
           <div className="grid3" style={{ marginTop: 12 }}>
             <div><label className="label">Tipo</label><SearchableSelect value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>
             <div><label className="label">Tipo de Nen</label><SearchableSelect value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>
@@ -5724,6 +6349,11 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         </div>
       )}
 
+      </section>
+
+      <section className="ed-sec ed-dash">
+        <div className="section-title">Dashboard da ficha</div>
+        <PainelFicha f={f} />
       </section>
 
       <div style={{ height: 70 }} />
@@ -5915,7 +6545,7 @@ function BarraVital({ tipo, nome, atual, max, temp = 0, entrada, extra }) {
     <div className={"barra-vital bv-" + tipo + (baixa ? " baixa" : "")}>
       <div className="bv-topo">
         <span className="bv-nome">{nome}</span>
-        <span className="bv-num">{entrada || <b>{atual}</b>} / <b>{max}</b>{temp ? <span style={{ color: "#86e8d0" }}> (+{temp})</span> : null}{extra}</span>
+        <span className="bv-num">{entrada || <b>{atual}</b>} / <b>{max}</b>{temp ? <span style={{ color: "#86c8e8" }}> (+{temp})</span> : null}{extra}</span>
       </div>
       <div className="bv-trilho">
         <div className="bv-seg principal" style={{ width: pctAtual + "%" }} />
@@ -6064,7 +6694,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
       <div className={"ent-item" + (onArrastarFicha ? " arrastavel" : "")} draggable={!!onArrastarFicha} onDragStart={(ev) => { if (onArrastarFicha) onArrastarFicha(ev, e); }} onDragEnd={() => { if (onArrastarFichaFim) onArrastarFichaFim(); }} title={onArrastarFicha ? "Arraste para uma pasta" : undefined}>
         <div className="ent-collapsed" onClick={() => setAberto(true)}>
           <div className="nome-row">
-            {e.foto && <img src={e.foto} alt="" className="foto-thumb" style={{ width: 26, height: 26 }} />}
+            {e.foto && <span className="foto-thumb-wrap" style={{ width: 26, height: 26 }}><ImgAj src={e.foto} aj={e.fotoAj} alt="" className="foto-thumb" style={{ width: 26, height: 26 }} /></span>}
             <span className="nome nome-clicavel">{e.nome}</span>
             <span className="meta">{e.rotulo} · Nv.{e.nivel} · {e.dono}</span>
             {e.oponente && <span className="badge-status">Engajado</span>}
@@ -6093,7 +6723,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
         <div className="hero-conteudo">
           <div className="hero-linha">
             <div className="hero-retrato" onClick={() => setAberto(false)} title="Recolher ficha">
-              {e.foto ? <img src={e.foto} alt={e.nome} /> : <span>{(e.nome || "?").trim().charAt(0).toUpperCase()}</span>}
+              {e.foto ? <ImgAj src={e.foto} aj={e.fotoAj} alt={e.nome} /> : <span>{(e.nome || "?").trim().charAt(0).toUpperCase()}</span>}
             </div>
             <div className="hero-info">
               <span className="nome nome-clicavel" onClick={() => setAberto(false)}>{e.nome}</span>
@@ -6264,7 +6894,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
                   <button key={a.id} type="button" className={"hab-card" + (passiva ? " passiva" : "") + (ativa ? " ativo" : "") + (itemQuebrado(a) ? " item-quebrado" : "")}
                     disabled={passiva && !editavel} onClick={() => (passiva ? (editavel ? alternarPassiva(a) : null) : abrirAtaque(a))}
                     title={passiva ? (editavel ? (ativa ? "Clique para desativar" : "Clique para ativar") : "") : "Clique para usar"}>
-                    {a.imagem ? <img className="hab-img" src={a.imagem} alt="" /> : <div className="hab-faixa" />}
+                    {a.imagem ? <div className="hab-img-wrap"><ImgAj className="hab-img" src={a.imagem} aj={a.imagemAj} /></div> : <div className="hab-faixa" />}
                     <div className="hab-corpo">
                       <div className="hab-nome">{a.nome || "(sem nome)"}</div>
                       <div className="hab-tags">
