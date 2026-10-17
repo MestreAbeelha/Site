@@ -2,10 +2,17 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   auth, ouvirAuth, cadastrar, entrar, sair, getPersonal, setPersonal,
   getShared, setShared, ouvirShared,
-  ouvirEntidades, salvarEntidade, removerEntidadeDoc, ouvirRoster, adicionarItemArray,
+  ouvirEntidades, salvarEntidade as salvarEntidadeBase, removerEntidadeDoc, ouvirRoster, adicionarItemArray,
   ouvirHistorico, adicionarHistorico,
   migrarDadosAntigos, ouvirErrosSalvamento,
 } from "./firebase.js";
+
+/* Toda ficha salva leva junto os máximos reais de Vida e Nen (com bônus de poderes). A extensão do Owlbear
+   lê esse campo "hud" para desenhar as barras sobre os tokens. */
+function calcHud(e) {
+  try { return { pvMax: pvMaxCalc(e), nenMax: nenMaxCalc(e) }; } catch { return e?.hud || null; }
+}
+const salvarEntidade = (e) => salvarEntidadeBase(e && typeof e === "object" ? { ...e, hud: calcHud(e) } : e);
 
 /* ---------- estilo global ---------- */
 const GlobalStyle = () => (
