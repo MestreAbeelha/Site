@@ -368,6 +368,10 @@ const GlobalStyle = () => (
     .mm3 .dash-tabela th { text-align:left; font-size:0.66rem; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); font-weight:500; padding:6px 8px; border-bottom:1px solid var(--border); white-space:nowrap; }
     .mm3 .dash-tabela td { padding:8px; border-bottom:1px solid var(--border); vertical-align:middle; }
     .mm3 .dash-tabela tr.off td { opacity:0.45; }
+    .mm3 .dash-linha-clicavel { cursor:pointer; transition:background .15s; }
+    .mm3 .dash-linha-clicavel:hover td { background:rgba(255,255,255,0.04); }
+    .mm3 .dash-linha-clicavel.solo td { background:var(--accent-soft); }
+    .mm3 .dash-linha-clicavel.solo td:first-child { box-shadow:inset 3px 0 0 var(--accent); }
     .mm3 .dash-mini { font-size:0.7rem; color:var(--muted); }
     .mm3 .dash-celula-acao { white-space:nowrap; text-align:right; }
     .mm3 .dash-usos { display:inline-flex; align-items:center; gap:3px; color:var(--muted); margin-right:6px; }
@@ -450,6 +454,9 @@ const GlobalStyle = () => (
     .mm3 .hab-card .hab-faixa { height:4px; background:linear-gradient(90deg,var(--accent),transparent); }
     .mm3 .hab-card.passiva .hab-faixa { background:linear-gradient(90deg,#5aa9e6,transparent); }
     .mm3 .hab-card .hab-corpo { padding:10px 12px 12px; }
+    .mm3 .acao-card .acao-linha { font-size:0.78rem; color:var(--text); opacity:0.88; margin-top:7px; line-height:1.35; }
+    .mm3 .acao-card .acao-linha b { display:block; font-size:0.62rem; text-transform:uppercase; letter-spacing:0.09em; color:var(--muted); font-weight:600; margin-bottom:1px; }
+    .mm3 .acao-card:hover { border-color:var(--hab-cor); }
     .mm3 .hab-card .hab-nome { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:0.03em; line-height:1.1; }
     .mm3 .hab-card .hab-tags { display:flex; flex-wrap:wrap; gap:4px; margin-top:7px; }
     .mm3 .hab-tag { font-size:0.68rem; padding:2px 8px; border-radius:999px; background:rgba(255,255,255,0.07); color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; display:inline-flex; align-items:center; gap:5px; }
@@ -868,6 +875,47 @@ function chaveAcaoDeNome(nome) {
   if (n.startsWith("Ação Livre")) return "livre";
   if (n.startsWith("Reação")) return "reacao";
   return null;
+}
+
+/* Resumo curto (teste + efeito) das ações e manobras, mostrado nos cartões da ficha. */
+const RESUMO_ACOES = {
+  agarrar: { teste: "Ataque corpo a corpo; se acertar, Atletismo oposto.", efeito: "1 grau: alvo agarrado. 2+ graus: amarrado." },
+  ajudar: { teste: "O mesmo teste do aliado, com CD 10.", efeito: "Se passar, o aliado ganha +2 por grau no próximo teste igual." },
+  defender: { teste: "Sem teste.", efeito: "Reduz todo dano recebido pelo seu Vigor até o seu próximo turno." },
+  derrubar: { teste: "Ataque com −2; se acertar, Acrobacia/Atletismo oposto.", efeito: "Se vencer, o alvo cai." },
+  desarmar: { teste: "Ataque com −2; o alvo testa Força contra a CD de dano.", efeito: "Se o alvo falhar, solta o item." },
+  escapar: { teste: "Atletismo ou Acrobacia contra a CD do agarrão (padrão 15).", efeito: "Se passar, escapa do agarrão." },
+  fugir: { teste: "Furtividade contra a Percepção dos oponentes escolhidos.", efeito: "Quem passar em todos fica furtivo, usando o deslocamento para cobertura." },
+  levantarse: { teste: "Acrobacia CD 20.", efeito: "Levanta-se do chão; se falhar, perde a ação de movimento e continua caído." },
+  levantamento: { teste: "Atletismo CD 10 + graduações de massa extra.", efeito: "Levanta ou arremessa objetos; até a graduação de Força é automático." },
+  mirar: { teste: "Sem teste.", efeito: "Fica indefeso e imóvel; o próximo ataque recebe +10." },
+  mover: { teste: "Atletismo CD 15 (opcional).", efeito: "Move-se pela graduação da Agilidade; cada grau dá +1 de velocidade por uma rodada." },
+  quebrar: { teste: "Ataque contra a defesa do personagem (−2 se o item estiver sendo segurado).", efeito: "Danifica o item vestido ou segurado." },
+  agarrao: { teste: "Sem teste.", efeito: "Mantém o agarrão ativo sobre o alvo." },
+  desmoralizar: { teste: "Intimidação oposta ao melhor entre Intimidação e Vontade do alvo.", efeito: "Se vencer, o alvo fica Prejudicado até o início do seu próximo turno." },
+  fintar: { teste: "Enganação oposta ao melhor entre Enganação e Vontade do alvo.", efeito: "Se vencer, o alvo fica Vulnerável contra o seu próximo ataque." },
+  encontrao: { teste: "Ataque, após usar todo o deslocamento em linha reta.", efeito: "+1 no ataque por graduação percorrida; se errar, o alvo pode reagir com Agarrar, Derrubar ou Desarmar." },
+  lubridiar: { teste: "Defesas ativas viram 10 + bônus de Enganação.", efeito: "Reação ao ser alvo de ataque; não vale se estiver indefeso (vulnerável: Enganação pela metade)." },
+  planejarManobra: { teste: "Investigação CD 10.", efeito: "Cada grau dá uma Ação de Planejamento: Agora!, Cuidado, Nosso Alvo ou Reposicionar." },
+};
+function CartaoAcao({ a, onClick, rotuloExtra, titulo }) {
+  const k = chaveAcaoDeNome(a.tag);
+  const cor = ACOES_TIPOS.find((t) => t.k === k)?.cor || "var(--muted)";
+  const r = RESUMO_ACOES[a.id] || { teste: "", efeito: a.desc };
+  return (
+    <button type="button" className="hab-card acao-card" onClick={onClick} title={titulo || "Clique para usar"} style={{ "--hab-cor": cor }}>
+      <div className="hab-faixa" style={{ background: `linear-gradient(90deg, ${cor}, transparent)` }} />
+      <div className="hab-corpo">
+        <div className="hab-nome">{a.nome}</div>
+        <div className="hab-tags">
+          <span className="hab-tag" style={{ "--hab-cor": cor }}><span className="hab-dot" />{a.tag}</span>
+          {rotuloExtra && <span className="hab-tag">{rotuloExtra}</span>}
+        </div>
+        {r.teste && <div className="acao-linha"><b>Teste</b>{r.teste}</div>}
+        {r.efeito && <div className="acao-linha"><b>Efeito</b>{r.efeito}</div>}
+      </div>
+    </button>
+  );
 }
 function acaoDaHabilidade(a) { return a?.acao || (a?.tipo === "passiva" ? "Ação Livre" : "Ação Padrão"); }
 function rotuloAcaoCurto(nome) { const k = chaveAcaoDeNome(nome); return ACOES_TIPOS.find((x) => x.k === k)?.curto || ""; }
@@ -5800,7 +5848,9 @@ function PainelFicha({ f }) {
   }));
 
   const alternar = (id) => setOff((o) => ({ ...o, [id]: !o[id] }));
-  const soEste = (id) => setOff(Object.fromEntries(habs.filter((h) => h.a.id !== id).map((h) => [h.a.id, true])));
+  const ehSolo = (id) => habs.length > 1 && habs.every((h) => (h.a.id === id ? !off[h.a.id] : !!off[h.a.id]));
+  // clicar numa habilidade isola; clicar de novo tira o filtro
+  const soEste = (id) => setOff(ehSolo(id) ? {} : Object.fromEntries(habs.filter((h) => h.a.id !== id).map((h) => [h.a.id, true])));
   const radarMax = atributoMax(f.nivel);
 
   const Tile = ({ rot, val, sub, cor }) => (
@@ -5834,12 +5884,6 @@ function PainelFicha({ f }) {
             </button>
           ))}
         </div>
-        {habs.length > 0 && (
-          <div className="dash-acoes">
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOff({})}>Ligar todas</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setOff(Object.fromEntries(habs.map((h) => [h.a.id, true])))}>Desligar todas</button>
-          </div>
-        )}
       </div>
 
       <div className="dash-bloco">
@@ -5874,24 +5918,26 @@ function PainelFicha({ f }) {
 
       <div className="dash-bloco">
         <div className="dash-titulo">Cada poder, isolado</div>
+        <div className="field-note" style={{ marginTop: -4 }}>Clique numa habilidade para ver só ela no gráfico; clique de novo para voltar.</div>
         <div className="dash-tabela-wrap">
           <table className="dash-tabela">
-            <thead><tr><th>Habilidade</th><th>Ação</th><th>Nen/turno</th><th>Dura (Nen)</th><th>Vida/turno</th><th>PP</th><th /></tr></thead>
+            <thead><tr><th>Habilidade</th><th>Ação</th><th>Nen/turno</th><th>Dura (Nen)</th><th>Vida/turno</th><th>PP</th>{habs.some((h) => !h.passiva && !h.sust) && <th>Usos/turno</th>}</tr></thead>
             <tbody>
               {habs.map((h) => {
                 const s = simular([h]);
                 return (
-                  <tr key={h.a.id} className={off[h.a.id] ? "off" : ""}>
+                  <tr key={h.a.id} className={"dash-linha-clicavel" + (off[h.a.id] ? " off" : "") + (ehSolo(h.a.id) ? " solo" : "")} onClick={() => soEste(h.a.id)} title={ehSolo(h.a.id) ? "Clique para tirar o filtro" : "Clique para ver só esta habilidade"}>
                     <td><span className="dash-dot" style={{ background: h.cor }} />{h.a.nome || "(sem nome)"}<div className="dash-mini">{h.passiva ? "Passiva" : "Ativa"}{h.sust ? " · Sustentada" : ""}{h.a.equipamento ? " · Equipamento" : ""}</div></td>
                     <td>{acaoDaHabilidade(h.a)}</td>
                     <td>{fmtNum(h.nenTurno)}{h.nenUnico > 0 ? ` (+${h.nenUnico})` : ""}</td>
                     <td>{txtDur(s.durNen)}</td>
                     <td>{s.vidaLiq === 0 ? "—" : (s.vidaLiq > 0 ? "−" : "+") + fmtNum(Math.abs(s.vidaLiq))}</td>
                     <td>{h.a.equipamento ? "eq. " : ""}{h.a.pp || 0}</td>
-                    <td className="dash-celula-acao">
-                      {!h.passiva && !h.sust && <span className="dash-usos" title="Usos por turno">×<input type="number" min={0} max={9} value={usos[h.a.id] ?? 1} onChange={(e) => setUsos((u) => ({ ...u, [h.a.id]: Math.max(0, Math.min(9, Number(e.target.value) || 0)) }))} /></span>}
-                      <button type="button" className="btn btn-ghost btn-sm" onClick={() => soEste(h.a.id)}>Só este</button>
-                    </td>
+                    {habs.some((x) => !x.passiva && !x.sust) && (
+                      <td className="dash-celula-acao" onClick={(ev) => ev.stopPropagation()}>
+                        {!h.passiva && !h.sust ? <span className="dash-usos" title="Usos por turno">×<input type="number" min={0} max={9} value={usos[h.a.id] ?? 1} onChange={(e) => setUsos((u) => ({ ...u, [h.a.id]: Math.max(0, Math.min(9, Number(e.target.value) || 0)) }))} /></span> : <span className="dash-mini">—</span>}
+                      </td>
+                    )}
                   </tr>
                 );
               })}
@@ -6562,7 +6608,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
   const [aberto, setAberto] = useState(false);
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const confirmarExclusao = () => { setConfirmandoExclusao(false); onExcluir(); };
-  const [secoes, setSecoes] = useState({ acoes: false, manobras: false, ataques: true, defesas: false, atributos: false, pericias: false, condicoes: false });
+  const [secoes, setSecoes] = useState({ acoes: false, manobras: false, vantagens: false, ataques: true, defesas: false, atributos: false, pericias: false, condicoes: false });
   const toggleSecao = (k) => setSecoes((s) => ({ ...s, [k]: !s[k] }));
   const abrirStat = (tipo, chave, label) => onAbrirRolagem({ origem: e, tipo, chave, label: `${e.nome} · ${label}` });
   const abrirAtaque = (ataque) => {
@@ -6991,15 +7037,9 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
             <span className={"arrow" + (secoes.acoes ? " open" : "")}>▶</span>
           </div>
           {secoes.acoes && (
-            <div className="chip-row">
-              {ACOES_PADRAO.map((a) => (
-                <button key={a.id} className="stat-chip acao-chip" onClick={() => abrirAcao(a)}>
-                  {a.nome}<span className="acao-tipo">{rotuloAcaoCurto(a.tag)}</span>
-                </button>
-              ))}
-              <button className="stat-chip acao-chip" onClick={manterAgarrao} title={rap.carente ? "Carente: manter o agarrão não gasta ação livre" : "Gasta uma ação livre"}>
-                Manter Agarrão<span className="acao-tipo">{rap.carente ? "grátis" : "livre"}</span>
-              </button>
+            <div className="hab-grid">
+              {ACOES_PADRAO.map((a) => <CartaoAcao key={a.id} a={a} onClick={() => abrirAcao(a)} />)}
+              <CartaoAcao a={{ id: "agarrao", nome: "Manter Agarrão", tag: "Ação Livre" }} onClick={manterAgarrao} rotuloExtra={rap.carente ? "Grátis (Carente)" : null} titulo={rap.carente ? "Carente: manter o agarrão não gasta ação livre" : "Gasta uma ação livre"} />
             </div>
           )}
         </div>
@@ -7012,12 +7052,8 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
             <span className={"arrow" + (secoes.manobras ? " open" : "")}>▶</span>
           </div>
           {secoes.manobras && (
-            <div className="chip-row">
-              {MANOBRAS.map((m) => (
-                <button key={m.id} className="stat-chip acao-chip" onClick={() => abrirAcao(m)}>
-                  {m.nome}<span className="acao-tipo">{rotuloAcaoCurto(m.tag)}</span>
-                </button>
-              ))}
+            <div className="hab-grid">
+              {MANOBRAS.map((m) => <CartaoAcao key={m.id} a={m} onClick={() => abrirAcao(m)} />)}
             </div>
           )}
         </div>
@@ -7037,14 +7073,19 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
 
       {(e.vantagens || []).length > 0 && (
         <div className="stat-group">
-          <div className="stat-group-label">Vantagens</div>
-          <div className="chip-row">
-            {e.vantagens.map((v) => (
-              <button key={v.id} className={"stat-chip vantagem-chip" + (v.ativo ? " ativo" : "")} onClick={() => onAbrirVantagem(e, v, editavel)}>
-                {v.nome}{v.graduacoes > 1 ? <b> ×{v.graduacoes}</b> : null}
-              </button>
-            ))}
+          <div className="acoes-header secao-titulo" onClick={() => toggleSecao("vantagens")}>
+            <div className="stat-group-label">Vantagens</div>
+            <span className={"arrow" + (secoes.vantagens ? " open" : "")}>▶</span>
           </div>
+          {secoes.vantagens && (
+            <div className="chip-row">
+              {e.vantagens.map((v) => (
+                <button key={v.id} className={"stat-chip vantagem-chip" + (v.ativo ? " ativo" : "")} onClick={() => onAbrirVantagem(e, v, editavel)}>
+                  {v.nome}{v.graduacoes > 1 ? <b> ×{v.graduacoes}</b> : null}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
