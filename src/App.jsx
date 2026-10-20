@@ -8,7 +8,7 @@ import {
 } from "./firebase.js";
 import {
   calcularHabilidade, custoColateral, grauCondicao, razaoTxt, modsDisponiveis, MOD_POR_ID, EFEITOS as EFEITOS_CAT, EFEITO_POR_ID as EFEITO_CAT_POR_ID,
-  TIPOS_NEN as TIPOS_NEN_CAT, relacaoNen, EXCLUSIVOS as EXCLUSIVOS_CAT, regraDoMod,
+  TIPOS_NEN as TIPOS_NEN_CAT, relacaoNen, EXCLUSIVOS as EXCLUSIVOS_CAT, regraDoMod, DESC_EFEITO, DESC_MOD, descEfeitoCompleta,
 } from "./poderes.js";
 
 /* Toda ficha salva leva junto os máximos reais de Vida e Nen (com bônus de poderes). A extensão do Owlbear
@@ -726,6 +726,48 @@ const GlobalStyle = () => (
     .mm3 .vb-grupo-t { font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:var(--vb-cor); margin-bottom:5px; }
     .mm3 .vb-opcao { font:inherit; font-size:.8rem; border-radius:9px; padding:7px 11px; border:1px solid var(--vb-cor); background:color-mix(in srgb, var(--vb-cor) 12%, var(--surface3)); color:var(--text); cursor:pointer; display:inline-flex; gap:7px; align-items:center; }
     .mm3 .vb-opcao i { font-style:normal; color:var(--muted); font-size:.7rem; }
+    .mm3 .vb-bloco { background:#1b1b24 !important; border-top-color:#33333f; border-right-color:#33333f; border-bottom-color:#33333f; }
+    .mm3 .vb-bloco.passivo { background:#1b1b24 !important; }
+    .mm3 .vb-peca { background:#262633; }
+    .mm3 .vb-peca.extra { border-color:#2fb84f; background:#14341f; }
+    .mm3 .vb-peca.falha { border-color:#d93636; background:#3a1618; }
+    .mm3 .vb-opcao { border:2px solid rgba(0,0,0,.25); font-weight:700; }
+    .mm3 .vb-opcao i { color:inherit; opacity:.7; }
+    .mm3 .vb-grupo { border-left-width:5px; }
+    .mm3 .vb-novo { background:#2a2614; }
+    .mm3 .mp-wrap { position:relative; border:1px solid #2c2c3a; border-radius:16px; background:#0f0f16; overflow:hidden; }
+    .mm3 .mp-area { overflow:auto; max-height:74vh; min-height:220px; cursor:grab; background-image:radial-gradient(#25253299 1.2px, transparent 1.2px); background-size:22px 22px; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
+    .mm3 .mp-area:active { cursor:grabbing; }
+    .mm3 .mp-cena { position:relative; transform-origin:0 0; transition:transform .25s ease; }
+    .mm3 .mp-linhas { position:absolute; left:0; top:0; pointer-events:none; }
+    .mm3 .mp-linhas path { fill:none; stroke:#5d6477; stroke-width:2.2; stroke-linecap:round; transition:stroke .2s, stroke-width .2s; }
+    .mm3 .mp-linhas path.on { stroke:#e8c84a; stroke-width:3.2; }
+    .mm3 .mp-linhas path.mais { stroke-dasharray:3 7; stroke:#3f4455; }
+    .mm3 .mp-no { position:absolute; cursor:pointer; user-select:none; transition:transform .15s ease, box-shadow .15s ease, filter .15s ease; animation:mpEntra .35s ease both; }
+    .mm3 .mp-no:hover { transform:translateY(-2px) scale(1.04); filter:brightness(1.08); z-index:3; }
+    @keyframes mpEntra { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
+    .mm3 .mp-raiz { height:72px; border-radius:18px; background:#e8c84a; color:#1a1a1a; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 8px; text-align:center; box-shadow:0 4px 0 #9c8420, 0 8px 18px rgba(0,0,0,.45); }
+    .mm3 .mp-raiz b { font-size:.82rem; line-height:1.1; max-height:2.2em; overflow:hidden; }
+    .mm3 .mp-raiz span { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:.03em; white-space:nowrap; }
+    .mm3 .mp-ef { display:flex; align-items:center; justify-content:center; text-align:center; padding:6px 10px; border-radius:18px; font-weight:800; font-size:.86rem; line-height:1.12; box-shadow:0 4px 0 rgba(0,0,0,.4), 0 8px 18px rgba(0,0,0,.4); border:3px solid transparent; }
+    .mm3 .mp-ef-nome { display:block; max-height:2.4em; overflow:hidden; overflow-wrap:anywhere; }
+    .mm3 .mp-ef em { position:absolute; right:-9px; top:-10px; min-width:26px; height:26px; border-radius:99px; background:#0f0f16; color:#fff; border:2px solid #8a90a0; font-size:.74rem; font-style:normal; display:flex; align-items:center; justify-content:center; padding:0 5px; }
+    .mm3 .mp-ef.sel { border-color:#fff; box-shadow:0 0 0 4px #e8c84a, 0 8px 18px rgba(0,0,0,.4); }
+    .mm3 .mp-ef.passivo { border-radius:99px; }
+    .mm3 .mp-ef.mp-novo { background:transparent !important; color:#8a90a0 !important; border:3px dashed #4b5163; box-shadow:none; }
+    .mm3 .mp-mod { display:flex; align-items:center; justify-content:center; text-align:center; padding:4px 10px; border-radius:99px; font-size:.7rem; font-weight:700; line-height:1.1; color:#fff; border:3px solid transparent; box-shadow:0 3px 0 rgba(0,0,0,.4); }
+    .mm3 .mp-mod span { display:block; max-height:2.3em; overflow:hidden; }
+    .mm3 .mp-mod.extra { background:#1f9a43; }
+    .mm3 .mp-mod.falha { background:#b72c34; }
+    .mm3 .mp-mod.sel { border-color:#fff; box-shadow:0 0 0 4px #e8c84a; }
+    .mm3 .mp-mod.fixa { border-style:dashed; border-color:rgba(255,255,255,.7); }
+    .mm3 .mp-mod.fixa.sel { border-style:solid; border-color:#fff; }
+    .mm3 .mp-mod.mp-mais { background:transparent; border:3px dashed #4b5163; color:#8a90a0; box-shadow:none; font-weight:600; }
+    .mm3 .mp-zoom { position:absolute; right:8px; bottom:8px; display:flex; align-items:center; gap:2px; background:#1b1b24; border:1px solid #33333f; border-radius:10px; padding:2px; box-shadow:0 4px 12px rgba(0,0,0,.4); }
+    .mm3 .mp-zoom button { width:30px; height:30px; border:none; background:#262633; color:#fff; border-radius:8px; font-size:1.05rem; cursor:pointer; }
+    .mm3 .mp-zoom button:hover { background:#34344a; }
+    .mm3 .mp-zoom span { font-size:.72rem; color:#cfd2dc; min-width:42px; text-align:center; }
+    .mm3 .mp-inspetor { display:flex; flex-direction:column; }
     .mm3 .cb-auto-custo { padding:9px 12px; background:var(--surface3); border-radius:8px; }
     .mm3 .cb-auto-custo span { color:var(--muted); font-size:.75rem; margin-left:6px; }
 `}</style>
@@ -6023,14 +6065,16 @@ function ModsEfeito({ efeito, onMudar, res, idCat: idCatProp, ocultar }) {
 
 
 /* ---------- CONSTRUTOR VISUAL: cada efeito é um bloco colorido com extras (verde) e falhas (vermelho) como peças ---------- */
-const COR_NEN = { emissor: "#4aa8e8", transmutador: "#b075e8", fortificador: "#4cba7a", manipulador: "#e85a5a", conjurador: "#e89a4a", especialista: "#e8c84a", modelador: "#4ad0c0", coringa: "#b8b8c4" };
+const COR_NEN = { modelador: "#f28c1e", especialista: "#2f6fe0", conjurador: "#d93636", manipulador: "#7d8794", coringa: "#f4f4f4", fortificador: "#2fb84f", transmutador: "#8a4fe0", emissor: "#f0c52e" };
+const COR_TXT_NEN = { coringa: "#222", emissor: "#222" };
+const GLIFO_EFEITO = { dano: "⚔", cura: "✚", aflicao: "☠", enfraquecer: "▼", camuflagem: "◌", nulificar: "⊘", leitura_mental: "Ψ", mover_objetos: "⇄", salto: "⤴", teleporte: "✦", transformacao: "⟳", criar: "✎", invocar: "☗", ilusao: "◐", variavel: "∿", alongamento: "↔", compreender: "?", comunicacao: "☎", controle_sorte: "♣", crescimento: "▲", deflexao: "◈", encolhimento: "▾", escavacao: "⌄", imortalidade: "∞", imunidade: "✔", membros_extras: "‖", movimento: "➜", protecao: "▣", rapidez: "⚡", regeneracao: "♥", sentidos: "◉", sentido_remoto: "◎", velocidade: "»", voo: "↑", natacao: "≈", caracteristica_aumentada: "▲", bonus_pericia: "★", caracteristica: "◆" };
 const ATIVO_POR_ID = Object.fromEntries(Object.entries({ ...CAT_PARA_EFEITO, ...CAT_UTIL_PARA_EFEITO }).map(([cat, id]) => [id, cat]));
 const PASSIVO_POR_ID = Object.fromEntries(Object.entries(PASSIVO_PARA_CAT).map(([t, id]) => [id, t]));
 const chaveGrad = (ativo, it) => (ativo && it.categoria === "Nulificar" ? "graduacaoNulificar" : "graduacao");
-function BlocoEfeito({ ativo, item, res, idCat, ocultar, onMudar, onRemover, onSubir, onDescer, children }) {
+function BlocoEfeito({ ativo, item, res, idCat, ocultar, onMudar, onRemover, onSubir, onDescer, children, palInicial, modInicial, mostrarDesc }) {
   const [det, setDet] = useState(false);
-  const [pal, setPal] = useState(null); // "extra" | "falha"
-  const [sel, setSel] = useState(null);
+  const [pal, setPal] = useState(palInicial || null); // "extra" | "falha"
+  const [sel, setSel] = useState(modInicial ?? null);
   const [busca, setBusca] = useState("");
   const cat = EFEITO_CAT_POR_ID[idCat];
   const tipoPadrao = cat?.tipo || "coringa";
@@ -6060,6 +6104,7 @@ function BlocoEfeito({ ativo, item, res, idCat, ocultar, onMudar, onRemover, onS
           <button type="button" className="small-btn" onClick={onRemover} title="Remover bloco">×</button>
         </div>
       </div>
+      {mostrarDesc && (() => { const d = descEfeitoCompleta(idCat); return d ? <div className="vb-desc"><span>{d.texto}</span><small>{d.meta}</small></div> : null; })()}
       <div className="vb-linha">
         <div className="vb-grad">
           <span className="vb-lbl">Graduação</span>
@@ -6093,7 +6138,7 @@ function BlocoEfeito({ ativo, item, res, idCat, ocultar, onMudar, onRemover, onS
             </select>
           )}
           {(NOTA_MODS.includes(selMod.id) || selMod.nota) && <input type="text" className="cb-nota" placeholder={selMod.id === "area" ? "Forma: Cone, Cilindro, Explosão, Linha ou Nuvem" : selMod.id === "depender_sentido" ? "Qual sentido? (visão / audição)" : "Descreva (ex: só funciona de dia)"} value={selMod.nota || ""} onChange={(e) => upd(sel, { nota: e.target.value })} />}
-          <div className="field-note">{regraDoMod(selMod.id, selMod.vezes, selMod.valor, grad, { nota: selMod.nota, mods, dist: graduacaoParaDistancia }) || ""}</div>
+          <div className="vb-desc"><span>{DESC_MOD[selMod.id] || ""}</span>{regraDoMod(selMod.id, selMod.vezes, selMod.valor, grad, { nota: selMod.nota, mods, dist: graduacaoParaDistancia }) && <small>Com os seus valores: {regraDoMod(selMod.id, selMod.vezes, selMod.valor, grad, { nota: selMod.nota, mods, dist: graduacaoParaDistancia })}</small>}</div>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setMods(mods.filter((_, j) => j !== sel)); setSel(null); }}>Remover peça</button>
         </div>
       )}
@@ -6125,19 +6170,112 @@ function BlocoEfeito({ ativo, item, res, idCat, ocultar, onMudar, onRemover, onS
     </div>
   );
 }
+/* layout do mapa: raiz (habilidade) -> blocos de efeito -> peças (extras/falhas) */
+const largMod = (t) => Math.min(156, Math.max(56, 26 + String(t).length * 6.4));
+function layoutMapa(blocos) {
+  const ROOT_X = 8, ROOT_W = 84, EF_X = 116, EF_W = 124, EF_H = 62, MOD_X = 278, MOD_H = 42, GAP = 54;
+  let cursor = 14, maxW = 100;
+  const pos = [];
+  blocos.forEach((b) => {
+    const n = b.mods.length + 1;
+    const h = Math.max(104, n * GAP + 14);
+    const cy = cursor + h / 2;
+    const ys = b.mods.map((_, k) => cy - ((n - 1) * GAP) / 2 + k * GAP);
+    b.mods.forEach((m) => { maxW = Math.max(maxW, largMod(m.nome)); });
+    pos.push({ cy, modsY: ys, plusY: cy - ((n - 1) * GAP) / 2 + b.mods.length * GAP });
+    cursor += h;
+  });
+  const novoY = cursor + 40;
+  const H = cursor + 100;
+  const rootCy = pos.length ? (pos[0].cy + pos[pos.length - 1].cy) / 2 : 70;
+  return { ROOT_X, ROOT_W, EF_X, EF_W, EF_H, MOD_X, MOD_H, pos, novoY, H: Math.max(H, 160), W: MOD_X + Math.max(maxW, 120) + 14, rootCy };
+}
+const curva = (x1, y1, x2, y2) => `M${x1} ${y1} C${x1 + (x2 - x1) / 2} ${y1}, ${x1 + (x2 - x1) / 2} ${y2}, ${x2} ${y2}`;
+
+function MapaPoder({ ataque, blocos, selecionado, onSel, onNovo, total, zoom, setZoom }) {
+  const L = layoutMapa(blocos);
+  const ref = useRef(null);
+  const arr = useRef(null);
+  const ajustou = useRef(false);
+  const ajustar = () => { const w = ref.current ? ref.current.clientWidth : 0; if (w > 0) setZoom(Math.max(0.5, Math.min(1.2, +((w - 4) / L.W).toFixed(2)))); };
+  useEffect(() => { if (!ajustou.current && ref.current && ref.current.clientWidth > 0) { ajustou.current = true; ajustar(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const down = (e) => { if (e.target.closest(".mp-no")) return; arr.current = { x: e.clientX, y: e.clientY, sl: ref.current.scrollLeft, st: ref.current.scrollTop }; };
+  const move = (e) => { if (!arr.current) return; ref.current.scrollLeft = arr.current.sl - (e.clientX - arr.current.x); ref.current.scrollTop = arr.current.st - (e.clientY - arr.current.y); };
+  const up = () => { arr.current = null; };
+  const efX2 = L.EF_X + L.EF_W;
+  return (
+    <div className="mp-wrap">
+      <div className="mp-area" ref={ref} onMouseDown={down} onMouseMove={move} onMouseUp={up} onMouseLeave={up}>
+        <div style={{ width: L.W * zoom, height: L.H * zoom }}>
+          <div className="mp-cena" style={{ width: L.W, height: L.H, transform: `scale(${zoom})` }}>
+            <svg className="mp-linhas" width={L.W} height={L.H}>
+              {blocos.map((b, i) => {
+                const blocoSel = selecionado && selecionado.key === b.key;
+                return (
+                  <g key={b.key}>
+                    <path className={blocoSel ? "on" : ""} d={curva(L.ROOT_X + L.ROOT_W, L.rootCy, L.EF_X, L.pos[i].cy)} />
+                    {b.mods.map((m, k) => <path key={k} className={blocoSel && (selecionado.mod === m.idx || (m.fixa && selecionado.fixo === m.id)) ? "on" : ""} d={curva(efX2, L.pos[i].cy, L.MOD_X, L.pos[i].modsY[k])} />)}
+                    <path className="mais" d={curva(efX2, L.pos[i].cy, L.MOD_X, L.pos[i].plusY)} />
+                  </g>
+                );
+              })}
+              {blocos.length === 0 && <path className="mais" d={curva(L.ROOT_X + L.ROOT_W, L.rootCy, L.EF_X, L.novoY)} />}
+            </svg>
+            <div className="mp-no mp-raiz" style={{ left: L.ROOT_X, top: L.rootCy - 36, width: L.ROOT_W }} onClick={() => onSel(null)}>
+              <b>{ataque.nome || "Habilidade"}</b><span>{total} PP</span>
+            </div>
+            {blocos.map((b, i) => {
+              const cor = COR_NEN[b.tipo] || COR_NEN.coringa;
+              const ativoSel = selecionado && selecionado.key === b.key;
+              return (
+                <React.Fragment key={b.key}>
+                  <div className={"mp-no mp-ef" + (ativoSel && selecionado.mod == null && !selecionado.fixo ? " sel" : "") + (b.ativo ? "" : " passivo")} style={{ left: L.EF_X, top: L.pos[i].cy - L.EF_H / 2, width: L.EF_W, height: L.EF_H, background: cor, color: COR_TXT_NEN[b.tipo] || "#fff", animationDelay: i * 40 + "ms" }} onClick={() => onSel({ key: b.key })} title={b.nome}>
+                    <span className="mp-ef-nome" style={{ fontSize: b.nome.length > 17 ? ".68rem" : b.nome.length > 11 ? ".74rem" : undefined }}>{b.nome}</span>
+                    <em>{b.grad}</em>
+                  </div>
+                  {b.mods.map((m, k) => (
+                    <div key={k} className={"mp-no mp-mod " + (m.neg ? "falha" : "extra") + (ativoSel && (m.fixa ? selecionado.fixo === m.id : selecionado.mod === m.idx) ? " sel" : "") + (m.fixa ? " fixa" : "")}
+                      style={{ left: L.MOD_X, top: L.pos[i].modsY[k] - L.MOD_H / 2, width: largMod(m.nome), height: L.MOD_H, animationDelay: i * 40 + k * 25 + "ms" }}
+                      onClick={() => onSel(m.fixa ? { key: b.key, fixo: m.id } : { key: b.key, mod: m.idx })} title={m.nome}>
+                      <span>{m.nome}</span>
+                    </div>
+                  ))}
+                  <div className="mp-no mp-mod mp-mais" style={{ left: L.MOD_X, top: L.pos[i].plusY - L.MOD_H / 2, width: 112, height: L.MOD_H }} onClick={() => onSel({ key: b.key, pal: "extra" })}>
+                    <span>+ extra / falha</span>
+                  </div>
+                </React.Fragment>
+              );
+            })}
+            <div className="mp-no mp-ef mp-novo" style={{ left: L.EF_X, top: L.novoY - L.EF_H / 2, width: L.EF_W, height: L.EF_H }} onClick={onNovo}>
+              <span className="mp-ef-nome">+ Novo efeito</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="mp-zoom">
+        <button type="button" title="Ajustar à tela" onClick={ajustar}>⤢</button>
+        <button type="button" onClick={() => setZoom(Math.max(0.5, +(zoom - 0.1).toFixed(2)))}>−</button>
+        <span>{Math.round(zoom * 100)}%</span>
+        <button type="button" onClick={() => setZoom(Math.min(1.6, +(zoom + 0.1).toFixed(2)))}>+</button>
+      </div>
+    </div>
+  );
+}
 function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso }) {
   const ehPassiva = ataque.tipo === "passiva";
   const efs = ehPassiva ? [] : (ataque.efeitos || []);
   const pas = passivosDe(ataque);
   const [paleta, setPaleta] = useState(false);
   const [busca, setBusca] = useState("");
+  const [sel, setSel] = useState(null); // { key, mod?, pal? }
+  const [zoom, setZoom] = useState(1);
   const setEfs = (arr) => onMudar({ ...ataque, efeitos: arr });
   const setPas = (arr) => onMudar({ ...ataque, passivos: arr });
   const mover = (arr, i, d) => { const novo = [...arr]; const j = i + d; if (j < 0 || j >= novo.length) return arr; [novo[i], novo[j]] = [novo[j], novo[i]]; return novo; };
   const addBloco = (id) => {
     setPaleta(false); setBusca("");
-    if (!ehPassiva && ATIVO_POR_ID[id]) setEfs([...efs, { id: uid(), ...efeitoPadrao(ATIVO_POR_ID[id]) }]);
-    else if (PASSIVO_POR_ID[id]) setPas([...pas, { id: uid(), tipoId: PASSIVO_POR_ID[id], graduacao: 1, campos: {}, extrasAtivos: {} }]);
+    if (!ehPassiva && ATIVO_POR_ID[id]) { const novo = { id: uid(), ...efeitoPadrao(ATIVO_POR_ID[id]) }; setEfs([...efs, novo]); setSel({ key: "e" + novo.id }); }
+    else if (PASSIVO_POR_ID[id]) { const novo = { id: uid(), tipoId: PASSIVO_POR_ID[id], graduacao: 1, campos: {}, extrasAtivos: {} }; setPas([...pas, novo]); setSel({ key: "p" + novo.id }); }
   };
   const total = calc ? (calc.efeitos.length ? calc.total : Math.max(0, ataque.ppManual || 0)) : (ataque.pp || 0);
   const nivel = Math.max(1, ent?.nivel || 1);
@@ -6147,49 +6285,57 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso }) {
   opcoesPaleta.forEach((e) => { (grupos[e.tipo || "coringa"] = grupos[e.tipo || "coringa"] || []).push(e); });
   const acoes = calc ? [...new Set(calc.efeitos.filter((e) => e.acao !== "nenhuma").map((e) => ACAO_TXT[e.acao] || e.acao))] : [];
   const durs = calc ? [...new Set(calc.efeitos.map((e) => DUR_TXT[e.duracao] || e.duracao))] : [];
-  const vazio = efs.length + pas.length === 0;
+
+  // lista unificada de blocos (efeitos ativos + passivos) para o mapa e o inspetor
+  const blocos = [
+    ...efs.map((ef, i) => ({ key: "e" + ef.id, ativo: true, i, item: ef, res: calc?.porEfeito?.[i], idCat: CAT_PARA_EFEITO[ef.categoria] || CAT_UTIL_PARA_EFEITO[ef.categoria] })),
+    ...pas.map((inst, i) => ({ key: "p" + (inst.id || i), ativo: false, i, item: inst, res: calc?.porPassivo?.[i], idCat: PASSIVO_PARA_CAT[inst.tipoId] })),
+  ].map((b) => {
+    const cat = EFEITO_CAT_POR_ID[b.idCat];
+    const def = b.ativo ? null : PODERES_PASSIVOS.find((p) => p.id === b.item.tipoId);
+    const mods = (b.item.mods || []).map((m, idx) => { const c = MOD_POR_ID[m.id]; return c ? { idx, nome: c.nome + ((m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""), neg: (m.valor ?? c.v) < 0 } : null; }).filter(Boolean);
+    ((b.res?.mods) || []).filter((m) => m.derivado).forEach((m) => mods.push({ idx: -1, fixa: true, id: m.id, nome: m.nome, neg: m.valor < 0 }));
+    return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : (def?.nome || cat?.nome || "Efeito"), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, custo: b.res ? b.res.custo : null, razao: b.res ? b.res.razao : null, mods, def };
+  });
+  const bSel = sel ? blocos.find((b) => b.key === sel.key) : null;
+  const atualizarBloco = (b, novo) => (b.ativo ? setEfs(efs.map((x, j) => (j === b.i ? novo : x))) : setPas(pas.map((x, j) => (j === b.i ? novo : x))));
+  const removerBloco = (b) => { setSel(null); b.ativo ? setEfs(efs.filter((_, j) => j !== b.i)) : setPas(pas.filter((_, j) => j !== b.i)); };
+  const lista = (b) => (b.ativo ? efs : pas);
+  const setLista = (b, arr) => (b.ativo ? setEfs(arr) : setPas(arr));
   return (
     <div className="vb-canvas">
       <div className="vb-resumo">
         <div className="vb-total"><b>{total}</b><span>PP</span></div>
         <div className="vb-resumo-info">
-          <div>Nível {nivel} · {efs.length + pas.length} bloco(s){acoes.length ? ` · ação ${acoes.join("/")}` : ""}{durs.length ? ` · ${durs.join("/")}` : ""}</div>
-          {calc && calc.efeitos.length > 0 && <div className="vb-meter"><div style={{ width: Math.min(100, (calc.efeitos.reduce((m, e) => Math.max(m, e.grad / Math.max(1, e.limite)), 0)) * 100) + "%" }} /></div>}
+          <div>Nível {nivel} · {blocos.length} bloco(s){acoes.length ? ` · ação ${acoes.join("/")}` : ""}{durs.length ? ` · ${durs.join("/")}` : ""}</div>
         </div>
       </div>
       {calc && calc.erros.map((e, i) => <div key={i} className="field-note cb-erro">⛔ {e}</div>)}
       {calc && calc.avisos.map((e, i) => <div key={i} className="field-note cb-aviso">💡 {e}</div>)}
-      {vazio && <div className="vb-vazio">Nenhum bloco ainda. Toque em “+ Bloco de efeito” para começar a montar o poder.</div>}
-      {efs.map((ef, i) => {
-        const idCat = CAT_PARA_EFEITO[ef.categoria] || CAT_UTIL_PARA_EFEITO[ef.categoria];
-        const novo = (n) => setEfs(efs.map((x, j) => (j === i ? n : x)));
-        return (
-          <BlocoEfeito key={ef.id} ativo item={ef} res={calc?.porEfeito?.[i]} idCat={idCat} onMudar={novo} onRemover={() => setEfs(efs.filter((_, j) => j !== i))}
-            onSubir={i > 0 ? () => setEfs(mover(efs, i, -1)) : null} onDescer={i < efs.length - 1 ? () => setEfs(mover(efs, i, 1)) : null}>
-            <EfeitoForm modo="bloco" efeito={ef} res={calc?.porEfeito?.[i]} onMudar={novo} onRemover={() => {}} onCriarArremesso={onCriarArremesso} />
-          </BlocoEfeito>
-        );
-      })}
-      {pas.map((inst, i) => {
-        const def = PODERES_PASSIVOS.find((p) => p.id === inst.tipoId);
-        const novo = (n) => setPas(pas.map((x, j) => (j === i ? n : x)));
-        if (!def) return <div key={inst.id || i} className="vb-bloco passivo"><div className="vb-topo"><div className="vb-nome"><b>Efeito sem tipo</b></div><button type="button" className="small-btn" onClick={() => setPas(pas.filter((_, j) => j !== i))}>×</button></div><PassivoInstanceEditor passivo={inst} onMudar={novo} onRemover={() => setPas(pas.filter((_, j) => j !== i))} /></div>;
-        return (
-          <BlocoEfeito key={inst.id || i} ativo={false} item={inst} res={calc?.porPassivo?.[i]} idCat={PASSIVO_PARA_CAT[inst.tipoId]} ocultar={modsOcultosDoPassivo(def)} onMudar={novo} onRemover={() => setPas(pas.filter((_, j) => j !== i))}
-            onSubir={i > 0 ? () => setPas(mover(pas, i, -1)) : null} onDescer={i < pas.length - 1 ? () => setPas(mover(pas, i, 1)) : null}>
-            <PassivoInstanceEditor modo="bloco" passivo={inst} res={calc?.porPassivo?.[i]} onMudar={novo} onRemover={() => {}} />
-          </BlocoEfeito>
-        );
-      })}
-      <button type="button" className="vb-novo" onClick={() => setPaleta((p) => !p)}>{paleta ? "× Fechar" : "+ Bloco de efeito"}</button>
+      <MapaPoder ataque={ataque} blocos={blocos} selecionado={sel} onSel={(x) => { setSel(x); setPaleta(false); }} onNovo={() => { setSel(null); setPaleta(true); }} total={total} zoom={zoom} setZoom={setZoom} />
+      {bSel && (
+        <div className="mp-inspetor">
+          {sel.fixo && <div className="vb-desc" style={{ marginBottom: 8 }}><b>{MOD_POR_ID[sel.fixo]?.nome || sel.fixo}</b><span>{DESC_MOD[sel.fixo] || ""}</span><small>Definido nos campos do efeito/habilidade (em “Detalhes do efeito” ou em “Falhas”).</small></div>}
+          {bSel.def || bSel.ativo ? (
+            <BlocoEfeito key={bSel.key + ":" + (sel.mod ?? "") + (sel.pal || "") + (sel.fixo || "")} mostrarDesc={sel.mod == null && !sel.pal && !sel.fixo} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat} ocultar={bSel.def ? modsOcultosDoPassivo(bSel.def) : undefined}
+              palInicial={sel.pal} modInicial={sel.mod ?? null}
+              onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => removerBloco(bSel)}
+              onSubir={bSel.i > 0 ? () => setLista(bSel, mover(lista(bSel), bSel.i, -1)) : null} onDescer={bSel.i < lista(bSel).length - 1 ? () => setLista(bSel, mover(lista(bSel), bSel.i, 1)) : null}>
+              {bSel.ativo
+                ? <EfeitoForm modo="bloco" efeito={bSel.item} res={bSel.res} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => {}} onCriarArremesso={onCriarArremesso} />
+                : <PassivoInstanceEditor modo="bloco" passivo={bSel.item} res={bSel.res} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => {}} />}
+            </BlocoEfeito>
+          ) : <PassivoInstanceEditor passivo={bSel.item} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => removerBloco(bSel)} />}
+        </div>
+      )}
       {paleta && (
         <div className="vb-paleta-efeitos">
           <input type="text" placeholder="Buscar efeito…" value={busca} onChange={(e) => setBusca(e.target.value)} />
-          {Object.entries(grupos).map(([t, lista]) => (
+          {Object.entries(grupos).map(([t, lst]) => (
             <div key={t} className="vb-grupo" style={{ "--vb-cor": COR_NEN[t] || COR_NEN.coringa }}>
               <div className="vb-grupo-t">{capNen(t)}</div>
               <div className="vb-pecas">
-                {lista.map((e) => <button type="button" key={e.id} className="vb-opcao" onClick={() => addBloco(e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>)}
+                {lst.map((e) => <button type="button" key={e.id} className="vb-opcao" style={{ background: COR_NEN[t] || COR_NEN.coringa, color: COR_TXT_NEN[t] || "#fff" }} onClick={() => addBloco(e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>)}
               </div>
             </div>
           ))}
