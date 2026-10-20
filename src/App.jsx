@@ -674,6 +674,58 @@ const GlobalStyle = () => (
     .mm3 .cb-tab tr.fixo td { color:var(--muted); }
     .mm3 .cb-erro { color:var(--danger); }
     .mm3 .cb-aviso { color:var(--accent); }
+    .mm3 .ed-efeito-bloco { display:flex; flex-direction:column; gap:8px; }
+    .mm3 .vb-canvas { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
+    .mm3 .vb-resumo { position:sticky; top:0; z-index:5; display:flex; gap:12px; align-items:center; padding:10px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,.35); }
+    .mm3 .vb-total { display:flex; align-items:baseline; gap:4px; }
+    .mm3 .vb-total b { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; color:var(--accent); letter-spacing:.03em; }
+    .mm3 .vb-total span { color:var(--muted); font-size:.75rem; }
+    .mm3 .vb-resumo-info { flex:1; font-size:.76rem; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
+    .mm3 .vb-meter { height:5px; border-radius:99px; background:var(--surface3); overflow:hidden; }
+    .mm3 .vb-meter > div { height:100%; background:var(--accent); border-radius:99px; }
+    .mm3 .vb-vazio { border:1px dashed var(--border); border-radius:12px; padding:18px; text-align:center; color:var(--muted); font-size:.85rem; }
+    .mm3 .vb-bloco { position:relative; background:var(--surface2); border:1px solid var(--border); border-left:6px solid var(--vb-cor); border-radius:12px; padding:10px 12px 10px 12px; display:flex; flex-direction:column; gap:9px; }
+    .mm3 .vb-bloco.passivo { border-style:solid; background:linear-gradient(90deg, color-mix(in srgb, var(--vb-cor) 7%, var(--surface2)), var(--surface2)); }
+    .mm3 .vb-topo { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .mm3 .vb-nome { display:flex; flex-wrap:wrap; align-items:center; gap:7px; min-width:0; }
+    .mm3 .vb-nome b { font-size:1rem; }
+    .mm3 .vb-dot { width:10px; height:10px; border-radius:50%; background:var(--vb-cor); box-shadow:0 0 8px var(--vb-cor); }
+    .mm3 .vb-tipo { font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--vb-cor); border:1px solid var(--vb-cor); border-radius:99px; padding:1px 7px; }
+    .mm3 .vb-tag { font-size:.62rem; color:var(--muted); }
+    .mm3 .vb-acoes { display:flex; gap:4px; flex-shrink:0; }
+    .mm3 .vb-linha { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .mm3 .vb-grad { display:flex; align-items:center; gap:6px; }
+    .mm3 .vb-lbl { font-size:.65rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-right:2px; }
+    .mm3 .vb-grad input { width:58px; text-align:center; padding:6px 4px; font-weight:700; }
+    .mm3 .vb-step { width:34px; height:34px; border-radius:9px; border:1px solid var(--border); background:var(--surface3); color:var(--text); font-size:1.2rem; line-height:1; cursor:pointer; }
+    .mm3 .vb-step:disabled { opacity:.35; }
+    .mm3 .vb-custo { text-align:right; }
+    .mm3 .vb-custo b { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--accent); letter-spacing:.03em; }
+    .mm3 .vb-custo span { display:block; font-size:.68rem; color:var(--muted); margin-top:-4px; }
+    .mm3 .vb-pecas { display:flex; flex-wrap:wrap; gap:6px; }
+    .mm3 .vb-peca { font:inherit; font-size:.76rem; border-radius:8px; padding:5px 9px; border:1px solid; cursor:pointer; background:var(--surface3); color:var(--text); display:inline-flex; gap:5px; align-items:center; }
+    .mm3 .vb-peca i { font-style:normal; font-weight:700; }
+    .mm3 .vb-peca.extra { border-color:var(--success-border); background:var(--success-bg); }
+    .mm3 .vb-peca.extra i { color:var(--success); }
+    .mm3 .vb-peca.falha { border-color:var(--danger-border); background:var(--danger-bg); }
+    .mm3 .vb-peca.falha i { color:var(--danger); }
+    .mm3 .vb-peca.sel { outline:2px solid var(--accent); }
+    .mm3 .vb-peca.fixa { cursor:default; opacity:.8; border-style:dashed; }
+    .mm3 .vb-add { font:inherit; font-size:.74rem; border-radius:8px; padding:5px 10px; border:1px dashed; background:transparent; cursor:pointer; }
+    .mm3 .vb-add.extra { color:var(--success); border-color:var(--success-border); }
+    .mm3 .vb-add.falha { color:var(--danger); border-color:var(--danger-border); }
+    .mm3 .vb-edit { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:9px 10px; display:flex; flex-direction:column; gap:7px; }
+    .mm3 .vb-stepper { display:inline-flex; align-items:center; gap:8px; }
+    .mm3 .vb-paleta { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:9px 10px; display:flex; flex-direction:column; gap:8px; }
+    .mm3 .vb-rodape { font-size:.72rem; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 10px; }
+    .mm3 .vb-det { font:inherit; font-size:.76rem; text-align:left; background:none; border:none; color:var(--muted); cursor:pointer; padding:2px 0; }
+    .mm3 .vb-detalhes { border-top:1px solid var(--border); padding-top:10px; }
+    .mm3 .vb-novo { font:inherit; border:2px dashed var(--accent); background:var(--accent-soft); color:var(--accent); border-radius:12px; padding:13px; font-weight:700; cursor:pointer; }
+    .mm3 .vb-paleta-efeitos { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:10px; }
+    .mm3 .vb-grupo { border-left:4px solid var(--vb-cor); padding-left:10px; }
+    .mm3 .vb-grupo-t { font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:var(--vb-cor); margin-bottom:5px; }
+    .mm3 .vb-opcao { font:inherit; font-size:.8rem; border-radius:9px; padding:7px 11px; border:1px solid var(--vb-cor); background:color-mix(in srgb, var(--vb-cor) 12%, var(--surface3)); color:var(--text); cursor:pointer; display:inline-flex; gap:7px; align-items:center; }
+    .mm3 .vb-opcao i { font-style:normal; color:var(--muted); font-size:.7rem; }
     .mm3 .cb-auto-custo { padding:9px 12px; background:var(--surface3); border-radius:8px; }
     .mm3 .cb-auto-custo span { color:var(--muted); font-size:.75rem; margin-left:6px; }
 `}</style>
@@ -5224,7 +5276,7 @@ function TelaIdentidade({ onEscolher }) {
 }
 
 /* ---------- efeito (form) ---------- */
-function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso }) {
+function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo }) {
   const upd = (campo, valor) => onMudar({ ...efeito, [campo]: valor });
   const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat), colateral: efeito.colateral, exigirTeste: efeito.exigirTeste, peculiaridade: efeito.peculiaridade, aquecimento: efeito.aquecimento, mods: efeito.mods, nen: efeito.nen });
   const addSentido = () => upd("sentidos", [...(efeito.sentidos || []), ""]);
@@ -5232,11 +5284,13 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso }) {
   const rmSentido = (i) => upd("sentidos", efeito.sentidos.filter((_, idx) => idx !== i));
 
   return (
-    <div className="subcard2 ed-efeito">
+    <div className={modo === "bloco" ? "ed-efeito-bloco" : "subcard2 ed-efeito"}>
+      {modo !== "bloco" && (
       <div className="row-inline">
         <SearchableSelect value={efeito.categoria} onChange={(e) => mudarCategoria(e.target.value)}>{EFEITO_CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}</SearchableSelect>
         <button className="small-btn" onClick={onRemover}>×</button>
       </div>
+      )}
 
       {efeito.categoria === "Dano" && (
         <>
@@ -5367,8 +5421,7 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso }) {
       {UTIL_CATS.includes(efeito.categoria) && <UtilCampos ef={efeito} onMudar={onMudar} />}
       <div className="divider" />
       <FalhasEfeito item={efeito} onMudar={onMudar} graduacao={efeito.graduacao ?? efeito.graduacaoNulificar} mostrarPeculiaridade={CATEGORIAS_COM_RESISTENCIA.includes(efeito.categoria)} />
-      <div className="divider" />
-      <ModsEfeito efeito={efeito} onMudar={onMudar} res={res} />
+      {modo !== "bloco" && <><div className="divider" /><ModsEfeito efeito={efeito} onMudar={onMudar} res={res} /></>}
     </div>
   );
 }
@@ -5609,21 +5662,21 @@ function modsOcultosDoPassivo(def) {
   if ((def.falhas || []).some((x) => x.chave === "limitado")) ids.push("limitado");
   return new Set(ids);
 }
-function PassivoInstanceEditor({ passivo, res, onMudar, onRemover }) {
+function PassivoInstanceEditor({ passivo, res, onMudar, onRemover, modo }) {
   const def = PODERES_PASSIVOS.find((p) => p.id === passivo?.tipoId);
   const upd = (campo, valor) => onMudar({ ...passivo, [campo]: valor });
   const updCampo = (chave, valor) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), [chave]: valor } });
   const toggleExtra = (chave) => onMudar({ ...passivo, extrasAtivos: { ...(passivo.extrasAtivos || {}), [chave]: !passivo.extrasAtivos?.[chave] } });
   const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, colateral: passivo?.colateral, exigirTeste: passivo?.exigirTeste, aquecimento: passivo?.aquecimento, mods: passivo?.mods, nen: passivo?.nen });
   return (
-    <div className="subcard2" style={{ marginBottom: 10 }}>
-      <div className="row-inline">
+    <div className={modo === "bloco" ? "ed-efeito-bloco" : "subcard2"} style={modo === "bloco" ? undefined : { marginBottom: 10 }}>
+      {modo !== "bloco" && <div className="row-inline">
         <SearchableSelect value={passivo?.tipoId || ""} onChange={(e) => mudarTipo(e.target.value)}>
           <option value="">Escolha um efeito…</option>
           {[...PODERES_PASSIVOS].filter((p) => !p.oculto || p.id === passivo?.tipoId).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
         </SearchableSelect>
         <button className="small-btn" onClick={onRemover}>×</button>
-      </div>
+      </div>}
       {def && (
         <>
           <div className="field-note" style={{ marginBottom: 8 }}>{def.desc}</div>
@@ -5685,8 +5738,7 @@ function PassivoInstanceEditor({ passivo, res, onMudar, onRemover }) {
           )}
           <div className="divider" />
           <FalhasEfeito item={passivo} onMudar={onMudar} graduacao={passivo.graduacao} mostrarPeculiaridade={false} />
-          <div className="divider" />
-          <ModsEfeito efeito={passivo} idCat={PASSIVO_PARA_CAT[passivo.tipoId]} ocultar={modsOcultosDoPassivo(def)} res={res} onMudar={onMudar} />
+          {modo !== "bloco" && <><div className="divider" /><ModsEfeito efeito={passivo} idCat={PASSIVO_PARA_CAT[passivo.tipoId]} ocultar={modsOcultosDoPassivo(def)} res={res} onMudar={onMudar} /></>}
         </>
       )}
     </div>
@@ -5969,8 +6021,185 @@ function ModsEfeito({ efeito, onMudar, res, idCat: idCatProp, ocultar }) {
   );
 }
 
+
+/* ---------- CONSTRUTOR VISUAL: cada efeito é um bloco colorido com extras (verde) e falhas (vermelho) como peças ---------- */
+const COR_NEN = { emissor: "#4aa8e8", transmutador: "#b075e8", fortificador: "#4cba7a", manipulador: "#e85a5a", conjurador: "#e89a4a", especialista: "#e8c84a", modelador: "#4ad0c0", coringa: "#b8b8c4" };
+const ATIVO_POR_ID = Object.fromEntries(Object.entries({ ...CAT_PARA_EFEITO, ...CAT_UTIL_PARA_EFEITO }).map(([cat, id]) => [id, cat]));
+const PASSIVO_POR_ID = Object.fromEntries(Object.entries(PASSIVO_PARA_CAT).map(([t, id]) => [id, t]));
+const chaveGrad = (ativo, it) => (ativo && it.categoria === "Nulificar" ? "graduacaoNulificar" : "graduacao");
+function BlocoEfeito({ ativo, item, res, idCat, ocultar, onMudar, onRemover, onSubir, onDescer, children }) {
+  const [det, setDet] = useState(false);
+  const [pal, setPal] = useState(null); // "extra" | "falha"
+  const [sel, setSel] = useState(null);
+  const [busca, setBusca] = useState("");
+  const cat = EFEITO_CAT_POR_ID[idCat];
+  const tipoPadrao = cat?.tipo || "coringa";
+  const tipo = item.nen || tipoPadrao;
+  const nome = ativo ? item.categoria : (PODERES_PASSIVOS.find((p) => p.id === item.tipoId)?.nome || cat?.nome || "Efeito");
+  const gk = chaveGrad(ativo, item);
+  const grad = item[gk] || 0;
+  const gradTravada = ativo && item.categoria === "Dano" && item.baseadoAtivo;
+  const mods = item.mods || [];
+  const setMods = (novos) => onMudar({ ...item, mods: novos });
+  const upd = (i, patch) => setMods(mods.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  const disp = modsDisponiveis(idCat);
+  const livre = (m) => !MODS_LEGADO.has(m.id) && !(ocultar && ocultar.has(m.id)) && (m.mult || !mods.some((x) => x.id === m.id));
+  const q = semAcento(busca);
+  const listaPal = pal ? (pal === "extra" ? disp.extras : disp.falhas).filter(livre).filter((m) => !q || semAcento(m.nome).includes(q)) : [];
+  const add = (m) => { setMods([...mods, { id: m.id, vezes: 1, valor: m.v, nota: "" }]); setSel(mods.length); setPal(null); setBusca(""); };
+  const derivados = (res?.mods || []).filter((m) => m.derivado);
+  const selMod = sel !== null ? mods[sel] : null;
+  const selCat = selMod ? MOD_POR_ID[selMod.id] : null;
+  return (
+    <div className={"vb-bloco" + (ativo ? "" : " passivo")} style={{ "--vb-cor": COR_NEN[tipo] || COR_NEN.coringa }}>
+      <div className="vb-topo">
+        <div className="vb-nome"><span className="vb-dot" /><b>{nome}</b><span className="vb-tipo">{capNen(tipo)}</span>{!ativo && <span className="vb-tag">enquanto sustentado/ativo</span>}</div>
+        <div className="vb-acoes">
+          <button type="button" className="small-btn" onClick={onSubir} disabled={!onSubir} title="Subir">▲</button>
+          <button type="button" className="small-btn" onClick={onDescer} disabled={!onDescer} title="Descer">▼</button>
+          <button type="button" className="small-btn" onClick={onRemover} title="Remover bloco">×</button>
+        </div>
+      </div>
+      <div className="vb-linha">
+        <div className="vb-grad">
+          <span className="vb-lbl">Graduação</span>
+          <button type="button" className="vb-step" disabled={gradTravada || grad <= 0} onClick={() => onMudar({ ...item, [gk]: Math.max(0, grad - 1) })}>−</button>
+          <input type="number" min={0} value={gradTravada ? "" : grad} placeholder={gradTravada ? "atrib." : ""} disabled={gradTravada} onChange={(e) => onMudar({ ...item, [gk]: Math.max(0, Number(e.target.value) || 0) })} />
+          <button type="button" className="vb-step" disabled={gradTravada} onClick={() => onMudar({ ...item, [gk]: grad + 1 })}>+</button>
+        </div>
+        <div className="vb-custo"><b>{res ? res.custo : "—"}</b> PP<span>{res ? res.razao : ""}</span></div>
+      </div>
+      <div className="vb-pecas">
+        {mods.map((m, i) => {
+          const c = MOD_POR_ID[m.id]; if (!c) return null;
+          const neg = (m.valor ?? c.v) < 0;
+          return (
+            <button type="button" key={i} className={"vb-peca " + (neg ? "falha" : "extra") + (sel === i ? " sel" : "")} onClick={() => setSel(sel === i ? null : i)}>
+              {c.nome}{(m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""} <i>{valorModTxt(m)}</i>
+            </button>
+          );
+        })}
+        {derivados.map((m, i) => <span key={"d" + i} className={"vb-peca fixa " + (m.valor < 0 ? "falha" : "extra")} title="Definido nos detalhes do efeito / da habilidade">{m.nome} <i>{m.valor > 0 ? "+" : ""}{Math.round(m.valor * 100) / 100}{m.k === "g" ? "/g" : ""}</i></span>)}
+        <button type="button" className="vb-add extra" onClick={() => { setPal(pal === "extra" ? null : "extra"); setSel(null); }}>+ Extra</button>
+        <button type="button" className="vb-add falha" onClick={() => { setPal(pal === "falha" ? null : "falha"); setSel(null); }}>+ Falha</button>
+      </div>
+      {selMod && selCat && (
+        <div className="vb-edit">
+          <b>{selCat.nome}</b>
+          {selCat.mult && <span className="vb-stepper"><button type="button" className="small-btn" disabled={(selMod.vezes || 1) <= 1} onClick={() => upd(sel, { vezes: (selMod.vezes || 1) - 1 })}>−</button><b>×{selMod.vezes || 1}</b><button type="button" className="small-btn" onClick={() => upd(sel, { vezes: (selMod.vezes || 1) + 1 })}>+</button></span>}
+          {selCat.opcoes && selCat.opcoes.length > 1 && (
+            <select className="cb-sel" value={String(selMod.valor ?? selCat.v)} onChange={(e) => upd(sel, { valor: Number(e.target.value) })}>
+              {[...new Set(selCat.opcoes)].map((v) => <option key={v} value={v}>{v > 0 ? "+" : ""}{v}{selCat.k === "g" ? "/g" : ""}</option>)}
+            </select>
+          )}
+          {(NOTA_MODS.includes(selMod.id) || selMod.nota) && <input type="text" className="cb-nota" placeholder={selMod.id === "area" ? "Forma: Cone, Cilindro, Explosão, Linha ou Nuvem" : selMod.id === "depender_sentido" ? "Qual sentido? (visão / audição)" : "Descreva (ex: só funciona de dia)"} value={selMod.nota || ""} onChange={(e) => upd(sel, { nota: e.target.value })} />}
+          <div className="field-note">{regraDoMod(selMod.id, selMod.vezes, selMod.valor, grad, { nota: selMod.nota, mods, dist: graduacaoParaDistancia }) || ""}</div>
+          <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setMods(mods.filter((_, j) => j !== sel)); setSel(null); }}>Remover peça</button>
+        </div>
+      )}
+      {pal && (
+        <div className={"vb-paleta " + pal}>
+          <input type="text" placeholder={pal === "extra" ? "Buscar extra…" : "Buscar falha…"} value={busca} onChange={(e) => setBusca(e.target.value)} />
+          <div className="vb-pecas">
+            {listaPal.map((m) => <button type="button" key={m.id} className={"vb-peca " + pal} onClick={() => add(m)}>{m.nome} <i>{m.v > 0 ? "+" : ""}{m.v}{m.k === "g" ? "/g" : " fixo"}</i></button>)}
+            {!listaPal.length && <span className="field-note">Nada encontrado.</span>}
+          </div>
+        </div>
+      )}
+      <div className="vb-rodape">
+        {res && <span>{res.grad}g · base {res.base}{res.ajG.length ? " · " + res.ajG.map((a) => `${a.nome} ${a.g > 0 ? "+" : ""}${a.g}`).join(" · ") : ""} · limite {res.limite}</span>}
+        {res?.dicaNivel && <span className="cb-dica">pode ir para lvl {res.dicaNivel} pelo mesmo custo</span>}
+      </div>
+      <button type="button" className="vb-det" onClick={() => setDet((d) => !d)}>{det ? "▼ Ocultar detalhes do efeito" : "▶ Detalhes do efeito (campos, tipo de Nen, falhas de teste…)"}</button>
+      {det && (
+        <div className="vb-detalhes">
+          <div className="cb-linha" style={{ marginBottom: 8 }}>
+            <label className="label" style={{ margin: 0 }}>Tipo de Nen do efeito</label>
+            <SearchableSelect value={tipo} onChange={(e) => onMudar({ ...item, nen: e.target.value === tipoPadrao ? undefined : e.target.value })}>
+              {["coringa", ...TIPOS_NEN_CAT].map((t) => <option key={t} value={t}>{capNen(t) + (t === tipoPadrao ? " (padrão)" : "")}</option>)}
+            </SearchableSelect>
+          </div>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso }) {
+  const ehPassiva = ataque.tipo === "passiva";
+  const efs = ehPassiva ? [] : (ataque.efeitos || []);
+  const pas = passivosDe(ataque);
+  const [paleta, setPaleta] = useState(false);
+  const [busca, setBusca] = useState("");
+  const setEfs = (arr) => onMudar({ ...ataque, efeitos: arr });
+  const setPas = (arr) => onMudar({ ...ataque, passivos: arr });
+  const mover = (arr, i, d) => { const novo = [...arr]; const j = i + d; if (j < 0 || j >= novo.length) return arr; [novo[i], novo[j]] = [novo[j], novo[i]]; return novo; };
+  const addBloco = (id) => {
+    setPaleta(false); setBusca("");
+    if (!ehPassiva && ATIVO_POR_ID[id]) setEfs([...efs, { id: uid(), ...efeitoPadrao(ATIVO_POR_ID[id]) }]);
+    else if (PASSIVO_POR_ID[id]) setPas([...pas, { id: uid(), tipoId: PASSIVO_POR_ID[id], graduacao: 1, campos: {}, extrasAtivos: {} }]);
+  };
+  const total = calc ? (calc.efeitos.length ? calc.total : Math.max(0, ataque.ppManual || 0)) : (ataque.pp || 0);
+  const nivel = Math.max(1, ent?.nivel || 1);
+  const q = semAcento(busca);
+  const opcoesPaleta = EFEITOS_CAT.filter((e) => (ehPassiva ? PASSIVO_POR_ID[e.id] : (ATIVO_POR_ID[e.id] || PASSIVO_POR_ID[e.id]))).filter((e) => !q || semAcento(e.nome).includes(q));
+  const grupos = {};
+  opcoesPaleta.forEach((e) => { (grupos[e.tipo || "coringa"] = grupos[e.tipo || "coringa"] || []).push(e); });
+  const acoes = calc ? [...new Set(calc.efeitos.filter((e) => e.acao !== "nenhuma").map((e) => ACAO_TXT[e.acao] || e.acao))] : [];
+  const durs = calc ? [...new Set(calc.efeitos.map((e) => DUR_TXT[e.duracao] || e.duracao))] : [];
+  const vazio = efs.length + pas.length === 0;
+  return (
+    <div className="vb-canvas">
+      <div className="vb-resumo">
+        <div className="vb-total"><b>{total}</b><span>PP</span></div>
+        <div className="vb-resumo-info">
+          <div>Nível {nivel} · {efs.length + pas.length} bloco(s){acoes.length ? ` · ação ${acoes.join("/")}` : ""}{durs.length ? ` · ${durs.join("/")}` : ""}</div>
+          {calc && calc.efeitos.length > 0 && <div className="vb-meter"><div style={{ width: Math.min(100, (calc.efeitos.reduce((m, e) => Math.max(m, e.grad / Math.max(1, e.limite)), 0)) * 100) + "%" }} /></div>}
+        </div>
+      </div>
+      {calc && calc.erros.map((e, i) => <div key={i} className="field-note cb-erro">⛔ {e}</div>)}
+      {calc && calc.avisos.map((e, i) => <div key={i} className="field-note cb-aviso">💡 {e}</div>)}
+      {vazio && <div className="vb-vazio">Nenhum bloco ainda. Toque em “+ Bloco de efeito” para começar a montar o poder.</div>}
+      {efs.map((ef, i) => {
+        const idCat = CAT_PARA_EFEITO[ef.categoria] || CAT_UTIL_PARA_EFEITO[ef.categoria];
+        const novo = (n) => setEfs(efs.map((x, j) => (j === i ? n : x)));
+        return (
+          <BlocoEfeito key={ef.id} ativo item={ef} res={calc?.porEfeito?.[i]} idCat={idCat} onMudar={novo} onRemover={() => setEfs(efs.filter((_, j) => j !== i))}
+            onSubir={i > 0 ? () => setEfs(mover(efs, i, -1)) : null} onDescer={i < efs.length - 1 ? () => setEfs(mover(efs, i, 1)) : null}>
+            <EfeitoForm modo="bloco" efeito={ef} res={calc?.porEfeito?.[i]} onMudar={novo} onRemover={() => {}} onCriarArremesso={onCriarArremesso} />
+          </BlocoEfeito>
+        );
+      })}
+      {pas.map((inst, i) => {
+        const def = PODERES_PASSIVOS.find((p) => p.id === inst.tipoId);
+        const novo = (n) => setPas(pas.map((x, j) => (j === i ? n : x)));
+        if (!def) return <div key={inst.id || i} className="vb-bloco passivo"><div className="vb-topo"><div className="vb-nome"><b>Efeito sem tipo</b></div><button type="button" className="small-btn" onClick={() => setPas(pas.filter((_, j) => j !== i))}>×</button></div><PassivoInstanceEditor passivo={inst} onMudar={novo} onRemover={() => setPas(pas.filter((_, j) => j !== i))} /></div>;
+        return (
+          <BlocoEfeito key={inst.id || i} ativo={false} item={inst} res={calc?.porPassivo?.[i]} idCat={PASSIVO_PARA_CAT[inst.tipoId]} ocultar={modsOcultosDoPassivo(def)} onMudar={novo} onRemover={() => setPas(pas.filter((_, j) => j !== i))}
+            onSubir={i > 0 ? () => setPas(mover(pas, i, -1)) : null} onDescer={i < pas.length - 1 ? () => setPas(mover(pas, i, 1)) : null}>
+            <PassivoInstanceEditor modo="bloco" passivo={inst} res={calc?.porPassivo?.[i]} onMudar={novo} onRemover={() => {}} />
+          </BlocoEfeito>
+        );
+      })}
+      <button type="button" className="vb-novo" onClick={() => setPaleta((p) => !p)}>{paleta ? "× Fechar" : "+ Bloco de efeito"}</button>
+      {paleta && (
+        <div className="vb-paleta-efeitos">
+          <input type="text" placeholder="Buscar efeito…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {Object.entries(grupos).map(([t, lista]) => (
+            <div key={t} className="vb-grupo" style={{ "--vb-cor": COR_NEN[t] || COR_NEN.coringa }}>
+              <div className="vb-grupo-t">{capNen(t)}</div>
+              <div className="vb-pecas">
+                {lista.map((e) => <button type="button" key={e.id} className="vb-opcao" onClick={() => addBloco(e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>)}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 function PainelCustoHabilidade({ ataque, ent, calc, onMudar }) {
-  const [aberto, setAberto] = useState(true);
+  const [aberto, setAberto] = useState(false);
   const fixos = ataque.fixosHab || [];
   const setFixos = (f) => onMudar({ ...ataque, fixosHab: f });
   if (!ataque.custoAuto) {
@@ -6204,20 +6433,11 @@ function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir
             </div>
           )}
 
-          <div className="section-title ed-sub">Efeitos</div>
-          {ataque.efeitos.map((ef, i) => <EfeitoForm key={ef.id} efeito={ef} res={calc?.porEfeito?.[i]} onMudar={(novo) => updEfeito(i, novo)} onRemover={() => rmEfeito(i)} onCriarArremesso={onCriarArremesso} />)}
-          <button className="btn btn-ghost btn-sm" onClick={addEfeito} style={{ marginBottom: 12 }}>+ Efeito</button>
-          <div className="section-title ed-sub">Efeitos de aprimoramento <span className="field-note" style={{ display: "inline" }}>(valem enquanto a habilidade é sustentada: Proteção, Velocidade, Voo, Característica Aumentada…)</span></div>
-          <PassivoEditor passivos={passivosDe(ataque)} onMudar={(nova) => upd("passivos", nova)} resLista={calc?.porPassivo} />
         </>
       )}
 
-      {ehPassiva && (
-        <>
-          <div className="section-title ed-sub">Efeitos passivos</div>
-          <PassivoEditor passivos={passivosDe(ataque)} onMudar={(nova) => upd("passivos", nova)} resLista={calc?.porPassivo} />
-        </>
-      )}
+      <div className="section-title ed-sub">Construtor de poder</div>
+      <ConstrutorVisual ataque={ataque} ent={ent} calc={calc} onMudar={onMudar} onCriarArremesso={onCriarArremesso} />
       {calc && <PainelCustoHabilidade ataque={ataque} ent={ent} calc={calc} onMudar={onMudar} />}
       <PainelRegras habilidade={ataque} />
 
