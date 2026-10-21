@@ -768,6 +768,70 @@ const GlobalStyle = () => (
     .mm3 .mp-zoom button:hover { background:#34344a; }
     .mm3 .mp-zoom span { font-size:.72rem; color:#cfd2dc; min-width:42px; text-align:center; }
     .mm3 .mp-inspetor { display:flex; flex-direction:column; }
+    .mm3 .vb-shell { display:flex; flex-direction:column; gap:12px; }
+    .mm3 .vb-shell.cheio { position:fixed; inset:0; z-index:200; background:#0b0b11; padding:10px; overflow:auto; }
+    .mm3 .vb-shell.cheio .mp-area { max-height:none; height:58vh; }
+    .mm3 .mp-area { height:72vh; max-height:none; min-height:360px; touch-action:pan-x pan-y; scroll-behavior:auto; }
+    .mm3 .mp-area.arrastando { cursor:grabbing; }
+    .mm3 .mp-ef { position:absolute; }
+    .mm3 .mp-grad { position:absolute; right:-24px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:3px; }
+    .mm3 .mp-grad button { width:22px; height:22px; border-radius:6px; border:2px solid #0f0f16; background:#e8c84a; color:#1a1a1a; font-size:.62rem; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; }
+    .mm3 .mp-grad button:hover:not(:disabled) { background:#fff; }
+    .mm3 .mp-grad button:disabled { opacity:.35; cursor:not-allowed; }
+    .mm3 .mp-lado { position:absolute; top:0; right:0; bottom:0; display:flex; z-index:6; }
+    .mm3 .mp-lado:not(.aberto) .mp-lado-corpo { display:none; }
+    .mm3 .mp-zoom { right:auto; left:8px; }
+    .mm3 .mp-lado-aba { width:34px; align-self:flex-start; margin-top:12px; border:1px solid #33333f; border-right:none; border-radius:12px 0 0 12px; background:#1b1b24; color:#e8c84a; cursor:pointer; padding:10px 0; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:1.1rem; }
+    .mm3 .mp-lado-aba b { font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#cfd2dc; writing-mode:vertical-rl; }
+    .mm3 .mp-lado-aba em { font-style:normal; background:#e8c84a; color:#1a1a1a; border-radius:99px; min-width:18px; font-size:.65rem; font-weight:800; padding:1px 4px; }
+    .mm3 .mp-lado-aba em.erro { background:#d93636; color:#fff; }
+    .mm3 .mp-lado-corpo { width:min(280px, 55vw); background:#14141c; border-left:1px solid #33333f; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:12px; box-shadow:-8px 0 24px rgba(0,0,0,.45); }
+    .mm3 .pi-total { display:flex; align-items:baseline; gap:6px; }
+    .mm3 .pi-total b { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:#e8c84a; line-height:1; }
+    .mm3 .pi-total span { color:#cfd2dc; font-weight:700; }
+    .mm3 .pi-total small { margin-left:auto; color:var(--muted); font-size:.7rem; }
+    .mm3 .pi-tit { font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; color:#8a90a0; margin-bottom:6px; }
+    .mm3 .pi-grade { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
+    .mm3 .pi-grade div { background:#1f1f2a; border-radius:10px; padding:7px 9px; display:flex; flex-direction:column; gap:2px; }
+    .mm3 .pi-grade i { font-style:normal; font-size:.6rem; text-transform:uppercase; letter-spacing:.08em; color:#8a90a0; }
+    .mm3 .pi-grade b { font-size:.82rem; color:#fff; }
+    .mm3 .pi-aviso { display:flex; gap:8px; align-items:flex-start; border-radius:10px; padding:8px 10px; margin-bottom:6px; font-size:.8rem; line-height:1.35; }
+    .mm3 .pi-aviso p { margin:0; }
+    .mm3 .pi-aviso.erro { background:#3a1618; border:1px solid #b72c34; color:#ffd5d8; }
+    .mm3 .pi-aviso.dica { background:#2a2614; border:1px solid #8a7620; color:#f4e6a8; }
+    .mm3 .pi-linha { background:#1f1f2a; border-radius:8px; padding:6px 9px; margin-bottom:5px; font-size:.78rem; color:#dfe2ea; }
+    .mm3 .dx { border-radius:14px; background:#1b1b24; border:1px solid #2c2c3a; border-left:6px solid var(--dx-cor, #e8c84a); padding:14px 16px; }
+    .mm3 .dx-topo { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+    .mm3 .dx-topo h4 { margin:0; font-size:1.05rem; }
+    .mm3 .dx-dot { width:12px; height:12px; border-radius:50%; background:var(--dx-cor, #e8c84a); }
+    .mm3 .dx-selo { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; padding:3px 9px; border-radius:99px; background:#2c2c3a; color:#cfd2dc; font-weight:700; }
+    .mm3 .dx-selo.extra { background:#14341f; color:#7be39b; }
+    .mm3 .dx-selo.falha { background:#3a1618; color:#ff9ba2; }
+    .mm3 .dx-chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+    .mm3 .dx-chip { background:#262633; border-radius:8px; padding:4px 9px; font-size:.78rem; display:inline-flex; gap:6px; align-items:baseline; }
+    .mm3 .dx-chip i { font-style:normal; font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:#8a90a0; }
+    .mm3 .dx-texto p { margin:0 0 8px; font-size:.88rem; line-height:1.5; color:#dfe2ea; }
+    .mm3 .dx-texto p:last-child { margin-bottom:0; }
+    .mm3 .dx-nota { margin-top:12px; background:#14141c; border-radius:10px; padding:9px 12px; display:flex; flex-direction:column; gap:3px; font-size:.82rem; }
+    .mm3 .dx-nota b { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:#8a90a0; }
+    .mm3 .px { display:flex; flex-direction:column; gap:10px; }
+    .mm3 .px-barra { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .mm3 .px-titulo { font-size:.7rem; text-transform:uppercase; letter-spacing:.1em; color:#8a90a0; }
+    .mm3 .px-dica { background:#2a2614; border-radius:10px; padding:8px 12px; font-size:.82rem; color:#f4e6a8; }
+    .mm3 .px-cfg { align-self:flex-start; font:inherit; font-size:.82rem; background:#262633; color:#fff; border:1px solid #33333f; border-radius:9px; padding:7px 12px; cursor:pointer; }
+    .mm3 .px-config, .mm3 .px-ctrl { background:#1b1b24; border:1px solid #2c2c3a; border-radius:12px; padding:12px; }
+    .mm3 .px-ctrl { display:flex; flex-direction:column; gap:8px; }
+    .mm3 .px-linha { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+    .mm3 .px-abas { display:flex; gap:6px; }
+    .mm3 .px-abas button { flex:1; font:inherit; font-weight:700; border-radius:9px; border:2px solid #33333f; background:#1b1b24; color:#cfd2dc; padding:7px; cursor:pointer; }
+    .mm3 .px-abas button.extra.on { background:#1f9a43; border-color:#1f9a43; color:#fff; }
+    .mm3 .px-abas button.falha.on { background:#b72c34; border-color:#b72c34; color:#fff; }
+    .mm3 .px-chips { display:flex; flex-wrap:wrap; gap:7px; }
+    .mm3 .px-chip { font:inherit; font-size:.78rem; font-weight:700; border-radius:99px; border:none; padding:7px 13px; color:#fff; cursor:pointer; }
+    .mm3 .px-chip.extra { background:#1f9a43; }
+    .mm3 .px-chip.falha { background:#b72c34; }
+    .mm3 .px-chip:hover { filter:brightness(1.15); }
+    .mm3 .vb-vazio { color:var(--muted); font-size:.85rem; text-align:center; padding:10px; }
     .mm3 .cb-auto-custo { padding:9px 12px; background:var(--surface3); border-radius:8px; }
     .mm3 .cb-auto-custo span { color:var(--muted); font-size:.75rem; margin-left:6px; }
 `}</style>
@@ -2072,7 +2136,7 @@ function calcularCustoAtaque(a, ent) {
       const id = CAT_PARA_EFEITO[ef.categoria] || CAT_UTIL_PARA_EFEITO[ef.categoria];
       if (!id) { idxAtivo.push(-1); return; }
       const mods = modsDoEfeito(ef, a);
-      if (efs.length === 0) { // Dividido / Multiataque (marcados na habilidade) contam no primeiro efeito
+      if (CATEGORIAS_COM_RESISTENCIA.includes(ef.categoria)) { // Dividido / Multiataque valem em todos os efeitos de ataque
         if (a.extras?.dividido) mods.push({ id: "dividido", derivado: true });
         if (a.extras?.multiataque) mods.push({ id: "multiataque", derivado: true });
       }
@@ -2095,7 +2159,7 @@ function calcularCustoAtaque(a, ent) {
 }
 /** PP da habilidade: pelo construtor (se ligado) ou o valor manual antigo */
 function ppAtaque(a, ent) {
-  if (a.custoAuto && ent) {
+  if (ent && (a.custoAuto || (a.efeitos || []).length || passivosDe(a).length)) {
     const r = calcularCustoAtaque(a, ent);
     return r.efeitos.length ? r.total : Math.max(0, a.ppManual || 0);
   }
@@ -3704,8 +3768,6 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         {ehAtaque && (ataqueAtual?.efeitos || []).filter((ef) => UTIL_CATS.includes(ef.categoria)).map((ef) => (
           <UtilCartao key={ef.id} ef={ef} ent={origemAtual} registrar={registrar} onMudar={(novo) => atualizarEfeitoMoverObjetos(ef.id, novo)} />
         ))}
-
-        {ehAtaque && ataqueAtual && <PainelRegras habilidade={ataqueAtual} />}
 
         {(temMultiataque || temDividido) && (
           <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
@@ -5349,7 +5411,7 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
               <div className="field-note">A graduação do dano é o valor atual do atributo escolhido + o dano adicional (que não varia com o atributo). Ela conta na CD; o dano em si continua limitado pelo nível do atacante.</div>
             </>
           ) : (
-            <>
+            modo !== "bloco" && <>
               <label className="label">Graduação de Dano</label>
               <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
             </>
@@ -5357,7 +5419,7 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
         </>
       )}
       {efeito.categoria === "Cura" && (
-        <>
+        modo !== "bloco" && <>
           <label className="label">Graduação de Cura</label>
           <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
         </>
@@ -5366,7 +5428,7 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
             <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(efeito.resistenciaAlternativa ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
-            <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
+            {modo !== "bloco" && <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>}
           </div>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.resistenciaAlternativa} onChange={(e) => { const ativo = e.target.checked; const precisaResetar = !ativo && (efeito.salvamento === "Aparar" || efeito.salvamento === "Esquiva"); onMudar({ ...efeito, resistenciaAlternativa: ativo, ...(precisaResetar ? { salvamento: "Fortitude" } : {}) }); }} />Resistência Alternativa (permite Aparar/Esquiva como salvamento)</label>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.recuperacaoInstantanea} onChange={(e) => upd("recuperacaoInstantanea", e.target.checked)} />Recuperação Instantânea</label>
@@ -5408,7 +5470,7 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
             <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(temModEf(efeito, "resistencia_alternativa") ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
-            <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
+            {modo !== "bloco" && <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>}
           </div>
           <label className="label">Característica afetada</label>
           <input type="text" value={efeito.caracteristica} onChange={(e) => upd("caracteristica", e.target.value)} />
@@ -5418,7 +5480,7 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
             <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(temModEf(efeito, "resistencia_alternativa") ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
-            <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>
+            {modo !== "bloco" && <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>}
           </div>
           <label className="label">Sentidos afetados</label>
           {(efeito.sentidos || []).map((s, i) => (
@@ -5435,12 +5497,14 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
             <option value="Fortitude">Fortitude</option>
           </SearchableSelect>
           <div className="field-note">CD: 10 + {efeito.salvamento || "Vontade"} do alvo</div>
+          {modo !== "bloco" && <>
           <label className="label">Graduação de Nulificar</label>
           <input type="number" value={efeito.graduacaoNulificar} onChange={(e) => upd("graduacaoNulificar", Number(e.target.value))} />
+          </>}
         </>
       )}
       {efeito.categoria === "Leitura Mental" && (
-        <>
+        modo !== "bloco" && <>
           <label className="label">Graduação de Leitura Mental</label>
           <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
         </>
@@ -5722,7 +5786,7 @@ function PassivoInstanceEditor({ passivo, res, onMudar, onRemover, modo }) {
       {def && (
         <>
           <div className="field-note" style={{ marginBottom: 8 }}>{def.desc}</div>
-          <div style={{ marginBottom: 8 }}><label className="label">{def.id === "rapidez" ? "Pontos de Rapidez" : "Graduação"}</label><input type="number" min={0} value={passivo.graduacao || 0} onChange={(e) => upd("graduacao", Math.max(0, Number(e.target.value)))} /></div>
+          {modo !== "bloco" && <div style={{ marginBottom: 8 }}><label className="label">{def.id === "rapidez" ? "Pontos de Rapidez" : "Graduação"}</label><input type="number" min={0} value={passivo.graduacao || 0} onChange={(e) => upd("graduacao", Math.max(0, Number(e.target.value)))} /></div>}
           {def.id === "rapidez" && <RapidezLoja passivo={passivo} onMudar={onMudar} />}
           {def.campoEscolha && !def.campoEscolha.multi && (
             <div style={{ marginBottom: 8 }}>
@@ -6065,99 +6129,174 @@ function ModsEfeito({ efeito, onMudar, res, idCat: idCatProp, ocultar }) {
 
 
 /* ---------- CONSTRUTOR VISUAL: cada efeito é um bloco colorido com extras (verde) e falhas (vermelho) como peças ---------- */
+/* ---------- CONSTRUTOR VISUAL: mapa de blocos (habilidade -> efeitos -> extras/falhas) ---------- */
 const COR_NEN = { modelador: "#f28c1e", especialista: "#2f6fe0", conjurador: "#d93636", manipulador: "#7d8794", coringa: "#f4f4f4", fortificador: "#2fb84f", transmutador: "#8a4fe0", emissor: "#f0c52e" };
 const COR_TXT_NEN = { coringa: "#222", emissor: "#222" };
-const GLIFO_EFEITO = { dano: "⚔", cura: "✚", aflicao: "☠", enfraquecer: "▼", camuflagem: "◌", nulificar: "⊘", leitura_mental: "Ψ", mover_objetos: "⇄", salto: "⤴", teleporte: "✦", transformacao: "⟳", criar: "✎", invocar: "☗", ilusao: "◐", variavel: "∿", alongamento: "↔", compreender: "?", comunicacao: "☎", controle_sorte: "♣", crescimento: "▲", deflexao: "◈", encolhimento: "▾", escavacao: "⌄", imortalidade: "∞", imunidade: "✔", membros_extras: "‖", movimento: "➜", protecao: "▣", rapidez: "⚡", regeneracao: "♥", sentidos: "◉", sentido_remoto: "◎", velocidade: "»", voo: "↑", natacao: "≈", caracteristica_aumentada: "▲", bonus_pericia: "★", caracteristica: "◆" };
 const ATIVO_POR_ID = Object.fromEntries(Object.entries({ ...CAT_PARA_EFEITO, ...CAT_UTIL_PARA_EFEITO }).map(([cat, id]) => [id, cat]));
 const PASSIVO_POR_ID = Object.fromEntries(Object.entries(PASSIVO_PARA_CAT).map(([t, id]) => [id, t]));
 const chaveGrad = (ativo, it) => (ativo && it.categoria === "Nulificar" ? "graduacaoNulificar" : "graduacao");
-function BlocoEfeito({ ativo, item, res, idCat, ocultar, onMudar, onRemover, onSubir, onDescer, children, palInicial, modInicial, mostrarDesc }) {
-  const [det, setDet] = useState(false);
-  const [pal, setPal] = useState(palInicial || null); // "extra" | "falha"
-  const [sel, setSel] = useState(modInicial ?? null);
+
+/* falhas/extras que na verdade são "interruptores" guardados em campos do efeito ou da habilidade */
+const objAtivo = (k, padrao = {}) => ({ ativo: (o) => !!o[k]?.ativo, on: (o) => ({ ...o, [k]: { ...padrao, ...(o[k] || {}), ativo: true } }), off: (o) => ({ ...o, [k]: { ...(o[k] || {}), ativo: false } }) });
+const boolAtivo = (k) => ({ ativo: (o) => !!o[k], on: (o) => ({ ...o, [k]: true }), off: (o) => ({ ...o, [k]: false }) });
+const LEG_EFEITO = {
+  efeito_colateral: objAtivo("colateral", { condicao: "", comTeste: false }),
+  exigir_teste: objAtivo("exigirTeste", { graduacoes: 1 }),
+  peculiaridade: objAtivo("peculiaridade", { bonus: 2 }),
+  aquecimento: objAtivo("aquecimento", { turnos: 3 }),
+  resistencia_alt_afl: boolAtivo("resistenciaAlternativa"),
+  recuperacao_instantanea: boolAtivo("recuperacaoInstantanea"),
+  cumulativo_afl: boolAtivo("cumulativo"),
+  condicao_extra: boolAtivo("condicaoExtra"),
+  grau_limitado_afl: { ativo: (o) => (o.graus || 3) < 3, on: (o) => ({ ...o, graus: 2 }), off: (o) => ({ ...o, graus: 3 }) },
+};
+const extraHab = (k, outro) => ({ ativo: (a) => !!a.extras?.[k], on: (a) => ({ ...a, extras: { ...(a.extras || {}), [k]: true, [outro]: false } }), off: (a) => ({ ...a, extras: { ...(a.extras || {}), [k]: false } }) });
+/* valem para a habilidade toda, mas aparecem (e contam custo) em TODOS os efeitos aplicáveis */
+const LEG_TODOS = {
+  dividido: extraHab("dividido", "multiataque"),
+  multiataque: extraHab("multiataque", "dividido"),
+  ponto_fraco: objAtivo("pontoFraco", { texto: "" }),
+};
+const elegivelTodos = (id, b) => id === "ponto_fraco" || (b.ativo && CATEGORIAS_COM_RESISTENCIA.includes(b.item.categoria));
+const LEG_HAB = {
+  desgastante: objAtivo("desgastante", { modo: "automatico", salvamento: "Fortitude", reducoes: [] }),
+  efeito_alternativo: {
+    ativo: (a) => (a.fixosHab || []).some((x) => x.id === "efeito_alternativo"),
+    on: (a) => ({ ...a, fixosHab: [...(a.fixosHab || []), { id: "efeito_alternativo", nome: "Efeito Alternativo", valor: 1 }] }),
+    off: (a) => { const i = (a.fixosHab || []).findIndex((x) => x.id === "efeito_alternativo"); return { ...a, fixosHab: (a.fixosHab || []).filter((_, k) => k !== i) }; },
+  },
+};
+
+/* ---------- valores que o construtor define sozinho (tipo, ação, sustentado, acerto, custos) ---------- */
+const ALCANCE_TXT = { pessoal: "Pessoal", perto: "Perto (toque)", distancia: "À distância", percepcao: "Percepção", graduacao: "Pela graduação" };
+const ACERTO_TXT = { corpo: "Corpo-a-corpo", distancia: "À distância", area: "Área", percepcao: "Sem teste de acerto" };
+function cdDoEfeito(ef) {
+  const g = ef.graduacao ?? ef.graduacaoNulificar ?? 0;
+  const sv = ef.salvamento || "Fortitude";
+  switch (ef.categoria) {
+    case "Dano": return `Dano ${g}: alvo resiste com Resistência, CD ${15 + g}`;
+    case "Aflição": return `Aflição ${g}: ${sv}, CD ${10 + g}`;
+    case "Enfraquecer": return `Enfraquecer ${g}: ${sv}, CD ${10 + g}`;
+    case "Camuflagem": return `Camuflagem ${g}: ${sv}, CD ${15 + g}`;
+    case "Leitura Mental": return `Leitura Mental ${g}: Vontade, CD ${10 + g}`;
+    case "Nulificar": return `Nulificar ${g}: você rola +${g} contra 10 + a defesa do alvo`;
+    case "Cura": return `Cura ${g}: você rola +${g} contra CD 10`;
+    default: return null;
+  }
+}
+function derivarHabilidade(a, calc, ent) {
+  const efs = a.efeitos || [], pas = passivosDe(a);
+  const linhas = calc?.efeitos || [];
+  const ativosLinhas = (calc?.porEfeito || []).filter(Boolean);
+  const tipo = efs.length ? "ativa" : (pas.length ? "passiva" : (a.tipo || "ativa"));
+  const duracoes = linhas.map((l) => l.duracao);
+  const sustentado = duracoes.includes("sustentado");
+  const acoes = [...new Set(linhas.filter((l) => l.acao !== "nenhuma").map((l) => l.acao))];
+  const ordem = ["reacao", "livre", "movimento", "padrao"];
+  const acaoEng = acoes.length ? acoes.sort((x, y) => ordem.indexOf(y) - ordem.indexOf(x))[0] : null;
+  const acao = acaoEng ? ACAO_ENGINE_PARA_NOME[acaoEng] : (a.acao || "Ação Livre");
+  const ms = modsDaHabilidade(a);
+  const acaoSustentar = sustentado ? (ms.some((m) => m.id === "concentracao") ? "Ação Padrão" : "Nenhuma") : "Nenhuma";
+  const temArea = ms.some((m) => m.id === "area");
+  const alvoLinha = ativosLinhas.find((l) => l.alcance && l.alcance !== "pessoal" && l.alcance !== "graduacao");
+  let tipoAcerto = "percepcao";
+  if (temArea) tipoAcerto = "area";
+  else if (alvoLinha?.alcance === "perto") tipoAcerto = "corpo";
+  else if (alvoLinha?.alcance === "distancia") tipoAcerto = "distancia";
+  let nen = 0, vida = 0;
+  ms.filter((m) => m.id === "variavel_nen_vida").forEach((m) => { const n = m.vezes || 1; if (/vida/i.test(m.nota || "")) vida += n; else nen += n; });
+  const nivel = Math.max(1, ent?.nivel || 1);
+  if (efs.some((e) => e.categoria === "Criar")) nen = Math.max(nen, nivel);
+  if (efs.some((e) => e.categoria === "Cura") || pas.some((p) => p.tipoId === "regeneracao")) nen = Math.max(nen, 1);
+  const patch = { tipo, sustentado, acao, acaoSustentar, tipoAcerto, custoNen: nen, custoVida: vida, custoAuto: true };
+  const alcances = [...new Set(ativosLinhas.map((l) => ALCANCE_TXT[l.alcance]).filter(Boolean))];
+  let bonusAcerto = null, defesa = null;
+  if (ent && tipoAcerto === "corpo") { bonusAcerto = attr(ent, "luta"); defesa = "Aparar"; }
+  if (ent && tipoAcerto === "distancia") { bonusAcerto = attr(ent, "destreza"); defesa = "Esquiva (ou Aparar contra Deflexão)"; }
+  const cds = efs.map(cdDoEfeito).filter(Boolean);
+  if (tipoAcerto === "area") cds.push(`Esquiva em área: CD ${10 + Math.max(0, ...efs.map((e) => e.graduacao ?? e.graduacaoNulificar ?? 0))}`);
+  return { patch, info: { acao, acaoSustentar, sustentado, duracoes: [...new Set(duracoes.map((d) => DUR_TXT[d] || d))], alcances, tipoAcerto, bonusAcerto, defesa, custoNen: nen, custoVida: vida, cds } };
+}
+
+/* ---------- descrições bonitas ---------- */
+function frasesDe(texto) {
+  const t = String(texto || "").replace(/ex\.:/g, "ex§:").replace(/ex\./g, "ex§");
+  const m = t.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [t];
+  return m.map((x) => x.replace(/ex§:/g, "ex.:").replace(/ex§/g, "ex.").trim()).filter(Boolean);
+}
+function DescBonita({ cor, titulo, selo, seloClasse, chips, texto, notaTitulo, nota, destaque }) {
+  return (
+    <div className="dx" style={cor ? { "--dx-cor": cor } : undefined}>
+      <div className="dx-topo">
+        <span className="dx-dot" />
+        <h4>{titulo}</h4>
+        {selo && <span className={"dx-selo " + (seloClasse || "")}>{selo}</span>}
+      </div>
+      {chips && chips.length > 0 && <div className="dx-chips">{chips.map(([k, v], i) => <span key={i} className="dx-chip"><i>{k}</i>{v}</span>)}</div>}
+      {destaque && <div className="dx-destaque">{destaque}</div>}
+      <div className="dx-texto">{frasesDe(texto).map((f, i) => <p key={i}>{f}</p>)}</div>
+      {nota && <div className="dx-nota"><b>{notaTitulo || "Com os seus valores"}</b><span>{nota}</span></div>}
+    </div>
+  );
+}
+
+/* ---------- inspetor (painel embaixo do mapa) ---------- */
+function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
+  const [aba, setAba] = useState("extra");
   const [busca, setBusca] = useState("");
+  const disp = modsDisponiveis(idCat);
+  const mods = item.mods || [];
+  const livre = (m) => {
+    if (LEG_TODOS[m.id]) return !!ataque && !LEG_TODOS[m.id].ativo(ataque) && elegivelTodos(m.id, bloco) && !(m.id === "dividido" && ataque.extras?.multiataque) && !(m.id === "multiataque" && ataque.extras?.dividido);
+    if (LEG_HAB[m.id]) return false;
+    if (ocultar && ocultar.has(m.id)) return false;
+    if (LEG_EFEITO[m.id]) return !LEG_EFEITO[m.id].ativo(item) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria)));
+    if (MODS_LEGADO.has(m.id)) return false;
+    return m.mult || !mods.some((x) => x.id === m.id);
+  };
+  const q = semAcento(busca);
+  const base = (aba === "extra" ? disp.extras : disp.falhas).filter(livre);
+  const lista = base.filter((m) => !q || semAcento(m.nome).includes(q));
+  return (
+    <div className="px-paleta">
+      <div className="px-abas">
+        <button type="button" className={"extra" + (aba === "extra" ? " on" : "")} onClick={() => setAba("extra")}>Extras</button>
+        <button type="button" className={"falha" + (aba === "falha" ? " on" : "")} onClick={() => setAba("falha")}>Falhas</button>
+      </div>
+      <input type="text" placeholder="Buscar…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+      <div className="px-chips">
+        {lista.map((m) => <button type="button" key={m.id} className={"px-chip " + aba} onClick={() => onAdd(m)}>{m.nome}</button>)}
+        {!lista.length && <span className="field-note">Nada por aqui.</span>}
+      </div>
+      <div className="field-note">Toque numa peça para colocá-la no mapa. Os valores aparecem ao selecioná-la lá.</div>
+    </div>
+  );
+}
+function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, onDescer, children }) {
+  const [cfg, setCfg] = useState(false);
   const cat = EFEITO_CAT_POR_ID[idCat];
   const tipoPadrao = cat?.tipo || "coringa";
   const tipo = item.nen || tipoPadrao;
   const nome = ativo ? item.categoria : (PODERES_PASSIVOS.find((p) => p.id === item.tipoId)?.nome || cat?.nome || "Efeito");
-  const gk = chaveGrad(ativo, item);
-  const grad = item[gk] || 0;
-  const gradTravada = ativo && item.categoria === "Dano" && item.baseadoAtivo;
-  const mods = item.mods || [];
-  const setMods = (novos) => onMudar({ ...item, mods: novos });
-  const upd = (i, patch) => setMods(mods.map((x, j) => (j === i ? { ...x, ...patch } : x)));
-  const disp = modsDisponiveis(idCat);
-  const livre = (m) => !MODS_LEGADO.has(m.id) && !(ocultar && ocultar.has(m.id)) && (m.mult || !mods.some((x) => x.id === m.id));
-  const q = semAcento(busca);
-  const listaPal = pal ? (pal === "extra" ? disp.extras : disp.falhas).filter(livre).filter((m) => !q || semAcento(m.nome).includes(q)) : [];
-  const add = (m) => { setMods([...mods, { id: m.id, vezes: 1, valor: m.v, nota: "" }]); setSel(mods.length); setPal(null); setBusca(""); };
-  const derivados = (res?.mods || []).filter((m) => m.derivado);
-  const selMod = sel !== null ? mods[sel] : null;
-  const selCat = selMod ? MOD_POR_ID[selMod.id] : null;
+  const d = descEfeitoCompleta(idCat);
+  const chips = [...(d?.meta || [])];
+  if (res) chips.push(["Agora", `${res.custo} PP · ${res.razao}`], ["Limite", `graduação ${res.limite}`]);
   return (
-    <div className={"vb-bloco" + (ativo ? "" : " passivo")} style={{ "--vb-cor": COR_NEN[tipo] || COR_NEN.coringa }}>
-      <div className="vb-topo">
-        <div className="vb-nome"><span className="vb-dot" /><b>{nome}</b><span className="vb-tipo">{capNen(tipo)}</span>{!ativo && <span className="vb-tag">enquanto sustentado/ativo</span>}</div>
+    <div className="px">
+      <div className="px-barra">
+        <span className="px-titulo">{nome}</span>
         <div className="vb-acoes">
           <button type="button" className="small-btn" onClick={onSubir} disabled={!onSubir} title="Subir">▲</button>
           <button type="button" className="small-btn" onClick={onDescer} disabled={!onDescer} title="Descer">▼</button>
-          <button type="button" className="small-btn" onClick={onRemover} title="Remover bloco">×</button>
+          <button type="button" className="small-btn" onClick={onRemover} title="Remover este efeito">🗑</button>
         </div>
       </div>
-      {mostrarDesc && (() => { const d = descEfeitoCompleta(idCat); return d ? <div className="vb-desc"><span>{d.texto}</span><small>{d.meta}</small></div> : null; })()}
-      <div className="vb-linha">
-        <div className="vb-grad">
-          <span className="vb-lbl">Graduação</span>
-          <button type="button" className="vb-step" disabled={gradTravada || grad <= 0} onClick={() => onMudar({ ...item, [gk]: Math.max(0, grad - 1) })}>−</button>
-          <input type="number" min={0} value={gradTravada ? "" : grad} placeholder={gradTravada ? "atrib." : ""} disabled={gradTravada} onChange={(e) => onMudar({ ...item, [gk]: Math.max(0, Number(e.target.value) || 0) })} />
-          <button type="button" className="vb-step" disabled={gradTravada} onClick={() => onMudar({ ...item, [gk]: grad + 1 })}>+</button>
-        </div>
-        <div className="vb-custo"><b>{res ? res.custo : "—"}</b> PP<span>{res ? res.razao : ""}</span></div>
-      </div>
-      <div className="vb-pecas">
-        {mods.map((m, i) => {
-          const c = MOD_POR_ID[m.id]; if (!c) return null;
-          const neg = (m.valor ?? c.v) < 0;
-          return (
-            <button type="button" key={i} className={"vb-peca " + (neg ? "falha" : "extra") + (sel === i ? " sel" : "")} onClick={() => setSel(sel === i ? null : i)}>
-              {c.nome}{(m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""} <i>{valorModTxt(m)}</i>
-            </button>
-          );
-        })}
-        {derivados.map((m, i) => <span key={"d" + i} className={"vb-peca fixa " + (m.valor < 0 ? "falha" : "extra")} title="Definido nos detalhes do efeito / da habilidade">{m.nome} <i>{m.valor > 0 ? "+" : ""}{Math.round(m.valor * 100) / 100}{m.k === "g" ? "/g" : ""}</i></span>)}
-        <button type="button" className="vb-add extra" onClick={() => { setPal(pal === "extra" ? null : "extra"); setSel(null); }}>+ Extra</button>
-        <button type="button" className="vb-add falha" onClick={() => { setPal(pal === "falha" ? null : "falha"); setSel(null); }}>+ Falha</button>
-      </div>
-      {selMod && selCat && (
-        <div className="vb-edit">
-          <b>{selCat.nome}</b>
-          {selCat.mult && <span className="vb-stepper"><button type="button" className="small-btn" disabled={(selMod.vezes || 1) <= 1} onClick={() => upd(sel, { vezes: (selMod.vezes || 1) - 1 })}>−</button><b>×{selMod.vezes || 1}</b><button type="button" className="small-btn" onClick={() => upd(sel, { vezes: (selMod.vezes || 1) + 1 })}>+</button></span>}
-          {selCat.opcoes && selCat.opcoes.length > 1 && (
-            <select className="cb-sel" value={String(selMod.valor ?? selCat.v)} onChange={(e) => upd(sel, { valor: Number(e.target.value) })}>
-              {[...new Set(selCat.opcoes)].map((v) => <option key={v} value={v}>{v > 0 ? "+" : ""}{v}{selCat.k === "g" ? "/g" : ""}</option>)}
-            </select>
-          )}
-          {(NOTA_MODS.includes(selMod.id) || selMod.nota) && <input type="text" className="cb-nota" placeholder={selMod.id === "area" ? "Forma: Cone, Cilindro, Explosão, Linha ou Nuvem" : selMod.id === "depender_sentido" ? "Qual sentido? (visão / audição)" : "Descreva (ex: só funciona de dia)"} value={selMod.nota || ""} onChange={(e) => upd(sel, { nota: e.target.value })} />}
-          <div className="vb-desc"><span>{DESC_MOD[selMod.id] || ""}</span>{regraDoMod(selMod.id, selMod.vezes, selMod.valor, grad, { nota: selMod.nota, mods, dist: graduacaoParaDistancia }) && <small>Com os seus valores: {regraDoMod(selMod.id, selMod.vezes, selMod.valor, grad, { nota: selMod.nota, mods, dist: graduacaoParaDistancia })}</small>}</div>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => { setMods(mods.filter((_, j) => j !== sel)); setSel(null); }}>Remover peça</button>
-        </div>
-      )}
-      {pal && (
-        <div className={"vb-paleta " + pal}>
-          <input type="text" placeholder={pal === "extra" ? "Buscar extra…" : "Buscar falha…"} value={busca} onChange={(e) => setBusca(e.target.value)} />
-          <div className="vb-pecas">
-            {listaPal.map((m) => <button type="button" key={m.id} className={"vb-peca " + pal} onClick={() => add(m)}>{m.nome} <i>{m.v > 0 ? "+" : ""}{m.v}{m.k === "g" ? "/g" : " fixo"}</i></button>)}
-            {!listaPal.length && <span className="field-note">Nada encontrado.</span>}
-          </div>
-        </div>
-      )}
-      <div className="vb-rodape">
-        {res && <span>{res.grad}g · base {res.base}{res.ajG.length ? " · " + res.ajG.map((a) => `${a.nome} ${a.g > 0 ? "+" : ""}${a.g}`).join(" · ") : ""} · limite {res.limite}</span>}
-        {res?.dicaNivel && <span className="cb-dica">pode ir para lvl {res.dicaNivel} pelo mesmo custo</span>}
-      </div>
-      <button type="button" className="vb-det" onClick={() => setDet((d) => !d)}>{det ? "▼ Ocultar detalhes do efeito" : "▶ Detalhes do efeito (campos, tipo de Nen, falhas de teste…)"}</button>
-      {det && (
-        <div className="vb-detalhes">
+      <DescBonita cor={COR_NEN[tipo] || COR_NEN.coringa} titulo={nome} selo={capNen(tipo) + (ativo ? "" : " · aprimoramento")} chips={chips} texto={d?.texto || ""}
+        nota={res ? `${res.grad} graduações · base ${res.base}${res.ajG.length ? " · " + res.ajG.map((a) => `${a.nome} ${a.g > 0 ? "+" : ""}${a.g}`).join(" · ") : ""}` : null} notaTitulo="Como o custo foi calculado" />
+      {res?.dicaNivel && <div className="px-dica">💡 Pode subir para a graduação {res.dicaNivel} pelo mesmo custo.</div>}
+      <button type="button" className="px-cfg" onClick={() => setCfg((v) => !v)}>{cfg ? "▼ Fechar configuração" : "⚙ Configurar este efeito"}</button>
+      {cfg && (
+        <div className="px-config">
           <div className="cb-linha" style={{ marginBottom: 8 }}>
             <label className="label" style={{ margin: 0 }}>Tipo de Nen do efeito</label>
             <SearchableSelect value={tipo} onChange={(e) => onMudar({ ...item, nen: e.target.value === tipoPadrao ? undefined : e.target.value })}>
@@ -6170,10 +6309,114 @@ function BlocoEfeito({ ativo, item, res, idCat, ocultar, onMudar, onRemover, onS
     </div>
   );
 }
-/* layout do mapa: raiz (habilidade) -> blocos de efeito -> peças (extras/falhas) */
+function InspetorMod({ item, grad, idx, onMudar, onRemover }) {
+  const mods = item.mods || [];
+  const m = mods[idx];
+  const c = m ? MOD_POR_ID[m.id] : null;
+  if (!m || !c) return null;
+  const upd = (patch) => onMudar({ ...item, mods: mods.map((x, j) => (j === idx ? { ...x, ...patch } : x)) });
+  const neg = (m.valor ?? c.v) < 0;
+  const regra = regraDoMod(m.id, m.vezes, m.valor, grad, { nota: m.nota, mods, dist: graduacaoParaDistancia });
+  return (
+    <div className="px">
+      <DescBonita cor={neg ? "#d93636" : "#2fb84f"} titulo={c.nome} selo={neg ? "Falha" : "Extra"} seloClasse={neg ? "falha" : "extra"}
+        chips={[["Custo", valorModTxt(m)], ...((m.vezes || 1) > 1 ? [["Vezes", "×" + m.vezes]] : [])]} texto={DESC_MOD[m.id] || ""} nota={regra || null} />
+      <div className="px-ctrl">
+        {c.mult && (
+          <div className="px-linha"><span>Quantas vezes</span>
+            <span className="vb-stepper"><button type="button" className="small-btn" disabled={(m.vezes || 1) <= 1} onClick={() => upd({ vezes: (m.vezes || 1) - 1 })}>−</button><b>×{m.vezes || 1}</b><button type="button" className="small-btn" onClick={() => upd({ vezes: (m.vezes || 1) + 1 })}>+</button></span>
+          </div>
+        )}
+        {c.opcoes && c.opcoes.length > 1 && (
+          <div className="px-linha"><span>Opção</span>
+            <select className="cb-sel" value={String(m.valor ?? c.v)} onChange={(e) => upd({ valor: Number(e.target.value) })}>
+              {[...new Set(c.opcoes)].map((v) => <option key={v} value={v}>{v > 0 ? "+" : ""}{v}{c.k === "g" ? "/g" : ""}</option>)}
+            </select>
+          </div>
+        )}
+        {(NOTA_MODS.includes(m.id) || m.nota) && (
+          <input type="text" className="cb-nota" placeholder={m.id === "area" ? "Forma: Cone, Cilindro, Explosão, Linha ou Nuvem" : m.id === "depender_sentido" ? "Qual sentido? (visão / audição)" : m.id === "variavel_nen_vida" ? "Gasta Nen ou Vida? (escreva “vida” para Vida)" : "Descreva (ex: só funciona de dia)"} value={m.nota || ""} onChange={(e) => upd({ nota: e.target.value })} />
+        )}
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onRemover}>🗑 Remover esta peça</button>
+      </div>
+    </div>
+  );
+}
+/* peça "interruptor" (Efeito Colateral, Exigir Teste, Ponto Fraco…): mostra o editor próprio dela */
+function InspetorLegado({ id, item, onMudar, onRemover, grad, ehHab, todos }) {
+  const c = MOD_POR_ID[id];
+  const neg = (c?.v ?? 0) < 0;
+  const editor = (() => {
+    if (id === "efeito_colateral") return <ColateralEditor colateral={item.colateral} onMudar={(x) => onMudar({ ...item, colateral: x })} graduacao={grad} />;
+    if (id === "exigir_teste") return <ExigirTesteEditor valor={item.exigirTeste} onMudar={(x) => onMudar({ ...item, exigirTeste: x })} />;
+    if (id === "peculiaridade") return <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />;
+    if (id === "aquecimento") return <AquecimentoEditor valor={item.aquecimento} onMudar={(x) => onMudar({ ...item, aquecimento: x })} />;
+    if (id === "desgastante") return <DesgastanteEditor desgastante={item.desgastante} onMudar={(x) => onMudar({ ...item, desgastante: x })} />;
+    if (id === "ponto_fraco") return (
+      <>
+        <div className="field-note" style={{ marginBottom: 8 }}>Vale em todos os efeitos da habilidade (remover aqui remove de todos). Ao usar a habilidade, você escolhe entre as criaturas engajadas quem vai tentar notar o ponto fraco (Investigação contra um único teste de Enganação seu). Quem passar vê o texto abaixo.</div>
+        <textarea className="outros-textarea" rows={3} value={item.pontoFraco?.texto || ""} onChange={(e) => onMudar({ ...item, pontoFraco: { ...(item.pontoFraco || {}), ativo: true, texto: e.target.value } })} placeholder="Texto do ponto fraco (aparece para quem passar no teste)" />
+      </>
+    );
+    if (id === "grau_limitado_afl") return (
+      <SearchableSelect value={String(item.graus || 3)} onChange={(e) => onMudar({ ...item, graus: Number(e.target.value) })}>
+        <option value="2">Até 2 graus (−1/g)</option><option value="1">Só 1 grau (−2/g)</option>
+      </SearchableSelect>
+    );
+    return null;
+  })();
+  return (
+    <div className="px">
+      <DescBonita cor={neg ? "#d93636" : "#2fb84f"} titulo={c?.nome || id} selo={(neg ? "Falha" : "Extra") + (todos ? " · em todos os efeitos" : ehHab ? " · da habilidade inteira" : "")} seloClasse={neg ? "falha" : "extra"} chips={[["Custo", c ? `${c.v > 0 ? "+" : ""}${c.v}${c.k === "g" ? "/g" : " fixo"}` : ""]]} texto={DESC_MOD[id] || ""} />
+      {editor && <div className="px-config">{editor}</div>}
+      <div className="px-ctrl"><button type="button" className="btn btn-ghost btn-sm" onClick={onRemover}>🗑 Remover esta peça</button></div>
+    </div>
+  );
+}
+function InspetorHabilidade({ ataque, onMudar, onNovoEfeito }) {
+  const fixos = (ataque.fixosHab || []).filter((x) => x.id !== "efeito_alternativo");
+  const setFixos = (novos) => onMudar({ ...ataque, fixosHab: [...(ataque.fixosHab || []).filter((x) => x.id === "efeito_alternativo"), ...novos] });
+  return (
+    <div className="px">
+      <DescBonita cor="#e8c84a" titulo={ataque.nome || "Habilidade"} selo="Habilidade" texto="Esta é a habilidade inteira. Toque num efeito para ver a descrição e ajustar a graduação com os triângulos. Toque numa peça verde ou vermelha para ver o que ela faz. Multiataque, Dividido e Ponto Fraco aparecem em todos os efeitos aplicáveis. Só Desgastante e Efeito Alternativo ficam presos aqui, embaixo do nome." />
+      <div className="px-ctrl">
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onNovoEfeito}>+ Novo efeito</button>
+      </div>
+      <div className="px-config">
+        <div className="label">Ajustes de pontos (opcional)</div>
+        {fixos.map((f, i) => (
+          <div className="row-inline" key={i} style={{ marginBottom: 6 }}>
+            <input type="text" value={f.nome || ""} placeholder="Nome" onChange={(e) => setFixos(fixos.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))} />
+            <input type="number" value={f.valor ?? 0} style={{ maxWidth: 80 }} title="Pontos (negativo reduz)" onChange={(e) => setFixos(fixos.map((x, j) => (j === i ? { ...x, valor: Number(e.target.value) } : x)))} />
+            <button type="button" className="small-btn" onClick={() => setFixos(fixos.filter((_, j) => j !== i))}>×</button>
+          </div>
+        ))}
+        <button type="button" className="btn btn-ghost btn-sm" onClick={() => setFixos([...fixos, { nome: "", valor: 0 }])}>+ Item fixo</button>
+        <div className="grid2" style={{ marginTop: 8 }}>
+          <div><label className="label">Ajuste manual (PP)</label><input type="number" value={ataque.ppManual || 0} onChange={(e) => onMudar({ ...ataque, ppManual: Number(e.target.value) || 0 })} /></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+function PaletaHab({ ataque, onAdd }) {
+  const lista = Object.keys(LEG_HAB).filter((id) => !LEG_HAB[id].ativo(ataque));
+  return (
+    <div className="px px-paleta">
+      <div className="px-abas"><button type="button" className="on extra">Extras e falhas da habilidade</button></div>
+      <div className="px-chips">
+        {lista.map((id) => { const m = MOD_POR_ID[id]; return <button type="button" key={id} className={"px-chip " + (m.v < 0 ? "falha" : "extra")} onClick={() => onAdd(id)}>{m.nome}</button>; })}
+        {!lista.length && <span className="field-note">Todas já estão no mapa.</span>}
+      </div>
+      <div className="field-note">Estes dois valem para a habilidade inteira.</div>
+    </div>
+  );
+}
+
+/* ---------- layout e mapa ---------- */
 const largMod = (t) => Math.min(156, Math.max(56, 26 + String(t).length * 6.4));
-function layoutMapa(blocos) {
-  const ROOT_X = 8, ROOT_W = 84, EF_X = 116, EF_W = 124, EF_H = 62, MOD_X = 278, MOD_H = 42, GAP = 54;
+function layoutMapa(blocos, nHab) {
+  const ROOT_X = 8, ROOT_W = 84, EF_X = 118, EF_W = 124, EF_H = 62, MOD_X = 296, MOD_H = 42, GAP = 54;
   let cursor = 14, maxW = 100;
   const pos = [];
   blocos.forEach((b) => {
@@ -6186,26 +6429,111 @@ function layoutMapa(blocos) {
     cursor += h;
   });
   const novoY = cursor + 40;
-  const H = cursor + 100;
   const rootCy = pos.length ? (pos[0].cy + pos[pos.length - 1].cy) / 2 : 70;
-  return { ROOT_X, ROOT_W, EF_X, EF_W, EF_H, MOD_X, MOD_H, pos, novoY, H: Math.max(H, 160), W: MOD_X + Math.max(maxW, 120) + 14, rootCy };
+  const habY = Array.from({ length: nHab }, (_, k) => rootCy + 64 + k * 48);
+  const habPlusY = rootCy + 64 + nHab * 48;
+  const H = Math.max(cursor + 100, habPlusY + 70, 180);
+  return { ROOT_X, ROOT_W, EF_X, EF_W, EF_H, MOD_X, MOD_H, pos, novoY, H, W: MOD_X + Math.max(maxW, 120) + 20, rootCy, habY, habPlusY };
 }
 const curva = (x1, y1, x2, y2) => `M${x1} ${y1} C${x1 + (x2 - x1) / 2} ${y1}, ${x1 + (x2 - x1) / 2} ${y2}, ${x2} ${y2}`;
 
-function MapaPoder({ ataque, blocos, selecionado, onSel, onNovo, total, zoom, setZoom }) {
-  const L = layoutMapa(blocos);
+function PainelInfo({ info, calc, aberto, setAberto, total, ent }) {
+  const erros = calc?.erros || [], avisos = calc?.avisos || [];
+  const alertas = erros.length + avisos.length;
+  return (
+    <div className={"mp-lado" + (aberto ? " aberto" : "")}>
+      <button type="button" className="mp-lado-aba" onClick={() => setAberto(!aberto)} title={aberto ? "Recolher painel" : "Abrir painel de informações"}>
+        <span>{aberto ? "›" : "‹"}</span>
+        {!aberto && alertas > 0 && <em className={erros.length ? "erro" : ""}>{alertas}</em>}
+        {!aberto && <b>Info</b>}
+      </button>
+      <div className="mp-lado-corpo">
+        <div className="pi-total"><b>{total}</b><span>PP</span><small>Nível {Math.max(1, ent?.nivel || 1)}</small></div>
+        {erros.length + avisos.length > 0 && (
+          <div className="pi-sec">
+            <div className="pi-tit">Avisos</div>
+            {erros.map((e, i) => <div key={"e" + i} className="pi-aviso erro"><span>⛔</span><p>{e}</p></div>)}
+            {avisos.map((e, i) => <div key={"a" + i} className="pi-aviso dica"><span>💡</span><p>{e}</p></div>)}
+          </div>
+        )}
+        {info && (
+          <>
+            <div className="pi-sec">
+              <div className="pi-tit">Como a habilidade é usada</div>
+              <div className="pi-grade">
+                <div><i>Ação</i><b>{info.acao}</b></div>
+                <div><i>Duração</i><b>{info.duracoes.join(" / ") || "—"}</b></div>
+                <div><i>Alcance</i><b>{info.alcances.join(" / ") || "—"}</b></div>
+                <div><i>Acerto</i><b>{ACERTO_TXT[info.tipoAcerto]}</b></div>
+                {info.sustentado && <div><i>Para sustentar</i><b>{info.acaoSustentar}</b></div>}
+                {info.bonusAcerto !== null && <div><i>Bônus de ataque</i><b>{info.bonusAcerto >= 0 ? "+" : ""}{info.bonusAcerto}</b></div>}
+                {info.defesa && <div><i>Alvo defende com</i><b>{info.defesa}</b></div>}
+              </div>
+            </div>
+            <div className="pi-sec">
+              <div className="pi-tit">Custos para usar</div>
+              <div className="pi-grade">
+                <div><i>Nen</i><b>{info.custoNen}{info.sustentado && info.custoNen > 0 ? " /turno" : ""}</b></div>
+                <div><i>Vida</i><b>{info.custoVida}</b></div>
+              </div>
+            </div>
+            {info.cds.length > 0 && (
+              <div className="pi-sec">
+                <div className="pi-tit">Testes e CDs</div>
+                {info.cds.map((t, i) => <div key={i} className="pi-linha">{t}</div>)}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function NoGraduacao({ b, onGrad }) {
+  const trav = b.gradTravada;
+  return (
+    <div className="mp-grad" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
+      <button type="button" disabled={trav} onClick={() => onGrad(b, 1)} title="Aumentar graduação">▲</button>
+      <button type="button" disabled={trav || b.grad <= 0} onClick={() => onGrad(b, -1)} title="Diminuir graduação">▼</button>
+    </div>
+  );
+}
+function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto }) {
+  const L = layoutMapa(blocos, habMods.length);
   const ref = useRef(null);
   const arr = useRef(null);
   const ajustou = useRef(false);
-  const ajustar = () => { const w = ref.current ? ref.current.clientWidth : 0; if (w > 0) setZoom(Math.max(0.5, Math.min(1.2, +((w - 4) / L.W).toFixed(2)))); };
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
+  const ajustar = () => { const w = ref.current ? ref.current.clientWidth : 0; if (w > 0) setZoom(Math.max(0.4, Math.min(1.3, +((w - 6) / L.W).toFixed(2)))); };
   useEffect(() => { if (!ajustou.current && ref.current && ref.current.clientWidth > 0) { ajustou.current = true; ajustar(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  const down = (e) => { if (e.target.closest(".mp-no")) return; arr.current = { x: e.clientX, y: e.clientY, sl: ref.current.scrollLeft, st: ref.current.scrollTop }; };
+  // zoom com o scroll do mouse (em torno do cursor)
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const onWheel = (e) => {
+      e.preventDefault();
+      const z0 = zoomRef.current;
+      const z1 = Math.max(0.4, Math.min(2, +(z0 * (e.deltaY < 0 ? 1.1 : 1 / 1.1)).toFixed(3)));
+      if (z1 === z0) return;
+      const r = el.getBoundingClientRect();
+      const mx = e.clientX - r.left, my = e.clientY - r.top;
+      const cx = (el.scrollLeft + mx) / z0, cy = (el.scrollTop + my) / z0;
+      setZoom(z1);
+      requestAnimationFrame(() => { el.scrollLeft = cx * z1 - mx; el.scrollTop = cy * z1 - my; });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, [setZoom]);
+  // arrastar para se mover (mouse/caneta; no toque o próprio scroll já funciona)
+  const down = (e) => { if (e.pointerType === "touch" || e.button !== 0 || e.target.closest(".mp-no, .mp-lado, .mp-zoom")) return; arr.current = { x: e.clientX, y: e.clientY, sl: ref.current.scrollLeft, st: ref.current.scrollTop }; ref.current.setPointerCapture?.(e.pointerId); ref.current.classList.add("arrastando"); };
   const move = (e) => { if (!arr.current) return; ref.current.scrollLeft = arr.current.sl - (e.clientX - arr.current.x); ref.current.scrollTop = arr.current.st - (e.clientY - arr.current.y); };
-  const up = () => { arr.current = null; };
+  const up = () => { arr.current = null; ref.current && ref.current.classList.remove("arrastando"); };
   const efX2 = L.EF_X + L.EF_W;
+  const raizSel = selecionado && selecionado.raiz;
   return (
     <div className="mp-wrap">
-      <div className="mp-area" ref={ref} onMouseDown={down} onMouseMove={move} onMouseUp={up} onMouseLeave={up}>
+      <div className="mp-area" ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
         <div style={{ width: L.W * zoom, height: L.H * zoom }}>
           <div className="mp-cena" style={{ width: L.W, height: L.H, transform: `scale(${zoom})` }}>
             <svg className="mp-linhas" width={L.W} height={L.H}>
@@ -6220,18 +6548,25 @@ function MapaPoder({ ataque, blocos, selecionado, onSel, onNovo, total, zoom, se
                 );
               })}
               {blocos.length === 0 && <path className="mais" d={curva(L.ROOT_X + L.ROOT_W, L.rootCy, L.EF_X, L.novoY)} />}
+              {habMods.map((h, k) => <path key={h.id} className={raizSel && selecionado.fixoHab === h.id ? "on" : ""} d={`M${L.ROOT_X + L.ROOT_W / 2} ${L.rootCy + 36} L${L.ROOT_X + L.ROOT_W / 2} ${L.habY[k]}`} />)}
+              <path className="mais" d={`M${L.ROOT_X + L.ROOT_W / 2} ${L.rootCy + 36} L${L.ROOT_X + L.ROOT_W / 2} ${L.habPlusY}`} />
             </svg>
-            <div className="mp-no mp-raiz" style={{ left: L.ROOT_X, top: L.rootCy - 36, width: L.ROOT_W }} onClick={() => onSel(null)}>
+            <div className={"mp-no mp-raiz" + (raizSel && !selecionado.fixoHab && !selecionado.pal ? " sel" : "")} style={{ left: L.ROOT_X, top: L.rootCy - 36, width: L.ROOT_W }} onClick={() => onSel({ raiz: true })}>
               <b>{ataque.nome || "Habilidade"}</b><span>{total} PP</span>
             </div>
+            {habMods.map((h, k) => (
+              <div key={h.id} className={"mp-no mp-mod " + (h.neg ? "falha" : "extra") + (raizSel && selecionado.fixoHab === h.id ? " sel" : "")} style={{ left: L.ROOT_X - 4, top: L.habY[k] - 21, width: 92, height: 42, fontSize: ".64rem" }} onClick={() => onSel({ raiz: true, fixoHab: h.id })} title={h.nome}><span>{h.nome}</span></div>
+            ))}
+            <div className={"mp-no mp-mod mp-mais" + (raizSel && selecionado.pal ? " sel" : "")} style={{ left: L.ROOT_X - 4, top: L.habPlusY - 21, width: 92, height: 42, fontSize: ".64rem" }} onClick={() => onSel({ raiz: true, pal: true })}><span>+ extra / falha da habilidade</span></div>
             {blocos.map((b, i) => {
               const cor = COR_NEN[b.tipo] || COR_NEN.coringa;
               const ativoSel = selecionado && selecionado.key === b.key;
               return (
                 <React.Fragment key={b.key}>
-                  <div className={"mp-no mp-ef" + (ativoSel && selecionado.mod == null && !selecionado.fixo ? " sel" : "") + (b.ativo ? "" : " passivo")} style={{ left: L.EF_X, top: L.pos[i].cy - L.EF_H / 2, width: L.EF_W, height: L.EF_H, background: cor, color: COR_TXT_NEN[b.tipo] || "#fff", animationDelay: i * 40 + "ms" }} onClick={() => onSel({ key: b.key })} title={b.nome}>
+                  <div className={"mp-no mp-ef" + (ativoSel && selecionado.mod == null && !selecionado.fixo && !selecionado.pal ? " sel" : "") + (b.ativo ? "" : " passivo")} style={{ left: L.EF_X, top: L.pos[i].cy - L.EF_H / 2, width: L.EF_W, height: L.EF_H, background: cor, color: COR_TXT_NEN[b.tipo] || "#fff", animationDelay: i * 40 + "ms" }} onClick={() => onSel({ key: b.key })} title={b.nome}>
                     <span className="mp-ef-nome" style={{ fontSize: b.nome.length > 17 ? ".68rem" : b.nome.length > 11 ? ".74rem" : undefined }}>{b.nome}</span>
                     <em>{b.grad}</em>
+                    <NoGraduacao b={b} onGrad={onGrad} />
                   </div>
                   {b.mods.map((m, k) => (
                     <div key={k} className={"mp-no mp-mod " + (m.neg ? "falha" : "extra") + (ativoSel && (m.fixa ? selecionado.fixo === m.id : selecionado.mod === m.idx) ? " sel" : "") + (m.fixa ? " fixa" : "")}
@@ -6240,7 +6575,7 @@ function MapaPoder({ ataque, blocos, selecionado, onSel, onNovo, total, zoom, se
                       <span>{m.nome}</span>
                     </div>
                   ))}
-                  <div className="mp-no mp-mod mp-mais" style={{ left: L.MOD_X, top: L.pos[i].plusY - L.MOD_H / 2, width: 112, height: L.MOD_H }} onClick={() => onSel({ key: b.key, pal: "extra" })}>
+                  <div className={"mp-no mp-mod mp-mais" + (ativoSel && selecionado.pal ? " sel" : "")} style={{ left: L.MOD_X, top: L.pos[i].plusY - L.MOD_H / 2, width: 112, height: L.MOD_H }} onClick={() => onSel({ key: b.key, pal: true })}>
                     <span>+ extra / falha</span>
                   </div>
                 </React.Fragment>
@@ -6252,41 +6587,48 @@ function MapaPoder({ ataque, blocos, selecionado, onSel, onNovo, total, zoom, se
           </div>
         </div>
       </div>
+      <PainelInfo info={info} calc={calc} aberto={ladoAberto} setAberto={setLadoAberto} total={total} ent={ent} />
       <div className="mp-zoom">
         <button type="button" title="Ajustar à tela" onClick={ajustar}>⤢</button>
-        <button type="button" onClick={() => setZoom(Math.max(0.5, +(zoom - 0.1).toFixed(2)))}>−</button>
+        <button type="button" onClick={() => setZoom(Math.max(0.4, +(zoom - 0.1).toFixed(2)))}>−</button>
         <span>{Math.round(zoom * 100)}%</span>
-        <button type="button" onClick={() => setZoom(Math.min(1.6, +(zoom + 0.1).toFixed(2)))}>+</button>
+        <button type="button" onClick={() => setZoom(Math.min(2, +(zoom + 0.1).toFixed(2)))}>+</button>
+        <button type="button" title={cheio ? "Sair da tela cheia" : "Tela cheia"} onClick={() => setCheio(!cheio)}>{cheio ? "🗙" : "⛶"}</button>
       </div>
     </div>
   );
 }
+
 function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso }) {
-  const ehPassiva = ataque.tipo === "passiva";
-  const efs = ehPassiva ? [] : (ataque.efeitos || []);
+  const efs = ataque.efeitos || [];
   const pas = passivosDe(ataque);
+  const ehPassiva = efs.length === 0 && pas.length > 0;
   const [paleta, setPaleta] = useState(false);
   const [busca, setBusca] = useState("");
-  const [sel, setSel] = useState(null); // { key, mod?, pal? }
+  const [sel, setSel] = useState(null);
   const [zoom, setZoom] = useState(1);
+  const [cheio, setCheio] = useState(false);
+  const [ladoAberto, setLadoAberto] = useState(false);
   const setEfs = (arr) => onMudar({ ...ataque, efeitos: arr });
   const setPas = (arr) => onMudar({ ...ataque, passivos: arr });
   const mover = (arr, i, d) => { const novo = [...arr]; const j = i + d; if (j < 0 || j >= novo.length) return arr; [novo[i], novo[j]] = [novo[j], novo[i]]; return novo; };
+  const { patch, info } = derivarHabilidade(ataque, calc, ent);
+  // o construtor define tipo, sustentado, ação, acerto e custos de Nen/Vida
+  useEffect(() => {
+    if (!calc || !(efs.length || pas.length)) return;
+    if (Object.keys(patch).some((k) => ataque[k] !== patch[k])) onMudar({ ...ataque, ...patch });
+  });
   const addBloco = (id) => {
     setPaleta(false); setBusca("");
-    if (!ehPassiva && ATIVO_POR_ID[id]) { const novo = { id: uid(), ...efeitoPadrao(ATIVO_POR_ID[id]) }; setEfs([...efs, novo]); setSel({ key: "e" + novo.id }); }
+    if (ATIVO_POR_ID[id]) { const novo = { id: uid(), ...efeitoPadrao(ATIVO_POR_ID[id]) }; setEfs([...efs, novo]); setSel({ key: "e" + novo.id }); }
     else if (PASSIVO_POR_ID[id]) { const novo = { id: uid(), tipoId: PASSIVO_POR_ID[id], graduacao: 1, campos: {}, extrasAtivos: {} }; setPas([...pas, novo]); setSel({ key: "p" + novo.id }); }
   };
   const total = calc ? (calc.efeitos.length ? calc.total : Math.max(0, ataque.ppManual || 0)) : (ataque.pp || 0);
-  const nivel = Math.max(1, ent?.nivel || 1);
   const q = semAcento(busca);
-  const opcoesPaleta = EFEITOS_CAT.filter((e) => (ehPassiva ? PASSIVO_POR_ID[e.id] : (ATIVO_POR_ID[e.id] || PASSIVO_POR_ID[e.id]))).filter((e) => !q || semAcento(e.nome).includes(q));
+  const opcoesPaleta = EFEITOS_CAT.filter((e) => ATIVO_POR_ID[e.id] || PASSIVO_POR_ID[e.id]).filter((e) => !q || semAcento(e.nome).includes(q));
   const grupos = {};
   opcoesPaleta.forEach((e) => { (grupos[e.tipo || "coringa"] = grupos[e.tipo || "coringa"] || []).push(e); });
-  const acoes = calc ? [...new Set(calc.efeitos.filter((e) => e.acao !== "nenhuma").map((e) => ACAO_TXT[e.acao] || e.acao))] : [];
-  const durs = calc ? [...new Set(calc.efeitos.map((e) => DUR_TXT[e.duracao] || e.duracao))] : [];
 
-  // lista unificada de blocos (efeitos ativos + passivos) para o mapa e o inspetor
   const blocos = [
     ...efs.map((ef, i) => ({ key: "e" + ef.id, ativo: true, i, item: ef, res: calc?.porEfeito?.[i], idCat: CAT_PARA_EFEITO[ef.categoria] || CAT_UTIL_PARA_EFEITO[ef.categoria] })),
     ...pas.map((inst, i) => ({ key: "p" + (inst.id || i), ativo: false, i, item: inst, res: calc?.porPassivo?.[i], idCat: PASSIVO_PARA_CAT[inst.tipoId] })),
@@ -6294,118 +6636,79 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso }) {
     const cat = EFEITO_CAT_POR_ID[b.idCat];
     const def = b.ativo ? null : PODERES_PASSIVOS.find((p) => p.id === b.item.tipoId);
     const mods = (b.item.mods || []).map((m, idx) => { const c = MOD_POR_ID[m.id]; return c ? { idx, nome: c.nome + ((m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""), neg: (m.valor ?? c.v) < 0 } : null; }).filter(Boolean);
-    ((b.res?.mods) || []).filter((m) => m.derivado).forEach((m) => mods.push({ idx: -1, fixa: true, id: m.id, nome: m.nome, neg: m.valor < 0 }));
-    return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : (def?.nome || cat?.nome || "Efeito"), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, custo: b.res ? b.res.custo : null, razao: b.res ? b.res.razao : null, mods, def };
+    Object.keys(LEG_EFEITO).filter((id) => LEG_EFEITO[id].ativo(b.item) && (b.ativo || id !== "peculiaridade")).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
+    Object.keys(LEG_TODOS).filter((id) => LEG_TODOS[id].ativo(ataque) && elegivelTodos(id, b)).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
+    return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : (def?.nome || cat?.nome || "Efeito"), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTravada: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo, mods, def };
   });
-  const bSel = sel ? blocos.find((b) => b.key === sel.key) : null;
+  const habMods = Object.keys(LEG_HAB).filter((id) => LEG_HAB[id].ativo(ataque)).map((id) => ({ id, nome: MOD_POR_ID[id]?.nome || id, neg: (MOD_POR_ID[id]?.v ?? 0) < 0 }));
+
+  const bSel = sel && sel.key ? blocos.find((b) => b.key === sel.key) : null;
   const atualizarBloco = (b, novo) => (b.ativo ? setEfs(efs.map((x, j) => (j === b.i ? novo : x))) : setPas(pas.map((x, j) => (j === b.i ? novo : x))));
   const removerBloco = (b) => { setSel(null); b.ativo ? setEfs(efs.filter((_, j) => j !== b.i)) : setPas(pas.filter((_, j) => j !== b.i)); };
   const lista = (b) => (b.ativo ? efs : pas);
   const setLista = (b, arr) => (b.ativo ? setEfs(arr) : setPas(arr));
-  return (
-    <div className="vb-canvas">
-      <div className="vb-resumo">
-        <div className="vb-total"><b>{total}</b><span>PP</span></div>
-        <div className="vb-resumo-info">
-          <div>Nível {nivel} · {blocos.length} bloco(s){acoes.length ? ` · ação ${acoes.join("/")}` : ""}{durs.length ? ` · ${durs.join("/")}` : ""}</div>
-        </div>
-      </div>
-      {calc && calc.erros.map((e, i) => <div key={i} className="field-note cb-erro">⛔ {e}</div>)}
-      {calc && calc.avisos.map((e, i) => <div key={i} className="field-note cb-aviso">💡 {e}</div>)}
-      <MapaPoder ataque={ataque} blocos={blocos} selecionado={sel} onSel={(x) => { setSel(x); setPaleta(false); }} onNovo={() => { setSel(null); setPaleta(true); }} total={total} zoom={zoom} setZoom={setZoom} />
-      {bSel && (
-        <div className="mp-inspetor">
-          {sel.fixo && <div className="vb-desc" style={{ marginBottom: 8 }}><b>{MOD_POR_ID[sel.fixo]?.nome || sel.fixo}</b><span>{DESC_MOD[sel.fixo] || ""}</span><small>Definido nos campos do efeito/habilidade (em “Detalhes do efeito” ou em “Falhas”).</small></div>}
-          {bSel.def || bSel.ativo ? (
-            <BlocoEfeito key={bSel.key + ":" + (sel.mod ?? "") + (sel.pal || "") + (sel.fixo || "")} mostrarDesc={sel.mod == null && !sel.pal && !sel.fixo} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat} ocultar={bSel.def ? modsOcultosDoPassivo(bSel.def) : undefined}
-              palInicial={sel.pal} modInicial={sel.mod ?? null}
-              onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => removerBloco(bSel)}
-              onSubir={bSel.i > 0 ? () => setLista(bSel, mover(lista(bSel), bSel.i, -1)) : null} onDescer={bSel.i < lista(bSel).length - 1 ? () => setLista(bSel, mover(lista(bSel), bSel.i, 1)) : null}>
-              {bSel.ativo
-                ? <EfeitoForm modo="bloco" efeito={bSel.item} res={bSel.res} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => {}} onCriarArremesso={onCriarArremesso} />
-                : <PassivoInstanceEditor modo="bloco" passivo={bSel.item} res={bSel.res} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => {}} />}
-            </BlocoEfeito>
-          ) : <PassivoInstanceEditor passivo={bSel.item} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => removerBloco(bSel)} />}
-        </div>
-      )}
-      {paleta && (
-        <div className="vb-paleta-efeitos">
-          <input type="text" placeholder="Buscar efeito…" value={busca} onChange={(e) => setBusca(e.target.value)} />
-          {Object.entries(grupos).map(([t, lst]) => (
-            <div key={t} className="vb-grupo" style={{ "--vb-cor": COR_NEN[t] || COR_NEN.coringa }}>
-              <div className="vb-grupo-t">{capNen(t)}</div>
-              <div className="vb-pecas">
-                {lst.map((e) => <button type="button" key={e.id} className="vb-opcao" style={{ background: COR_NEN[t] || COR_NEN.coringa, color: COR_TXT_NEN[t] || "#fff" }} onClick={() => addBloco(e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>)}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-function PainelCustoHabilidade({ ataque, ent, calc, onMudar }) {
-  const [aberto, setAberto] = useState(false);
-  const fixos = ataque.fixosHab || [];
-  const setFixos = (f) => onMudar({ ...ataque, fixosHab: f });
-  if (!ataque.custoAuto) {
-    return (
-      <div className="cb-painel cb-off">
-        <div>Custo <b>manual</b>: {ataque.pp || 0} PP. O construtor calcula o custo pelos efeitos, extras e falhas.</div>
-        <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMudar({ ...ataque, custoAuto: true, ppAntigo: ataque.pp || 0 })}>Calcular custo pelo construtor</button>
-      </div>
-    );
+  const onGrad = (b, d) => { const k = chaveGrad(b.ativo, b.item); atualizarBloco(b, { ...b.item, [k]: Math.max(0, (b.item[k] || 0) + d) }); };
+  const addMod = (b, m) => {
+    if (LEG_TODOS[m.id]) { onMudar(LEG_TODOS[m.id].on(ataque)); setSel({ key: b.key, fixo: m.id }); return; }
+    if (LEG_EFEITO[m.id]) { atualizarBloco(b, LEG_EFEITO[m.id].on(b.item)); setSel({ key: b.key, fixo: m.id }); return; }
+    const novos = [...(b.item.mods || []), { id: m.id, vezes: 1, valor: m.v, nota: "" }];
+    atualizarBloco(b, { ...b.item, mods: novos });
+    setSel({ key: b.key, mod: novos.length - 1 });
+  };
+  const gradDe = (b) => b.item[chaveGrad(b.ativo, b.item)] || 0;
+
+  let inspetor = null;
+  if (sel && sel.raiz) {
+    if (sel.pal) inspetor = <PaletaHab ataque={ataque} onAdd={(id) => { onMudar(LEG_HAB[id].on(ataque)); setSel({ raiz: true, fixoHab: id }); }} />;
+    else if (sel.fixoHab) inspetor = <InspetorLegado id={sel.fixoHab} item={ataque} ehHab onMudar={onMudar} onRemover={() => { onMudar(LEG_HAB[sel.fixoHab].off(ataque)); setSel({ raiz: true }); }} grad={0} />;
+    else inspetor = <InspetorHabilidade ataque={ataque} onMudar={onMudar} onNovoEfeito={() => { setSel(null); setPaleta(true); }} />;
+  } else if (bSel) {
+    if (sel.pal) {
+      inspetor = <PaletaMods ataque={ataque} bloco={bSel} idCat={bSel.idCat} item={bSel.item} ativo={bSel.ativo} ocultar={bSel.def ? modsOcultosDoPassivo(bSel.def) : undefined} onAdd={(m) => addMod(bSel, m)} />;
+    } else if (sel.fixo && LEG_TODOS[sel.fixo]) {
+      inspetor = <InspetorLegado id={sel.fixo} item={ataque} todos onMudar={onMudar} onRemover={() => { onMudar(LEG_TODOS[sel.fixo].off(ataque)); setSel({ key: bSel.key }); }} grad={0} />;
+    } else if (sel.fixo) {
+      inspetor = <InspetorLegado id={sel.fixo} item={bSel.item} grad={gradDe(bSel)} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, LEG_EFEITO[sel.fixo].off(bSel.item)); setSel({ key: bSel.key }); }} />;
+    } else if (sel.mod != null) {
+      inspetor = <InspetorMod item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, { ...bSel.item, mods: (bSel.item.mods || []).filter((_, j) => j !== sel.mod) }); setSel({ key: bSel.key }); }} />;
+    } else {
+      inspetor = (
+        <InspetorEfeito key={bSel.key} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat}
+          onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => removerBloco(bSel)}
+          onSubir={bSel.i > 0 ? () => setLista(bSel, mover(lista(bSel), bSel.i, -1)) : null} onDescer={bSel.i < lista(bSel).length - 1 ? () => setLista(bSel, mover(lista(bSel), bSel.i, 1)) : null}>
+          {bSel.ativo
+            ? <EfeitoForm modo="bloco" efeito={bSel.item} res={bSel.res} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => {}} onCriarArremesso={onCriarArremesso} />
+            : <PassivoInstanceEditor modo="bloco" passivo={bSel.item} res={bSel.res} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => {}} />}
+        </InspetorEfeito>
+      );
+    }
   }
-  const acoes = [...new Set(calc.efeitos.filter((e) => e.acao !== "nenhuma").map((e) => e.acao))];
-  const acaoCalc = acoes.length === 1 ? ACAO_ENGINE_PARA_NOME[acoes[0]] : null;
-  const acaoAtual = ataque.acao || acaoDaHabilidade(ataque);
-  const temSust = calc.efeitos.some((e) => e.duracao === "sustentado");
-  const total = calc.efeitos.length ? calc.total : Math.max(0, ataque.ppManual || 0);
   return (
-    <div className="cb-painel">
-      <div className="acoes-header ed-colapso-head" onClick={() => setAberto((s) => !s)}>
-        <div className="section-title" style={{ marginBottom: 0 }}>Custo da habilidade: <b className="cb-total">{total} PP</b></div>
-        <span className={"arrow" + (aberto ? " open" : "")}>▶</span>
+    <div className={"vb-shell" + (cheio ? " cheio" : "")}>
+      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={(x) => { setSel(x); setPaleta(false); }} onNovo={() => { setSel(null); setPaleta(true); }} total={total}
+        zoom={zoom} setZoom={setZoom} onGrad={onGrad} info={info} calc={calc} ent={ent} cheio={cheio} setCheio={setCheio} ladoAberto={ladoAberto} setLadoAberto={setLadoAberto} />
+      <div className="vb-inspetor">
+        {inspetor}
+        {paleta && (
+          <div className="vb-paleta-efeitos">
+            <input type="text" placeholder="Buscar efeito…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+            {Object.entries(grupos).map(([t, lst]) => (
+              <div key={t} className="vb-grupo" style={{ "--vb-cor": COR_NEN[t] || COR_NEN.coringa }}>
+                <div className="vb-grupo-t">{capNen(t)}</div>
+                <div className="vb-pecas">
+                  {lst.map((e) => <button type="button" key={e.id} className="vb-opcao" style={{ background: COR_NEN[t] || COR_NEN.coringa, color: COR_TXT_NEN[t] || "#fff" }} onClick={() => addBloco(e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        {!inspetor && !paleta && <div className="vb-vazio">Toque num bloco do mapa para ver a descrição. Use os triângulos ▲▼ do bloco para mudar a graduação.</div>}
       </div>
-      {aberto && (
-        <>
-          {typeof ataque.ppAntigo === "number" && ataque.ppAntigo !== total && <div className="field-note cb-aviso">Custo manual anterior: {ataque.ppAntigo} PP — agora calculado: {total} PP.</div>}
-          <table className="cb-tab">
-            <tbody>
-              {calc.efeitos.map((e, i) => <tr key={i}><td>{e.nome} {e.grad}</td><td>{e.razao}</td><td><b>{e.custo}</b></td></tr>)}
-              {calc.fixos.map((f, i) => <tr key={"f" + i} className="fixo"><td colSpan={2}>{f.nome}</td><td><b>{f.valor > 0 ? "+" : ""}{f.valor}</b></td></tr>)}
-              {calc.efeitos.length > 0 && calc.bruto < 1 && <tr className="fixo"><td colSpan={2}>Mínimo de 1 PP por habilidade</td><td><b>1</b></td></tr>}
-            </tbody>
-          </table>
-          {calc.erros.map((e, i) => <div key={i} className="field-note cb-erro">⛔ {e}</div>)}
-          {calc.avisos.map((e, i) => <div key={i} className="field-note cb-aviso">💡 {e}</div>)}
-          {acaoCalc && acaoCalc !== acaoAtual && <div className="field-note cb-aviso">Pelos efeitos, a ação desta habilidade seria <b>{acaoCalc}</b> (está como {acaoAtual}). <button type="button" className="small-btn" onClick={() => onMudar({ ...ataque, acao: acaoCalc })}>Usar {acaoCalc}</button></div>}
-          {temSust && !ataque.sustentado && <div className="field-note cb-aviso">Os efeitos são sustentados, mas a habilidade não está marcada como Sustentado. <button type="button" className="small-btn" onClick={() => onMudar({ ...ataque, sustentado: true })}>Marcar</button></div>}
-          <label className="label">Itens fixos da habilidade (Efeito Alternativo, variáveis, etc.)</label>
-          {fixos.map((f, i) => (
-            <div className="row-inline" key={i} style={{ marginBottom: 6 }}>
-              <input type="text" value={f.nome || ""} placeholder="Nome" onChange={(e) => setFixos(fixos.map((x, j) => (j === i ? { ...x, nome: e.target.value } : x)))} />
-              <input type="number" value={f.valor ?? 0} style={{ maxWidth: 80 }} title="Pontos (negativo reduz)" onChange={(e) => setFixos(fixos.map((x, j) => (j === i ? { ...x, valor: Number(e.target.value) } : x)))} />
-              <button type="button" className="small-btn" onClick={() => setFixos(fixos.filter((_, j) => j !== i))}>×</button>
-            </div>
-          ))}
-          <div className="row-inline" style={{ flexWrap: "wrap", gap: 6 }}>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setFixos([...fixos, { id: "efeito_alternativo", nome: "Efeito Alternativo", valor: 1 }])}>+ Efeito Alternativo (+1)</button>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => setFixos([...fixos, { nome: "", valor: 0 }])}>+ Item fixo</button>
-          </div>
-          <div className="grid2" style={{ marginTop: 8 }}>
-            <div><label className="label">Ajuste manual (PP)</label><input type="number" value={ataque.ppManual || 0} onChange={(e) => onMudar({ ...ataque, ppManual: Number(e.target.value) || 0 })} /></div>
-            <div style={{ alignSelf: "end" }}><button type="button" className="btn btn-ghost btn-sm" onClick={() => onMudar({ ...ataque, custoAuto: false, pp: total })}>Voltar ao custo manual</button></div>
-          </div>
-        </>
-      )}
     </div>
   );
 }
 
 function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir, onDescer, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
-  const [extrasAberto, setExtrasAberto] = useState(false);
-  const [exigirTesteAberto, setExigirTesteAberto] = useState(false);
   const [ajImgAberto, setAjImgAberto] = useState(false);
   const colapsado = !!ataque.colapsado;
   const setColapsado = (fnOuValor) => {
@@ -6434,24 +6737,10 @@ function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir
       )}
       {!colapsado && (
       <>
-      {!ehPassiva && (
-        <div style={{ marginBottom: 10 }}>
-          <label className="label">Tipo de acerto</label>
-          <SearchableSelect value={ataque.tipoAcerto} onChange={(e) => upd("tipoAcerto", e.target.value)}>{TIPOS_ACERTO.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}</SearchableSelect>
-        </div>
-      )}
-      <div className="grid2" style={{ marginBottom: 10 }}>
-        <div>
-          <label className="label">{ataque.equipamento ? "Custo (pontos de equipamento)" : "Custo (pontos de poder)"}</label>
-          {ataque.custoAuto && calc
-            ? <div className="cb-auto-custo"><b>{ppAtaque(ataque, ent)}</b> PP <span>automático (construtor)</span></div>
-            : <input type="number" min={0} value={ataque.pp || 0} onChange={(e) => upd("pp", Math.max(0, Number(e.target.value)))} />}
-        </div>
-        <label className="checkbox-row" style={{ alignSelf: "end", marginBottom: 11 }}>
-          <input type="checkbox" checked={!!ataque.equipamento} onChange={(e) => upd("equipamento", e.target.checked)} />
-          Equipamento
-        </label>
-      </div>
+      <label className="checkbox-row" style={{ marginBottom: 10 }}>
+        <input type="checkbox" checked={!!ataque.equipamento} onChange={(e) => upd("equipamento", e.target.checked)} />
+        Equipamento
+      </label>
       {ataque.equipamento && (
         <div className="grid2" style={{ marginBottom: 10 }}>
           <div>
@@ -6488,29 +6777,9 @@ function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir
           </div>
         );
       })()}
-      <div className="grid2" style={{ marginBottom: 10 }}>
-        <div>
-          <label className="label">Custo de Vida</label>
-          <input type="number" min={0} value={ataque.custoVida || 0} onChange={(e) => upd("custoVida", Math.max(0, Number(e.target.value)))} />
-        </div>
-        <div>
-          <label className="label">Custo de Nen</label>
-          <input type="number" min={0} value={ataque.custoNen || 0} onChange={(e) => upd("custoNen", Math.max(0, Number(e.target.value)))} />
-        </div>
-      </div>
       <VariaveisUsoEditor usos={ataque.usoVariaveis} variaveis={variaveis} onMudarUsos={(novos) => upd("usoVariaveis", novos)}
         onCriarVariavel={onCriarVariavel || (() => {})} onMudarVariavel={onMudarVariavel || (() => {})} onExcluirVariavel={onExcluirVariavel || (() => {})} />
 
-      <div className="row-inline" style={{ marginBottom: 10, alignItems: "center", flexWrap: "wrap" }}>
-        <div className="tipo-toggle" role="tablist" aria-label="Tipo de habilidade">
-          <button type="button" role="tab" aria-selected={!ehPassiva} className={!ehPassiva ? "sel" : ""} onClick={() => upd("tipo", "ativa")}><span className="dot" />Ativa</button>
-          <button type="button" role="tab" aria-selected={ehPassiva} className={ehPassiva ? "sel" : ""} onClick={() => upd("tipo", "passiva")}><span className="dot" />Passiva</button>
-        </div>
-        <label className="checkbox-row" style={{ marginBottom: 0 }}>
-          <input type="checkbox" checked={!!ataque.sustentado} onChange={(e) => upd("sustentado", e.target.checked)} />
-          Sustentado
-        </label>
-      </div>
       <div className="foto-upload-row ed-hab-img">
         {ataque.imagem ? <div className="foto-preview ed-hab-prev"><ImgAj src={ataque.imagem} aj={ataque.imagemAj} /></div> : <div className="foto-preview" />}
         <div>
@@ -6535,80 +6804,8 @@ function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir
         </div>
         {ataque.imagem && ajImgAberto && <div style={{ flexBasis: "100%" }}><AjusteImagem src={ataque.imagem} ajuste={ataque.imagemAj} onMudar={(v) => upd("imagemAj", v)} proporcao="5 / 2" maxLargura={380} /></div>}
       </div>
-      <div className="grid2" style={{ marginBottom: 10 }}>
-        <div>
-          <label className="label">Ação para usar</label>
-          <SearchableSelect value={ataque.acao || acaoDaHabilidade(ataque)} onChange={(e) => upd("acao", e.target.value)}>
-            {ACOES_USO_OPCOES.map((o) => <option key={o} value={o}>{o}</option>)}
-          </SearchableSelect>
-        </div>
-        {ataque.sustentado && (
-          <div>
-            <label className="label">Ação para sustentar</label>
-            <SearchableSelect value={ataque.acaoSustentar || "Nenhuma"} onChange={(e) => upd("acaoSustentar", e.target.value)}>
-              {ACOES_SUSTENTAR_OPCOES.map((o) => <option key={o} value={o}>{o}</option>)}
-            </SearchableSelect>
-          </div>
-        )}
-      </div>
-
-      {!ehPassiva && (
-        <>
-          <div className="acoes-header ed-colapso-head" onClick={() => setExtrasAberto((s) => !s)}>
-            <div className="section-title" style={{ marginBottom: 0 }}>Extras</div>
-            <span className={"arrow" + (extrasAberto ? " open" : "")}>▶</span>
-          </div>
-          {extrasAberto && (
-            <div className="subcard2 ed-colapso" style={{ marginBottom: 10 }}>
-              <label className="checkbox-row">
-                <input type="checkbox" checked={!!ataque.extras?.dividido}
-                  onChange={(e) => upd("extras", { ...(ataque.extras || {}), dividido: e.target.checked, multiataque: e.target.checked ? false : !!ataque.extras?.multiataque })} />
-                Dividido <span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>(+1 ponto por graduação)</span>
-              </label>
-              <div className="field-note" style={{ marginBottom: 10 }}>
-                Um efeito resistível que funciona em um alvo pode ser dividido entre dois alvos diferentes. O atacante escolhe quantas graduações se aplicam a cada alvo. Cada graduação adicional deste modificador permite que o poder seja dividido mais uma vez. Não pode ser combinado com Multiataque.
-              </div>
-              <label className="checkbox-row">
-                <input type="checkbox" checked={!!ataque.extras?.multiataque}
-                  onChange={(e) => upd("extras", { ...(ataque.extras || {}), multiataque: e.target.checked, dividido: e.target.checked ? false : !!ataque.extras?.dividido })} />
-                Multiataque <span style={{ color: "var(--muted)", fontSize: "0.7rem" }}>(+2 pontos por graduação)</span>
-              </label>
-              <div className="field-note">
-                Permite fazer um único ataque extra por ataque. Ao acertar, pode fazer esse ataque extra contra o mesmo alvo com -10 no teste de ataque, ou contra um alvo diferente engajado no combate com -5. Não pode ser combinado com Dividido.
-              </div>
-            </div>
-          )}
-
-        </>
-      )}
-
       <div className="section-title ed-sub">Construtor de poder</div>
       <ConstrutorVisual ataque={ataque} ent={ent} calc={calc} onMudar={onMudar} onCriarArremesso={onCriarArremesso} />
-      {calc && <PainelCustoHabilidade ataque={ataque} ent={ent} calc={calc} onMudar={onMudar} />}
-      <PainelRegras habilidade={ataque} />
-
-      <div className="acoes-header ed-colapso-head" onClick={() => setExigirTesteAberto((s) => !s)}>
-        <div className="section-title" style={{ marginBottom: 0 }}>Falhas</div>
-        <span className={"arrow" + (exigirTesteAberto ? " open" : "")}>▶</span>
-      </div>
-      {exigirTesteAberto && (
-        <div className="subcard2" style={{ marginBottom: 10 }}>
-          <DesgastanteEditor desgastante={ataque.desgastante} onMudar={(d) => upd("desgastante", d)} />
-
-          <div className="divider" />
-          <label className="checkbox-row">
-            <input type="checkbox" checked={!!ataque.pontoFraco?.ativo} onChange={(e) => upd("pontoFraco", { texto: "", ...(ataque.pontoFraco || {}), ativo: e.target.checked })} />
-            Ponto Fraco
-          </label>
-          <div className="field-note" style={{ marginBottom: 10 }}>
-            Ao usar a habilidade, você escolhe entre as criaturas engajadas quem vai tentar notar o ponto fraco. Cada uma faz Investigação contra um único teste de Enganação seu; quem passar vê o texto abaixo na tela.
-          </div>
-          {ataque.pontoFraco?.ativo && (
-            <textarea className="outros-textarea" rows={3} value={ataque.pontoFraco?.texto || ""} onChange={(e) => upd("pontoFraco", { ...ataque.pontoFraco, texto: e.target.value })} placeholder="Texto do ponto fraco (aparece para quem passar no teste)…" />
-          )}
-
-        </div>
-      )}
 
       <label className="label">Descrição / texto da habilidade</label>
       <RichTextEditor value={ataque.textoFormatado || ""} onChange={(html) => upd("textoFormatado", html)} placeholder="Descreva a habilidade…" />
@@ -7247,7 +7444,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
 
   const tentarSalvar = () => {
     for (const h of f.ataques || []) {
-      if (!h.custoAuto || h.tipo === "passiva") continue;
+      if (!(h.efeitos || []).length && !passivosDe(h).length) continue;
       const r = calcularCustoAtaque(h, f);
       if (r.erros.length) { setErro(`Habilidade "${h.nome || "sem nome"}": ${r.erros[0]}`); return; }
     }
@@ -7424,18 +7621,6 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       </section>
       <section className="ed-sec">
       <div className="section-title">Habilidades</div>
-      {(() => {
-        const pend = (f.ataques || []).filter((h) => h.tipo !== "passiva" && !h.custoAuto && (h.efeitos || []).length);
-        if (!pend.length) return null;
-        const antes = pend.reduce((t, h) => t + (h.equipamento ? 0 : (h.pp || 0)), 0);
-        const depois = pend.reduce((t, h) => t + (h.equipamento ? 0 : calcularCustoAtaque({ ...h, custoAuto: true }, f).total), 0);
-        return (
-          <div className="cb-painel cb-off">
-            <div>{pend.length} habilidade(s) ainda com custo manual ({antes} PP). Pelo construtor ficariam em {depois} PP. Dá para ligar uma a uma ou todas de uma vez.</div>
-            <button type="button" className="btn btn-ghost btn-sm" onClick={() => upd("ataques", f.ataques.map((h) => (pend.includes(h) ? { ...h, custoAuto: true, ppAntigo: h.pp || 0 } : h)))}>Calcular todas pelo construtor</button>
-          </div>
-        );
-      })()}
       {f.ataques.map((a, i) => <AtaqueForm key={a.id} ent={f} ataque={a} onMudar={(novo) => updAtaque(i, novo)} onRemover={() => rmAtaque(i)} onCriarArremesso={addAtaqueArremesso}
         variaveis={f.variaveis || []}
         onCriarVariavel={(v) => upd("variaveis", [...(f.variaveis || []), v])}
