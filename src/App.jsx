@@ -743,7 +743,7 @@ const GlobalStyle = () => (
     .mm3 .mp-linhas path { fill:none; stroke:#5d6477; stroke-width:2.2; stroke-linecap:round; transition:stroke .2s, stroke-width .2s; }
     .mm3 .mp-linhas path.on { stroke:#e8c84a; stroke-width:3.2; }
     .mm3 .mp-linhas path.mais { stroke-dasharray:3 7; stroke:#3f4455; }
-    .mm3 .mp-no { position:absolute; cursor:pointer; user-select:none; transition:transform .15s ease, box-shadow .15s ease, filter .15s ease; animation:mpEntra .35s ease both; }
+    .mm3 .mp-no { position:absolute; cursor:pointer; user-select:none; transition:transform .15s ease, box-shadow .15s ease, filter .15s ease; }
     .mm3 .mp-no:hover { transform:translateY(-2px) scale(1.04); filter:brightness(1.08); z-index:3; }
     @keyframes mpEntra { from { opacity:0; transform:scale(.7); } to { opacity:1; transform:scale(1); } }
     .mm3 .mp-raiz { height:72px; border-radius:18px; background:#e8c84a; color:#1a1a1a; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:4px 8px; text-align:center; box-shadow:0 4px 0 #9c8420, 0 8px 18px rgba(0,0,0,.45); }
