@@ -322,7 +322,8 @@ export const REGRAS = {
     const forma = Object.keys(base).find((k) => nota.includes(k)) || "explosao";
     const passos = (c?.mods || []).filter((m) => m.id === "alcance_estendido").reduce((t, m) => t + (m.vezes || 1), 0);
     const m = c?.dist ? c.dist(base[forma] + passos) : "?";
-    return `Área (${forma}): ${m} m${passos ? ` (com ${passos} passo(s) de Alcance Estendido)` : ""}. Afeta todos na área; cada alvo pode fazer Esquiva (CD 10 + graduação) para reduzir pela metade a CD de resistência.`;
+    const nomeForma = { cone: "Cone", cilindro: "Cilindro", explosao: "Explosão", linha: "Linha", nuvem: "Nuvem" }[forma];
+    return `Alcance da área (${nomeForma}): ${m} m${passos ? ` (com ${passos} passo(s) de Alcance Estendido)` : ""}. Afeta todos na área; cada alvo pode fazer Esquiva (CD 10 + graduação) para reduzir pela metade a CD de resistência.`;
   },
   afeta_objetos: () => "Afeta Objetos: o efeito também funciona contra objetos.",
   afeta_outros: () => "Afeta Outros: o efeito pode ser aplicado em outra criatura (toque).",
