@@ -755,15 +755,16 @@ const GlobalStyle = () => (
     .mm3 .mp-ef em { position:absolute; right:-9px; top:-10px; min-width:26px; height:26px; border-radius:99px; background:#0f0f16; color:#fff; border:2px solid #8a90a0; font-size:.74rem; font-style:normal; display:flex; align-items:center; justify-content:center; padding:0 5px; }
     .mm3 .mp-ef.sel { border-color:#fff; box-shadow:0 0 0 4px #e8c84a, 0 8px 18px rgba(0,0,0,.4); }
     .mm3 .mp-ef.passivo { border-radius:99px; }
-    .mm3 .mp-ef.mp-novo { background:transparent !important; color:#8a90a0 !important; border:3px dashed #4b5163; box-shadow:none; }
+    .mm3 .mp-ef.mp-novo { background:#1b1b24 !important; color:#cfd2dc !important; border:3px solid #4b5163; border-radius:50% !important; box-shadow:none; padding:0; font-size:1.6rem; }
+    .mm3 .mp-ef.mp-novo .mp-ef-nome { font-size:1.6rem; line-height:1; max-height:none; }
     .mm3 .mp-mod { display:flex; align-items:center; justify-content:center; text-align:center; padding:4px 10px; border-radius:99px; font-size:.7rem; font-weight:700; line-height:1.1; color:#fff; border:3px solid transparent; box-shadow:0 3px 0 rgba(0,0,0,.4); }
     .mm3 .mp-mod span { display:block; max-height:2.3em; overflow:hidden; }
     .mm3 .mp-mod.extra { background:#1f9a43; }
     .mm3 .mp-mod.falha { background:#b72c34; }
     .mm3 .mp-mod.sel { border-color:#fff; box-shadow:0 0 0 4px #e8c84a; }
-    .mm3 .mp-mod.fixa { border-style:dashed; border-color:rgba(255,255,255,.7); }
-    .mm3 .mp-mod.fixa.sel { border-style:solid; border-color:#fff; }
-    .mm3 .mp-mod.mp-mais { background:transparent; border:3px dashed #4b5163; color:#8a90a0; box-shadow:none; font-weight:600; }
+        .mm3 .mp-mod.mp-mais { background:#1b1b24; border:3px solid #4b5163; border-radius:50%; color:#cfd2dc; box-shadow:none; padding:0; font-size:1.3rem; font-weight:600; }
+    .mm3 .mp-mod.mp-mais span { max-height:none; line-height:1; }
+    .mm3 .mp-mod.mp-mais:hover, .mm3 .mp-ef.mp-novo:hover { border-color:#e8c84a; color:#e8c84a !important; }
     .mm3 .mp-zoom { position:absolute; right:8px; bottom:8px; display:flex; align-items:center; gap:2px; background:#1b1b24; border:1px solid #33333f; border-radius:10px; padding:2px; box-shadow:0 4px 12px rgba(0,0,0,.4); }
     .mm3 .mp-zoom button { width:30px; height:30px; border:none; background:#262633; color:#fff; border-radius:8px; font-size:1.05rem; cursor:pointer; }
     .mm3 .mp-zoom button:hover { background:#34344a; }
@@ -840,6 +841,11 @@ const GlobalStyle = () => (
     .mm3 .px-chip.extra { background:#1f9a43; }
     .mm3 .px-chip.falha { background:#b72c34; }
     .mm3 .px-chip:hover { filter:brightness(1.15); }
+    .mm3 .px-chip.on, .mm3 .vb-opcao.on { box-shadow:0 0 0 3px #e8c84a; }
+    .mm3 .px-opcao-card { flex-basis:100%; width:100%; display:flex; flex-direction:column; gap:8px; margin:4px 0 8px; }
+    .mm3 .px-add { font:inherit; font-weight:800; letter-spacing:.08em; background:#e8c84a; color:#1a1a1a; border:none; border-radius:10px; padding:10px; cursor:pointer; }
+    .mm3 .px-add:hover { filter:brightness(1.08); }
+    .mm3 .ssel-grupo { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); padding:7px 10px 3px; }
     .mm3 .vb-vazio { color:var(--muted); font-size:.85rem; text-align:center; padding:10px; }
     .mm3 .cb-auto-custo { padding:9px 12px; background:var(--surface3); border-radius:8px; }
     .mm3 .cb-auto-custo span { color:var(--muted); font-size:.75rem; margin-left:6px; }
@@ -2856,9 +2862,9 @@ function SearchableSelect({ value, onChange, children, style, disabled, placehol
   const [destacado, setDestacado] = useState(0);
   const ref = useRef(null);
 
-  const opcoes = React.Children.toArray(children)
-    .filter((c) => c && c.props && c.props.value !== undefined)
-    .map((c) => ({ value: c.props.value, label: typeof c.props.children === "string" ? c.props.children : String(c.props.children ?? c.props.value) }));
+  const opcoes = React.Children.toArray(children).flatMap((c) => (c && c.type === "optgroup" ? React.Children.toArray(c.props.children).map((x) => ({ x, g: c.props.label })) : [{ x: c, g: null }]))
+    .filter(({ x }) => x && x.props && x.props.value !== undefined)
+    .map(({ x: c, g }) => ({ value: c.props.value, grupo: g, label: typeof c.props.children === "string" ? c.props.children : String(c.props.children ?? c.props.value) }));
 
   const atual = opcoes.find((o) => o.value === value);
   const filtradas = busca ? opcoes.filter((o) => normalizarBusca(o.label).startsWith(normalizarBusca(busca))) : opcoes;
@@ -2920,11 +2926,14 @@ function SearchableSelect({ value, onChange, children, style, disabled, placehol
         <div className="ssel-lista" style={listaCheia && pos ? { position: "fixed", top: pos.top ?? "auto", bottom: pos.bottom ?? "auto", left: pos.left, width: pos.width, right: "auto", maxHeight: pos.maxHeight } : undefined}>
           {filtradas.length === 0 && <div className="ssel-vazio">Nada encontrado…</div>}
           {filtradas.map((o, i) => (
-            <div key={String(o.value)} className={"ssel-opt" + (i === destacado ? " destacado" : "")}
-              onMouseEnter={() => setDestacado(i)}
-              onMouseDown={(ev) => { ev.preventDefault(); escolher(o); }}>
-              {o.label || <>&nbsp;</>}
-            </div>
+            <React.Fragment key={String(o.value)}>
+              {o.grupo && (i === 0 || filtradas[i - 1].grupo !== o.grupo) && <div className="ssel-grupo">{o.grupo}</div>}
+              <div className={"ssel-opt" + (i === destacado ? " destacado" : "")}
+                onMouseEnter={() => setDestacado(i)}
+                onMouseDown={(ev) => { ev.preventDefault(); escolher(o); }}>
+                {o.label || <>&nbsp;</>}
+              </div>
+            </React.Fragment>
           ))}
         </div>
       )}
@@ -5623,18 +5632,18 @@ function FalhasEfeito({ item, onMudar, graduacao, mostrarPeculiaridade }) {
 /* ---------- Efeito Colateral (usado tanto em efeitos ativos quanto em efeitos passivos) ----------
    Tudo automático: sem teste, a condição é aplicada ao usar/ativar e removida quando a habilidade para.
    Com teste, rola ao usar e de novo no começo de cada turno enquanto sustentada. */
-function ColateralEditor({ colateral, onMudar, graduacao }) {
+function ColateralEditor({ colateral, onMudar, graduacao, semCheck }) {
   const col = colateral || {};
   const upd = (campo, valor) => onMudar({ ...col, [campo]: valor });
   return (
     <>
-      <label className="checkbox-row"><input type="checkbox" checked={!!col.ativo} onChange={(e) => upd("ativo", e.target.checked)} />Efeito Colateral</label>
+      {!semCheck && <label className="checkbox-row"><input type="checkbox" checked={!!col.ativo} onChange={(e) => upd("ativo", e.target.checked)} />Efeito Colateral</label>}
       {col.ativo && (
         <>
           <label className="label">Condição</label>
           <SearchableSelect value={col.condicao || ""} onChange={(e) => upd("condicao", e.target.value)}>
             <option value="">Escolha…</option>
-            {CONDICOES_LISTA.map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}
+            {[1, 2, 3].map((g) => <optgroup key={g} label={`Grau ${g}`}>{CONDICOES_LISTA.filter((c) => (grauCondicao(c.nome) || 1) === g).map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}</optgroup>)}
           </SearchableSelect>
           <label className="checkbox-row"><input type="checkbox" checked={!!col.comTeste} onChange={(e) => upd("comTeste", e.target.checked)} />Colateral com Teste</label>
           {col.comTeste && (
@@ -6255,9 +6264,19 @@ function DescBonitaInner({ cor, titulo, selo, seloClasse, chips, texto, notaTitu
 }
 
 /* ---------- inspetor (painel embaixo do mapa) ---------- */
+function CartaoOpcao({ cor, titulo, selo, seloClasse, chips, texto, onAdd }) {
+  return (
+    <div className="px-opcao-card">
+      <DescBonitaInner cor={cor} titulo={titulo} selo={selo} seloClasse={seloClasse} chips={chips} texto={texto} />
+      <button type="button" className="px-add" onClick={onAdd}>ADICIONAR</button>
+    </div>
+  );
+}
+const custoModTxt = (c) => (c ? `${c.v > 0 ? "+" : ""}${c.v}${c.k === "g" ? "/g" : " fixo"}` : "");
 function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
   const [aba, setAba] = useState("extra");
   const [busca, setBusca] = useState("");
+  const [aberta, setAberta] = useState(null);
   const disp = modsDisponiveis(idCat);
   const mods = item.mods || [];
   const livre = (m) => {
@@ -6279,10 +6298,14 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
       </div>
       <input type="text" placeholder="Buscar…" value={busca} onChange={(e) => setBusca(e.target.value)} />
       <div className="px-chips">
-        {lista.map((m) => <button type="button" key={m.id} className={"px-chip " + aba} onClick={() => onAdd(m)}>{m.nome}</button>)}
+        {lista.map((m) => (
+          <React.Fragment key={m.id}>
+            <button type="button" className={"px-chip " + aba + (aberta === m.id ? " on" : "")} onClick={() => setAberta(aberta === m.id ? null : m.id)}>{m.nome}</button>
+            {aberta === m.id && <CartaoOpcao cor={aba === "extra" ? "#2fb84f" : "#d93636"} titulo={m.nome} selo={aba === "extra" ? "Extra" : "Falha"} seloClasse={aba} chips={[["Custo", custoModTxt(m)]]} texto={DESC_MOD[m.id] || ""} onAdd={() => onAdd(m)} />}
+          </React.Fragment>
+        ))}
         {!lista.length && <span className="field-note">Nada por aqui.</span>}
       </div>
-      <div className="field-note">Toque numa peça para colocá-la no mapa. Os valores aparecem ao selecioná-la lá.</div>
     </div>
   );
 }
@@ -6359,15 +6382,14 @@ function InspetorLegado({ id, item, onMudar, onRemover, grad, ehHab, todos }) {
   const c = MOD_POR_ID[id];
   const neg = (c?.v ?? 0) < 0;
   const editor = (() => {
-    if (id === "efeito_colateral") return <ColateralEditor colateral={item.colateral} onMudar={(x) => onMudar({ ...item, colateral: x })} graduacao={grad} />;
+    if (id === "efeito_colateral") return <ColateralEditor semCheck colateral={item.colateral} onMudar={(x) => onMudar({ ...item, colateral: x })} graduacao={grad} />;
     if (id === "exigir_teste") return <ExigirTesteEditor valor={item.exigirTeste} onMudar={(x) => onMudar({ ...item, exigirTeste: x })} />;
     if (id === "peculiaridade") return <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />;
     if (id === "aquecimento") return <AquecimentoEditor valor={item.aquecimento} onMudar={(x) => onMudar({ ...item, aquecimento: x })} />;
     if (id === "desgastante") return <DesgastanteEditor desgastante={item.desgastante} onMudar={(x) => onMudar({ ...item, desgastante: x })} />;
     if (id === "ponto_fraco") return (
       <>
-        <div className="field-note" style={{ marginBottom: 8 }}>Vale em todos os efeitos da habilidade (remover aqui remove de todos). Ao usar a habilidade, você escolhe entre as criaturas engajadas quem vai tentar notar o ponto fraco (Investigação contra um único teste de Enganação seu). Quem passar vê o texto abaixo.</div>
-        <textarea className="outros-textarea" rows={3} value={item.pontoFraco?.texto || ""} onChange={(e) => onMudar({ ...item, pontoFraco: { ...(item.pontoFraco || {}), ativo: true, texto: e.target.value } })} placeholder="Texto do ponto fraco (aparece para quem passar no teste)" />
+        <textarea className="outros-textarea" rows={9} style={{ minHeight: 190, width: "100%" }} value={item.pontoFraco?.texto || ""} onChange={(e) => onMudar({ ...item, pontoFraco: { ...(item.pontoFraco || {}), ativo: true, texto: e.target.value } })} placeholder="Texto do ponto fraco (aparece para quem passar no teste)" />
       </>
     );
     if (id === "grau_limitado_afl") return (
@@ -6419,6 +6441,7 @@ function nomeUso(u, variaveis) {
 }
 function PaletaHab({ ataque, onAdd, onAddVar }) {
   const [aba, setAba] = useState("extra");
+  const [aberta, setAberta] = useState(null);
   const lista = Object.keys(LEG_HAB).filter((id) => !LEG_HAB[id].ativo(ataque) && ((MOD_POR_ID[id].v < 0) === (aba === "falha")));
   const vars = [["nen", "Nen"], ["vida", "Vida"], ["carga", "Carga"], ["municao", "Munição"], ["custom", "Personalizada"]].filter(([k]) => aba === "falha" || (k !== "nen" && k !== "vida"));
   return (
@@ -6428,11 +6451,27 @@ function PaletaHab({ ataque, onAdd, onAddVar }) {
         <button type="button" className={"falha" + (aba === "falha" ? " on" : "")} onClick={() => setAba("falha")}>Falhas</button>
       </div>
       <div className="px-chips">
-        {lista.map((id) => <button type="button" key={id} className={"px-chip " + aba} onClick={() => onAdd(id)}>{MOD_POR_ID[id].nome}</button>)}
+        {lista.map((id) => (
+          <React.Fragment key={id}>
+            <button type="button" className={"px-chip " + aba + (aberta === id ? " on" : "")} onClick={() => setAberta(aberta === id ? null : id)}>{MOD_POR_ID[id].nome}</button>
+            {aberta === id && <CartaoOpcao cor={aba === "extra" ? "#2fb84f" : "#d93636"} titulo={MOD_POR_ID[id].nome} selo={(aba === "extra" ? "Extra" : "Falha") + " · da habilidade inteira"} seloClasse={aba} chips={[["Custo", custoModTxt(MOD_POR_ID[id])]]} texto={DESC_MOD[id] || ""} onAdd={() => onAdd(id)} />}
+          </React.Fragment>
+        ))}
       </div>
       <div className="label" style={{ marginTop: 4 }}>Variável</div>
       <div className="px-chips">
-        {vars.map(([k, n]) => <button type="button" key={k} className={"px-chip " + aba} onClick={() => onAddVar(k, aba === "extra" ? 1 : -1)}>{n}</button>)}
+        {vars.map(([k, n]) => (
+          <React.Fragment key={k}>
+            <button type="button" className={"px-chip " + aba + (aberta === k ? " on" : "")} onClick={() => setAberta(aberta === k ? null : k)}>{n}</button>
+            {aberta === k && <CartaoOpcao cor={aba === "extra" ? "#2fb84f" : "#d93636"} titulo={k === "custom" ? "Variável personalizada" : n} selo={(aba === "extra" ? "Extra" : "Falha") + " · variável"} seloClasse={aba}
+              chips={k === "nen" || k === "vida" ? [["Custo", "−1 fixo por unidade"]] : []}
+              texto={k === "nen" ? "Ao usar a habilidade, você gasta Nen. Cada unidade retirada é −1 ponto fixo no custo." : k === "vida" ? "Ao usar a habilidade, você gasta Vida. Cada unidade retirada é −1 ponto fixo no custo."
+                : k === "municao" ? `Cria uma variável de munição, com máximo baseado num atributo. Ao usar a habilidade, a munição ${aba === "extra" ? "aumenta" : "diminui"}.${aba === "falha" ? " Se não houver o suficiente, a habilidade não pode ser usada." : ""}`
+                : k === "carga" ? `Cria uma variável de carga (começa em 0). Ao usar a habilidade, a carga ${aba === "extra" ? "aumenta" : "diminui"}.${aba === "falha" ? " Não pode ficar negativa." : ""}`
+                : `Cria uma variável com o nome e o tipo que você escolher. Ao usar a habilidade, ela ${aba === "extra" ? "aumenta" : "diminui"}.`}
+              onAdd={() => onAddVar(k, aba === "extra" ? 1 : -1)} />}
+          </React.Fragment>
+        ))}
       </div>
       <div className="field-note">{aba === "extra" ? "Extra de variável: usar a habilidade aumenta a variável (ex.: ganha carga)." : "Falha de variável: usar a habilidade reduz a variável (ex.: gasta carga, Nen ou Vida)."} Estas peças valem para a habilidade inteira.</div>
     </div>
@@ -6652,7 +6691,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
             {habMods.map((h, k) => (
               <div key={h.id} className={"mp-no mp-mod " + (h.neg ? "falha" : "extra") + (raizSel && selecionado.fixoHab === h.id ? " sel" : "")} style={{ left: L.ROOT_X - 4, top: L.habY[k] - 21, width: 92, height: 42, fontSize: ".64rem" }} onClick={() => onSel({ raiz: true, fixoHab: h.id })} title={h.nome}><BtnX onClick={() => onRemHab(h)} /><span>{h.nome}</span></div>
             ))}
-            <div className={"mp-no mp-mod mp-mais" + (raizSel && selecionado.pal ? " sel" : "")} style={{ left: L.ROOT_X - 4, top: L.habPlusY - 21, width: 92, height: 42, fontSize: ".64rem" }} onClick={() => onSel({ raiz: true, pal: true })}><span>+ extra / falha da habilidade</span></div>
+            <div className={"mp-no mp-mod mp-mais" + (raizSel && selecionado.pal ? " sel" : "")} style={{ left: L.ROOT_X + L.ROOT_W / 2 - 17, top: L.habPlusY - 17, width: 34, height: 34 }} title="Extra ou falha da habilidade" onClick={() => onSel({ raiz: true, pal: true })}><span>+</span></div>
             {blocos.map((b, i) => {
               const cor = COR_NEN[b.tipo] || COR_NEN.coringa;
               const ativoSel = selecionado && selecionado.key === b.key;
@@ -6671,14 +6710,14 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
                       <BtnX onClick={() => onRemMod(b, m)} /><span>{m.nome}</span>
                     </div>
                   ))}
-                  <div className={"mp-no mp-mod mp-mais" + (ativoSel && selecionado.pal ? " sel" : "")} style={{ left: L.MOD_X, top: L.pos[i].plusY - L.MOD_H / 2, width: 112, height: L.MOD_H }} onClick={() => onSel({ key: b.key, pal: true })}>
-                    <span>+ extra / falha</span>
+                  <div className={"mp-no mp-mod mp-mais" + (ativoSel && selecionado.pal ? " sel" : "")} style={{ left: L.MOD_X, top: L.pos[i].plusY - 17, width: 34, height: 34 }} title="Extra ou falha" onClick={() => onSel({ key: b.key, pal: true })}>
+                    <span>+</span>
                   </div>
                 </React.Fragment>
               );
             })}
-            <div className="mp-no mp-ef mp-novo" style={{ left: L.EF_X, top: L.novoY - L.EF_H / 2, width: L.EF_W, height: L.EF_H }} onClick={onNovo}>
-              <span className="mp-ef-nome">+ Novo efeito</span>
+            <div className="mp-no mp-ef mp-novo" style={{ left: L.EF_X, top: L.novoY - 23, width: 46, height: 46 }} title="Novo efeito" onClick={onNovo}>
+              <span className="mp-ef-nome">+</span>
             </div>
           </div>
         </div>
@@ -6702,6 +6741,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   const ehPassiva = efs.length === 0 && pas.length > 0;
   const [paleta, setPaleta] = useState(false);
   const [busca, setBusca] = useState("");
+  const [opAberta, setOpAberta] = useState(null);
   const [sel, setSel] = useState(null);
   const [zoom, setZoom] = useState(1);
   const [cheio, setCheio] = useState(false);
@@ -6815,7 +6855,15 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
             <div key={t} className="vb-grupo" style={{ "--vb-cor": COR_NEN[t] || COR_NEN.coringa }}>
               <div className="vb-grupo-t">{capNen(t)}</div>
               <div className="vb-pecas">
-                {lst.map((e) => <button type="button" key={e.id} className="vb-opcao" style={{ background: COR_NEN[t] || COR_NEN.coringa, color: COR_TXT_NEN[t] || "#fff" }} onClick={() => addBloco(e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>)}
+                {lst.map((e) => {
+                  const d = descEfeitoCompleta(e.id);
+                  return (
+                    <React.Fragment key={e.id}>
+                      <button type="button" className={"vb-opcao" + (opAberta === e.id ? " on" : "")} style={{ background: COR_NEN[t] || COR_NEN.coringa, color: COR_TXT_NEN[t] || "#fff" }} onClick={() => setOpAberta(opAberta === e.id ? null : e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>
+                      {opAberta === e.id && <CartaoOpcao cor={COR_NEN[t] || COR_NEN.coringa} titulo={e.nome} selo={capNen(t)} chips={d?.meta || []} texto={d?.texto || ""} onAdd={() => { setOpAberta(null); addBloco(e.id); }} />}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             </div>
           ))}
