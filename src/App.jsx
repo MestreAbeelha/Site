@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef, createContext, useContext } from "react";
+import React, { useState, useEffect, useCallback, useRef, useMemo, createContext, useContext } from "react";
 import { createPortal } from "react-dom";
 import {
   auth, ouvirAuth, cadastrar, entrar, sair, getPersonal, setPersonal,
@@ -737,8 +737,7 @@ const GlobalStyle = () => (
     .mm3 .vb-grupo { border-left-width:5px; }
     .mm3 .vb-novo { background:#2a2614; }
     .mm3 .mp-wrap { position:relative; border:1px solid #2c2c3a; border-radius:16px; background:#0f0f16; overflow:hidden; }
-    .mm3 .mp-area { overflow:auto; max-height:74vh; min-height:220px; cursor:grab; background-image:radial-gradient(#25253299 1.2px, transparent 1.2px); background-size:22px 22px; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
-    .mm3 .mp-area:active { cursor:grabbing; }
+    .mm3 .mp-area { user-select:none; overflow:auto; max-height:74vh; min-height:220px; cursor:grab; background-image:radial-gradient(#25253299 1.2px, transparent 1.2px); background-size:22px 22px; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
     .mm3 .mp-cena { position:relative; transform-origin:0 0; transition:transform .25s ease; }
     .mm3 .mp-linhas { position:absolute; left:0; top:0; pointer-events:none; }
     .mm3 .mp-linhas path { fill:none; stroke:#5d6477; stroke-width:2.2; stroke-linecap:round; transition:stroke .2s, stroke-width .2s; }
@@ -777,6 +776,12 @@ const GlobalStyle = () => (
     .mm3 .mp-area { height:50vh; max-height:none; min-height:280px; touch-action:pan-x pan-y; scroll-behavior:auto; }
     .mm3 .mp-area.arrastando { cursor:grabbing; }
     .mm3 .mp-ef { position:absolute; }
+    .mm3 .mp-area { cursor:default; user-select:none; }
+    .mm3 .mp-no { cursor:grab; touch-action:none; }
+    .mm3 .mp-area.movendo .mp-no { cursor:grabbing; transition:none; animation:none; }
+    .mm3 .mp-no.marc { outline:3px solid #5cc3f5; outline-offset:3px; }
+    .mm3 .mp-caixa { position:absolute; border:1.5px solid #5cc3f5; background:rgba(92,195,245,.14); pointer-events:none; z-index:5; border-radius:4px; }
+    .mm3 .mp-zoom button.off { background:#e8c84a; color:#1a1a1a; }
     .mm3 .mp-x { position:absolute; left:-9px; top:-9px; width:19px; height:19px; border-radius:50%; border:2px solid #0f0f16; background:#2a2a36; color:#fff; font-size:.8rem; line-height:1; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:4; }
     .mm3 .mp-x:hover { background:#d93636; }
     .mm3 .mp-lado-corpo.com-desc .pi-info { display:none; }
@@ -2111,12 +2116,18 @@ function modsDoEfeito(ef, a) {
   if (a?.pontoFraco?.ativo) der("ponto_fraco", -4);
   return m;
 }
-function fixosDoAtaque(a) {
+function fixosDoAtaque(a, ent) {
   const f = (a.fixosHab || []).map((x) => ({ nome: x.nome || (x.id && MOD_POR_ID[x.id]?.nome) || "Item", valor: Number(x.valor) || 0 }));
   if (a.desgastante?.ativo) {
     const pts = (a.desgastante.reducoes || []).reduce((s, r) => s + (r.valor || 1), 0);
     if (pts) f.push({ nome: `Desgastante (${pts}${a.desgastante.modo === "teste" ? "" : " ×2 automático"})`, valor: -pts * (a.desgastante.modo === "teste" ? 1 : 2) });
   }
+  (a.usoVariaveis || []).filter((u) => u.variavelId && u.delta).forEach((u) => {
+    const v = (ent?.variaveis || []).find((x) => x.id === u.variavelId); if (!v) return;
+    const n = Math.abs(u.delta);
+    if (v.tipo === "municao" && u.delta < 0) f.push({ nome: "Variável (Munição)", valor: -2 * n });
+    else if (v.tipo !== "municao" && u.delta > 0) f.push({ nome: "Variável (Carga)", valor: n });
+  });
   (a.usoVariaveis || []).filter((u) => u.kind === "nen" || u.kind === "vida").forEach((u) => f.push({ nome: `Variável (${u.kind === "vida" ? "Vida" : "Nen"})`, valor: -Math.max(1, Math.abs(u.delta || 1)) }));
   if (a.ppManual) f.push({ nome: "Ajuste manual", valor: a.ppManual });
   return f;
@@ -2168,7 +2179,7 @@ function calcularCustoAtaque(a, ent) {
     idxPassivo.push(efs.length);
     efs.push({ id, grad: Math.max(0, inst.graduacao || 0), base, tipo: inst.nen || undefined, mods: modsDoPassivo(inst, a) });
   });
-  const r = calcularHabilidade({ nivel: Math.max(1, ent?.nivel || 1), tipoNen: nenEngine(ent?.tipoNen) }, { efeitos: efs, fixos: fixosDoAtaque(a) });
+  const r = calcularHabilidade({ nivel: Math.max(1, ent?.nivel || 1), tipoNen: nenEngine(ent?.tipoNen) }, { efeitos: efs, fixos: fixosDoAtaque(a, ent) });
   r.porEfeito = idxAtivo.map((i) => (i >= 0 ? r.efeitos[i] : null));
   r.porPassivo = idxPassivo.map((i) => (i >= 0 ? r.efeitos[i] : null));
   return r;
@@ -6067,7 +6078,7 @@ function VariaveisUsoEditor({ usos, variaveis, onMudarUsos, onCriarVariavel, onM
 
 /* ---------- Construtor de poder: extras/falhas por efeito + painel de custo da habilidade ---------- */
 const MODS_LEGADO = new Set(["efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "ponto_fraco", "dividido", "multiataque", "desgastante", "efeito_alternativo",
-  "resistencia_alt_afl", "recuperacao_instantanea", "cumulativo_afl", "condicao_extra", "grau_limitado_afl", "variavel_nen_vida"]);
+  "resistencia_alt_afl", "recuperacao_instantanea", "cumulativo_afl", "condicao_extra", "grau_limitado_afl", "variavel_nen_vida", "variavel_carga", "variavel_municao"]);
 const MODS_COM_EFEITO = new Set(["sobrecarregado"]); // os demais ainda entram só no custo (sem efeito automático no combate)
 const capNen = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
 const ACAO_TXT = { padrao: "padrão", livre: "livre", movimento: "movimento", reacao: "reação", nenhuma: "nenhuma" };
@@ -6633,16 +6644,41 @@ function NoGraduacao({ b, onGrad }) {
 function BtnX({ onClick }) {
   return <button type="button" className="mp-x" title="Remover" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onClick(); }}>×</button>;
 }
-function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab }) {
+function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs }) {
   const L = layoutMapa(blocos, habMods.length);
   const ref = useRef(null);
-  const arr = useRef(null);
+  const gest = useRef(null);
+  const ignora = useRef(false);
   const ajustou = useRef(false);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+  const [marc, setMarc] = useState(() => new Set());
+  const [drag, setDrag] = useState(null);
+  const [caixa, setCaixa] = useState(null);
+  const [semLinhas, setSemLinhas] = useState(false);
+
+  // retângulos base de todos os quadrados
+  const N = {};
+  const add = (k, x, y, w, h) => { N[k] = { x, y, w, h }; };
+  add("raiz", L.ROOT_X, L.rootCy - 36, L.ROOT_W, 72);
+  habMods.forEach((h, k) => add("h:" + h.id, L.ROOT_X - 4, L.habY[k] - 21, 92, 42));
+  add("h+", L.ROOT_X + L.ROOT_W / 2 - 17, L.habPlusY - 17, 34, 34);
+  blocos.forEach((b, i) => {
+    add(b.key, L.EF_X, L.pos[i].cy - L.EF_H / 2, L.EF_W, L.EF_H);
+    b.mods.forEach((m, k) => add(modKey(b, m), L.MOD_X, L.pos[i].modsY[k] - L.MOD_H / 2, largMod(m.nome), L.MOD_H));
+    add(b.key + ":+", L.MOD_X, L.pos[i].plusY - 17, 34, 34);
+  });
+  add("novo", L.EF_X, L.novoY - 23, 46, 46);
+  const R = (k) => {
+    const n = N[k], o = (offs && offs[k]) || {};
+    const d = drag && drag.keys.has(k) ? drag : null;
+    return { x: n.x + (o.x || 0) + (d ? d.dx : 0), y: n.y + (o.y || 0) + (d ? d.dy : 0), w: n.w, h: n.h };
+  };
+  let W = L.W, H = L.H;
+  Object.keys(N).forEach((k) => { const r = R(k); W = Math.max(W, r.x + r.w + 30); H = Math.max(H, r.y + r.h + 30); });
+
   const ajustar = () => { const w = ref.current ? ref.current.clientWidth : 0; if (w > 0) setZoom(Math.max(0.4, Math.min(1.1, +(((w - 6) / L.W) * 0.85).toFixed(2)))); };
   useEffect(() => { if (!ajustou.current && ref.current && ref.current.clientWidth > 0) { ajustou.current = true; ajustar(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
-  // zoom com o scroll do mouse (em torno do cursor)
   useEffect(() => {
     const el = ref.current; if (!el) return;
     const onWheel = (e) => {
@@ -6659,80 +6695,139 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
     el.addEventListener("wheel", onWheel, { passive: false });
     return () => el.removeEventListener("wheel", onWheel);
   }, [setZoom]);
-  // arrastar para se mover (mouse/caneta; no toque o próprio scroll já funciona)
-  const down = (e) => { if (e.pointerType === "touch" || e.button !== 0 || e.target.closest(".mp-no, .mp-lado, .mp-zoom")) return; arr.current = { x: e.clientX, y: e.clientY, sl: ref.current.scrollLeft, st: ref.current.scrollTop }; ref.current.setPointerCapture?.(e.pointerId); ref.current.classList.add("arrastando"); };
-  const move = (e) => { if (!arr.current) return; ref.current.scrollLeft = arr.current.sl - (e.clientX - arr.current.x); ref.current.scrollTop = arr.current.st - (e.clientY - arr.current.y); };
-  const up = () => { arr.current = null; ref.current && ref.current.classList.remove("arrastando"); };
-  const efX2 = L.EF_X + L.EF_W;
+
+  const cena = (e) => { const r = ref.current.getBoundingClientRect(); return { x: (e.clientX - r.left + ref.current.scrollLeft) / zoom, y: (e.clientY - r.top + ref.current.scrollTop) / zoom }; };
+  const down = (e) => {
+    if (e.target.closest(".mp-lado, .mp-zoom, .mp-x, .mp-grad")) return;
+    if (e.button === 1 || e.button === 2) { gest.current = { t: "pan", x: e.clientX, y: e.clientY, sl: ref.current.scrollLeft, st: ref.current.scrollTop }; ref.current.setPointerCapture?.(e.pointerId); e.preventDefault(); return; }
+    if (e.button !== 0) return;
+    const no = e.target.closest(".mp-no");
+    if (no && no.dataset.k) {
+      const k = no.dataset.k;
+      let keys = marc;
+      if (!marc.has(k)) { keys = new Set([k]); setMarc(keys); }
+      gest.current = { t: "no", x: e.clientX, y: e.clientY, keys, moveu: false, id: e.pointerId };
+    } else {
+      const p = cena(e);
+      gest.current = { t: "caixa", p, moveu: false };
+      ref.current.setPointerCapture?.(e.pointerId);
+    }
+  };
+  const move = (e) => {
+    const g = gest.current; if (!g) return;
+    if (g.t === "pan") { ref.current.scrollLeft = g.sl - (e.clientX - g.x); ref.current.scrollTop = g.st - (e.clientY - g.y); return; }
+    if (g.t === "no") {
+      const dx = (e.clientX - g.x) / zoom, dy = (e.clientY - g.y) / zoom;
+      if (!g.moveu && Math.hypot(dx, dy) * zoom < 4) return;
+      if (!g.moveu) { g.moveu = true; ref.current.setPointerCapture?.(g.id); }
+      let minX = -Infinity, minY = -Infinity;
+      g.keys.forEach((k) => { if (!N[k]) return; const o = (offs && offs[k]) || {}; minX = Math.max(minX, -(N[k].x + (o.x || 0))); minY = Math.max(minY, -(N[k].y + (o.y || 0))); });
+      setDrag({ keys: g.keys, dx: Math.max(dx, minX), dy: Math.max(dy, minY) });
+    } else {
+      const p = cena(e);
+      if (!g.moveu && Math.hypot(p.x - g.p.x, p.y - g.p.y) * zoom < 4) return;
+      g.moveu = true;
+      const x1 = Math.min(g.p.x, p.x), y1 = Math.min(g.p.y, p.y), x2 = Math.max(g.p.x, p.x), y2 = Math.max(g.p.y, p.y);
+      setCaixa({ x: x1, y: y1, w: x2 - x1, h: y2 - y1 });
+      const dentro = new Set(Object.keys(N).filter((k) => { const r = R(k); return r.x < x2 && r.x + r.w > x1 && r.y < y2 && r.y + r.h > y1; }));
+      setMarc(dentro);
+    }
+  };
+  const up = () => {
+    const g = gest.current; gest.current = null;
+    if (!g) return;
+    if (g.t === "no" && g.moveu && drag) {
+      const novo = { ...(offs || {}) };
+      drag.keys.forEach((k) => { if (!N[k]) return; const o = novo[k] || {}; novo[k] = { x: (o.x || 0) + drag.dx, y: (o.y || 0) + drag.dy }; });
+      onOffs(novo);
+      ignora.current = true; setTimeout(() => { ignora.current = false; }, 0);
+    } else if (g.t === "caixa" && !g.moveu) setMarc(new Set());
+    setDrag(null); setCaixa(null);
+  };
+  const clique = (fn) => () => { if (ignora.current) return; fn(); };
+
   const raizSel = selecionado && selecionado.raiz;
+  // componente com identidade estável (se fosse recriado a cada render, os quadrados remontariam e a animação de entrada piscaria)
+  const ctx = useRef(null);
+  ctx.current = { R, marc, clique };
+  const No = useMemo(() => function No({ k, cls, style, onClick, title, children }) {
+    const { R: Rk, marc: mc, clique: cq } = ctx.current;
+    const r = Rk(k);
+    return <div data-k={k} className={"mp-no " + cls + (mc.has(k) ? " marc" : "")} style={{ left: r.x, top: r.y, width: r.w, height: r.h, ...style }} onClick={cq(onClick)} title={title}>{children}</div>;
+  }, []);
+  const ancD = (k) => { const r = R(k); return { x: r.x + r.w, y: r.y + r.h / 2 }; };
+  const ancE = (k) => { const r = R(k); return { x: r.x, y: r.y + r.h / 2 }; };
+  const ancB = (k) => { const r = R(k); return { x: r.x + r.w / 2, y: r.y + r.h }; };
+  const cen = (k) => { const r = R(k); return { x: r.x + r.w / 2, y: r.y + r.h / 2 }; };
+  const lin = (a, b, cls, key) => <path key={key} className={cls} d={curva(a.x, a.y, b.x, b.y)} />;
+  const linV = (a, b, cls, key) => <path key={key} className={cls} d={`M${a.x} ${a.y} C${a.x} ${(a.y + b.y) / 2}, ${b.x} ${(a.y + b.y) / 2}, ${b.x} ${b.y}`} />;
   return (
     <div className="mp-wrap">
-      <div className="mp-area" ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up}>
-        <div style={{ width: L.W * zoom, height: L.H * zoom }}>
-          <div className="mp-cena" style={{ width: L.W, height: L.H, transform: `scale(${zoom})` }}>
-            <svg className="mp-linhas" width={L.W} height={L.H}>
-              {blocos.map((b, i) => {
-                const blocoSel = selecionado && selecionado.key === b.key;
-                return (
-                  <g key={b.key}>
-                    <path className={blocoSel ? "on" : ""} d={curva(L.ROOT_X + L.ROOT_W, L.rootCy, L.EF_X, L.pos[i].cy)} />
-                    {b.mods.map((m, k) => <path key={k} className={blocoSel && (selecionado.mod === m.idx || (m.fixa && selecionado.fixo === m.id)) ? "on" : ""} d={curva(efX2, L.pos[i].cy, L.MOD_X, L.pos[i].modsY[k])} />)}
-                    <path className="mais" d={curva(efX2, L.pos[i].cy, L.MOD_X, L.pos[i].plusY)} />
-                  </g>
-                );
-              })}
-              {blocos.length === 0 && <path className="mais" d={curva(L.ROOT_X + L.ROOT_W, L.rootCy, L.EF_X, L.novoY)} />}
-              {habMods.map((h, k) => <path key={h.id} className={raizSel && selecionado.fixoHab === h.id ? "on" : ""} d={`M${L.ROOT_X + L.ROOT_W / 2} ${L.rootCy + 36} L${L.ROOT_X + L.ROOT_W / 2} ${L.habY[k]}`} />)}
-              <path className="mais" d={`M${L.ROOT_X + L.ROOT_W / 2} ${L.rootCy + 36} L${L.ROOT_X + L.ROOT_W / 2} ${L.habPlusY}`} />
-            </svg>
-            <div className={"mp-no mp-raiz" + (raizSel && !selecionado.fixoHab && !selecionado.pal ? " sel" : "")} style={{ left: L.ROOT_X, top: L.rootCy - 36, width: L.ROOT_W }} onClick={() => onSel({ raiz: true })}>
+      <div className={"mp-area" + (drag ? " movendo" : "")} ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onContextMenu={(e) => e.preventDefault()}>
+        <div style={{ width: W * zoom, height: H * zoom }}>
+          <div className="mp-cena" style={{ width: W, height: H, transform: `scale(${zoom})` }}>
+            {!semLinhas && (
+              <svg className="mp-linhas" width={W} height={H}>
+                {blocos.map((b, i) => {
+                  const blocoSel = selecionado && selecionado.key === b.key;
+                  return (
+                    <g key={b.key}>
+                      {lin(ancD("raiz"), ancE(b.key), blocoSel ? "on" : "", "r")}
+                      {b.mods.map((m, k) => lin(ancD(b.key), ancE(modKey(b, m)), blocoSel && (selecionado.mod === m.idx || (m.fixa && selecionado.fixo === m.id)) ? "on" : "", k))}
+                      {lin(ancD(b.key), ancE(b.key + ":+"), "mais", "p")}
+                    </g>
+                  );
+                })}
+                {blocos.length === 0 && lin(ancD("raiz"), ancE("novo"), "mais", "n")}
+                {habMods.map((h) => linV(ancB("raiz"), cen("h:" + h.id), raizSel && selecionado.fixoHab === h.id ? "on" : "", h.id))}
+                {linV(ancB("raiz"), cen("h+"), "mais", "hp")}
+              </svg>
+            )}
+            {caixa && <div className="mp-caixa" style={{ left: caixa.x, top: caixa.y, width: caixa.w, height: caixa.h }} />}
+            <No k="raiz" cls={"mp-raiz" + (raizSel && !selecionado.fixoHab && !selecionado.pal ? " sel" : "")} onClick={() => onSel({ raiz: true })}>
               <b>{ataque.nome || "Habilidade"}</b><span>{total} PP</span>
-            </div>
-            {habMods.map((h, k) => (
-              <div key={h.id} className={"mp-no mp-mod " + (h.neg ? "falha" : "extra") + (raizSel && selecionado.fixoHab === h.id ? " sel" : "")} style={{ left: L.ROOT_X - 4, top: L.habY[k] - 21, width: 92, height: 42, fontSize: ".64rem" }} onClick={() => onSel({ raiz: true, fixoHab: h.id })} title={h.nome}><BtnX onClick={() => onRemHab(h)} /><span>{h.nome}</span></div>
+            </No>
+            {habMods.map((h) => (
+              <No key={h.id} k={"h:" + h.id} cls={"mp-mod " + (h.neg ? "falha" : "extra") + (raizSel && selecionado.fixoHab === h.id ? " sel" : "")} style={{ fontSize: ".64rem" }} onClick={() => onSel({ raiz: true, fixoHab: h.id })} title={h.nome}>
+                <BtnX onClick={() => onRemHab(h)} /><span>{h.nome}</span>
+              </No>
             ))}
-            <div className={"mp-no mp-mod mp-mais" + (raizSel && selecionado.pal ? " sel" : "")} style={{ left: L.ROOT_X + L.ROOT_W / 2 - 17, top: L.habPlusY - 17, width: 34, height: 34 }} title="Extra ou falha da habilidade" onClick={() => onSel({ raiz: true, pal: true })}><span>+</span></div>
+            <No k="h+" cls={"mp-mod mp-mais" + (raizSel && selecionado.pal ? " sel" : "")} title="Extra ou falha da habilidade" onClick={() => onSel({ raiz: true, pal: true })}><span>+</span></No>
             {blocos.map((b, i) => {
               const cor = COR_NEN[b.tipo] || COR_NEN.coringa;
               const ativoSel = selecionado && selecionado.key === b.key;
               return (
                 <React.Fragment key={b.key}>
-                  <div className={"mp-no mp-ef" + (ativoSel && selecionado.mod == null && !selecionado.fixo && !selecionado.pal ? " sel" : "") + (b.ativo ? "" : " passivo")} style={{ left: L.EF_X, top: L.pos[i].cy - L.EF_H / 2, width: L.EF_W, height: L.EF_H, background: cor, color: COR_TXT_NEN[b.tipo] || "#fff", animationDelay: i * 40 + "ms" }} onClick={() => onSel({ key: b.key })} title={b.nome}>
+                  <No k={b.key} cls={"mp-ef" + (ativoSel && selecionado.mod == null && !selecionado.fixo && !selecionado.pal ? " sel" : "") + (b.ativo ? "" : " passivo")} style={{ background: cor, color: COR_TXT_NEN[b.tipo] || "#fff", animationDelay: i * 40 + "ms" }} onClick={() => onSel({ key: b.key })} title={b.nome}>
                     <span className="mp-ef-nome" style={{ fontSize: b.nome.length > 17 ? ".68rem" : b.nome.length > 11 ? ".74rem" : undefined }}>{b.nome}</span>
                     <em>{b.grad}</em>
                     <BtnX onClick={() => onRemBloco(b)} />
                     <NoGraduacao b={b} onGrad={onGrad} />
-                  </div>
+                  </No>
                   {b.mods.map((m, k) => (
-                    <div key={k} className={"mp-no mp-mod " + (m.neg ? "falha" : "extra") + (ativoSel && (m.fixa ? selecionado.fixo === m.id : selecionado.mod === m.idx) ? " sel" : "") + (m.fixa ? " fixa" : "")}
-                      style={{ left: L.MOD_X, top: L.pos[i].modsY[k] - L.MOD_H / 2, width: largMod(m.nome), height: L.MOD_H, animationDelay: i * 40 + k * 25 + "ms" }}
-                      onClick={() => onSel(m.fixa ? { key: b.key, fixo: m.id } : { key: b.key, mod: m.idx })} title={m.nome}>
+                    <No key={k} k={modKey(b, m)} cls={"mp-mod " + (m.neg ? "falha" : "extra") + (ativoSel && (m.fixa ? selecionado.fixo === m.id : selecionado.mod === m.idx) ? " sel" : "")}
+                      style={{ animationDelay: i * 40 + k * 25 + "ms" }} onClick={() => onSel(m.fixa ? { key: b.key, fixo: m.id } : { key: b.key, mod: m.idx })} title={m.nome}>
                       <BtnX onClick={() => onRemMod(b, m)} /><span>{m.nome}</span>
-                    </div>
+                    </No>
                   ))}
-                  <div className={"mp-no mp-mod mp-mais" + (ativoSel && selecionado.pal ? " sel" : "")} style={{ left: L.MOD_X, top: L.pos[i].plusY - 17, width: 34, height: 34 }} title="Extra ou falha" onClick={() => onSel({ key: b.key, pal: true })}>
-                    <span>+</span>
-                  </div>
+                  <No k={b.key + ":+"} cls={"mp-mod mp-mais" + (ativoSel && selecionado.pal ? " sel" : "")} title="Extra ou falha" onClick={() => onSel({ key: b.key, pal: true })}><span>+</span></No>
                 </React.Fragment>
               );
             })}
-            <div className="mp-no mp-ef mp-novo" style={{ left: L.EF_X, top: L.novoY - 23, width: 46, height: 46 }} title="Novo efeito" onClick={onNovo}>
-              <span className="mp-ef-nome">+</span>
-            </div>
+            <No k="novo" cls="mp-ef mp-novo" title="Novo efeito" onClick={onNovo}><span className="mp-ef-nome">+</span></No>
           </div>
         </div>
       </div>
       <PainelInfo info={info} calc={calc} aberto={ladoAberto} setAberto={setLadoAberto} total={total} ent={ent} conteudo={conteudo} />
       <div className="mp-zoom">
+        <button type="button" title={semLinhas ? "Mostrar linhas" : "Ocultar linhas"} className={semLinhas ? "off" : ""} onClick={() => setSemLinhas(!semLinhas)}>⌇</button>
         <button type="button" title="Ajustar à tela" onClick={ajustar}>⤢</button>
-        <button type="button" onClick={() => setZoom(Math.max(0.4, +(zoom - 0.1).toFixed(2)))}>−</button>
-        <span>{Math.round(zoom * 100)}%</span>
-        <button type="button" onClick={() => setZoom(Math.min(2, +(zoom + 0.1).toFixed(2)))}>+</button>
         <button type="button" title={cheio ? "Sair da tela cheia" : "Tela cheia"} onClick={() => setCheio(!cheio)}>{cheio ? "🗙" : "⛶"}</button>
       </div>
     </div>
   );
 }
+const modKey = (b, m) => (m.fixa ? `${b.key}:f${m.id}` : `${b.key}:m${m.idx}`);
 
 function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
   const [alvoDesc, setAlvoDesc] = useState(null);
@@ -6873,7 +6968,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   ) : null;
   return (
     <div className={"vb-shell" + (cheio ? " cheio" : "")}>
-      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
+      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} offs={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaPos: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
         zoom={zoom} setZoom={setZoom} onGrad={onGrad} info={info} calc={calc} ent={ent} cheio={cheio} setCheio={setCheio} ladoAberto={ladoAberto} setLadoAberto={setLadoAberto} />
     </div>
   );
