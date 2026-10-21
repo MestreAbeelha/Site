@@ -200,6 +200,16 @@ export function acaoDoEfeito(acaoBase, mods) {
   const desce = mods.filter((m) => m.id === "reacao").reduce((s, m) => s + Math.min(3, Math.abs(m.valor ?? 1)), 0);
   return ESCALA_ACAO[Math.max(0, Math.min(3, i + sobe - desce))];
 }
+const ESCALA_ALCANCE = ["pessoal", "perto", "distancia", "percepcao"];
+export function alcanceDoEfeito(alcBase, mods) {
+  const i = ESCALA_ALCANCE.indexOf(alcBase);
+  if (i < 0) return alcBase;
+  let j = i;
+  if (mods.some((m) => m.id === "ataque") && j === 0) j = 1;
+  mods.filter((m) => m.id === "distancia_aumentada").forEach((m) => { j += Math.abs(m.valor ?? 1) >= 2 ? 2 : 1; });
+  mods.filter((m) => m.id === "alcance_reduzido" || m.id === "alcance_diminuido").forEach((m) => { j -= (m.vezes || 1); });
+  return ESCALA_ALCANCE[Math.max(0, Math.min(3, j))];
+}
 export function duracaoDoEfeito(durBase, mods) {
   if (durBase === "instantaneo" && mods.some((m) => ["duracao_aumentada", "sustentado_afl"].includes(m.id))) return "sustentado";
   if (mods.some((m) => ["permanente_rap", "continuo_criar"].includes(m.id))) return "permanente";
@@ -269,7 +279,7 @@ export function calcularHabilidade(ctx, hab) {
     }
     if (dica) avisos.push(`${cat?.nome || ef.id}: pode ir para o nível ${dica} pelo mesmo custo (${custo} PP).`);
     return { id: ef.id, nome: cat?.nome || ef.id, grad: ef.grad, base, tipo: tipoEf, mods, ajG, c, razao: razaoTxt(c), custo, limite, dicaNivel: dica,
-      acao: ef.acao ?? acaoDoEfeito(cat?.acao, mods), duracao: ef.duracao ?? duracaoDoEfeito(cat?.duracao, mods), fixos: fixosEf };
+      alcance: ef.alcance ?? alcanceDoEfeito(cat?.alcance, mods), acao: ef.acao ?? acaoDoEfeito(cat?.acao, mods), duracao: ef.duracao ?? duracaoDoEfeito(cat?.duracao, mods), fixos: fixosEf };
   });
 
   // ajustes fixos de Nen (uma vez por habilidade)
@@ -568,5 +578,5 @@ export function descEfeitoCompleta(id) {
   const e = EFEITO_POR_ID[id]; if (!e) return null;
   const ac = { padrao: "padrão", livre: "livre", movimento: "movimento", reacao: "reação", nenhuma: "nenhuma" }[e.acao] || e.acao;
   const base = typeof e.base === "object" ? `${e.base.min}–${e.base.max}/g` : `${e.base}/g`;
-  return { texto: DESC_EFEITO[id] || "", meta: `Custo base ${base} · ação ${ac} · alcance ${e.alcance} · duração ${e.duracao}` };
+  return { texto: DESC_EFEITO[id] || "", meta: [["Custo base", base], ["Ação", ac], ["Alcance", ({ pessoal: "pessoal", perto: "perto", distancia: "à distância", percepcao: "percepção", graduacao: "pela graduação" }[e.alcance] || e.alcance)], ["Duração", e.duracao]] };
 }
