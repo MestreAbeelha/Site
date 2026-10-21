@@ -770,9 +770,10 @@ const GlobalStyle = () => (
     .mm3 .mp-zoom span { font-size:.72rem; color:#cfd2dc; min-width:42px; text-align:center; }
     .mm3 .mp-inspetor { display:flex; flex-direction:column; }
     .mm3 .vb-shell { display:flex; flex-direction:column; gap:12px; }
-    .mm3 .vb-shell.cheio { position:fixed; inset:0; z-index:200; background:#0b0b11; padding:10px; overflow:auto; }
-    .mm3 .vb-shell.cheio .mp-area { max-height:none; height:58vh; }
-    .mm3 .mp-area { height:72vh; max-height:none; min-height:360px; touch-action:pan-x pan-y; scroll-behavior:auto; }
+    .mm3 .vb-shell.cheio { position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; z-index:200; background:#0b0b11; padding:0; display:flex; flex-direction:column; }
+    .mm3 .vb-shell.cheio .mp-wrap { flex:1; min-height:0; border-radius:0; border:none; }
+    .mm3 .vb-shell.cheio .mp-area { position:absolute; inset:0; max-height:none; height:auto; }
+    .mm3 .mp-area { height:50vh; max-height:none; min-height:280px; touch-action:pan-x pan-y; scroll-behavior:auto; }
     .mm3 .mp-area.arrastando { cursor:grabbing; }
     .mm3 .mp-ef { position:absolute; }
     .mm3 .mp-x { position:absolute; left:-9px; top:-9px; width:19px; height:19px; border-radius:50%; border:2px solid #0f0f16; background:#2a2a36; color:#fff; font-size:.8rem; line-height:1; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:4; }
@@ -785,13 +786,15 @@ const GlobalStyle = () => (
     .mm3 .mp-grad button:hover:not(:disabled) { background:#fff; }
     .mm3 .mp-grad button:disabled { opacity:.35; cursor:not-allowed; }
     .mm3 .mp-lado { position:absolute; top:0; right:0; bottom:0; display:flex; z-index:6; }
+    .mm3 .mp-lado.aberto { width:min(380px, 88%); }
+    .mm3 .mp-lado-aba { flex:none; }
     .mm3 .mp-lado:not(.aberto) .mp-lado-corpo { display:none; }
-    .mm3 .mp-zoom { right:auto; left:8px; }
+    .mm3 .mp-zoom { right:auto; left:8px; z-index:8; }
     .mm3 .mp-lado-aba { width:34px; align-self:flex-start; margin-top:12px; border:1px solid #33333f; border-right:none; border-radius:12px 0 0 12px; background:#1b1b24; color:#e8c84a; cursor:pointer; padding:10px 0; display:flex; flex-direction:column; align-items:center; gap:6px; font-size:1.1rem; }
     .mm3 .mp-lado-aba b { font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:#cfd2dc; writing-mode:vertical-rl; }
     .mm3 .mp-lado-aba em { font-style:normal; background:#e8c84a; color:#1a1a1a; border-radius:99px; min-width:18px; font-size:.65rem; font-weight:800; padding:1px 4px; }
     .mm3 .mp-lado-aba em.erro { background:#d93636; color:#fff; }
-    .mm3 .mp-lado-corpo { width:min(280px, 55vw); background:#14141c; border-left:1px solid #33333f; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:12px; box-shadow:-8px 0 24px rgba(0,0,0,.45); }
+    .mm3 .mp-lado-corpo { flex:1; min-width:0; background:#14141c; border-left:1px solid #33333f; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:12px; box-shadow:-8px 0 24px rgba(0,0,0,.45); }
     .mm3 .pi-total { display:flex; align-items:baseline; gap:6px; }
     .mm3 .pi-total b { font-family:'Bebas Neue',sans-serif; font-size:2.2rem; color:#e8c84a; line-height:1; }
     .mm3 .pi-total span { color:#cfd2dc; font-weight:700; }
@@ -6234,7 +6237,7 @@ function frasesDe(texto) {
   return m.map((x) => x.replace(/ex§:/g, "ex.:").replace(/ex§/g, "ex.").trim()).filter(Boolean);
 }
 const DescCtx = createContext(null);
-function DescBonita(props) { const alvo = useContext(DescCtx); return alvo ? createPortal(<DescBonitaInner {...props} />, alvo) : null; }
+function DescBonita(props) { const alvo = useContext(DescCtx); return alvo ? createPortal(<DescBonitaInner {...props} />, alvo) : <DescBonitaInner {...props} />; }
 function DescBonitaInner({ cor, titulo, selo, seloClasse, chips, texto, notaTitulo, nota, destaque }) {
   return (
     <div className="dx" style={cor ? { "--dx-cor": cor } : undefined}>
@@ -6299,7 +6302,6 @@ function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, 
         <div className="vb-acoes">
           <button type="button" className="small-btn" onClick={onSubir} disabled={!onSubir} title="Subir">▲</button>
           <button type="button" className="small-btn" onClick={onDescer} disabled={!onDescer} title="Descer">▼</button>
-          <button type="button" className="small-btn" onClick={onRemover} title="Remover este efeito">🗑</button>
         </div>
       </div>
       <DescBonita cor={COR_NEN[tipo] || COR_NEN.coringa} titulo={nome} selo={capNen(tipo) + (ativo ? "" : " · aprimoramento")} chips={chips} texto={d?.texto || ""}
@@ -6348,7 +6350,6 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover }) {
         {(NOTA_MODS.includes(m.id) || m.nota) && (
           <input type="text" className="cb-nota" placeholder={m.id === "area" ? "Forma: Cone, Cilindro, Explosão, Linha ou Nuvem" : m.id === "depender_sentido" ? "Qual sentido? (visão / audição)" : m.id === "variavel_nen_vida" ? "Gasta Nen ou Vida? (escreva “vida” para Vida)" : "Descreva (ex: só funciona de dia)"} value={m.nota || ""} onChange={(e) => upd({ nota: e.target.value })} />
         )}
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onRemover}>🗑 Remover esta peça</button>
       </div>
     </div>
   );
@@ -6380,7 +6381,6 @@ function InspetorLegado({ id, item, onMudar, onRemover, grad, ehHab, todos }) {
     <div className="px">
       <DescBonita cor={neg ? "#d93636" : "#2fb84f"} titulo={c?.nome || id} selo={(neg ? "Falha" : "Extra") + (todos ? " · em todos os efeitos" : ehHab ? " · da habilidade inteira" : "")} seloClasse={neg ? "falha" : "extra"} chips={[["Custo", c ? `${c.v > 0 ? "+" : ""}${c.v}${c.k === "g" ? "/g" : " fixo"}` : ""]]} texto={DESC_MOD[id] || ""} />
       {editor && <div className="px-config">{editor}</div>}
-      <div className="px-ctrl"><button type="button" className="btn btn-ghost btn-sm" onClick={onRemover}>🗑 Remover esta peça</button></div>
     </div>
   );
 }
@@ -6490,7 +6490,6 @@ function InspetorUso({ u, variaveis, onMudar, onRemover, onMudarVariavel, onExcl
             )}
           </>
         )}
-        <button type="button" className="btn btn-ghost btn-sm" onClick={onRemover}>🗑 Remover esta peça</button>
       </div>
     </div>
   );
@@ -6520,7 +6519,7 @@ function layoutMapa(blocos, nHab) {
 }
 const curva = (x1, y1, x2, y2) => `M${x1} ${y1} C${x1 + (x2 - x1) / 2} ${y1}, ${x1 + (x2 - x1) / 2} ${y2}, ${x2} ${y2}`;
 
-function PainelInfo({ info, calc, aberto, setAberto, total, ent, setAlvoDesc, temDesc }) {
+function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
   const erros = calc?.erros || [], avisos = calc?.avisos || [];
   const alertas = erros.length + avisos.length;
   return (
@@ -6530,8 +6529,8 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, setAlvoDesc, te
         {!aberto && alertas > 0 && <em className={erros.length ? "erro" : ""}>{alertas}</em>}
         {!aberto && <b>Info</b>}
       </button>
-      <div className={"mp-lado-corpo" + (temDesc ? " com-desc" : "")}>
-        <div ref={setAlvoDesc} className="pi-desc" />
+      <div className={"mp-lado-corpo" + (conteudo ? " com-desc" : "")}>
+        {conteudo ? <div className="pi-conteudo">{conteudo}</div> : <>
         <div className="pi-total"><b>{total}</b><span>PP</span><small>Nível {Math.max(1, ent?.nivel || 1)}</small></div>
         <div className="pi-info">
         {erros.length + avisos.length > 0 && (
@@ -6577,6 +6576,7 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, setAlvoDesc, te
           </>
         )}
         </div>
+        </>}
       </div>
     </div>
   );
@@ -6594,14 +6594,14 @@ function NoGraduacao({ b, onGrad }) {
 function BtnX({ onClick }) {
   return <button type="button" className="mp-x" title="Remover" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onClick(); }}>×</button>;
 }
-function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, setAlvoDesc, temDesc, onRemBloco, onRemMod, onRemHab }) {
+function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab }) {
   const L = layoutMapa(blocos, habMods.length);
   const ref = useRef(null);
   const arr = useRef(null);
   const ajustou = useRef(false);
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
-  const ajustar = () => { const w = ref.current ? ref.current.clientWidth : 0; if (w > 0) setZoom(Math.max(0.4, Math.min(1.3, +((w - 6) / L.W).toFixed(2)))); };
+  const ajustar = () => { const w = ref.current ? ref.current.clientWidth : 0; if (w > 0) setZoom(Math.max(0.4, Math.min(1.1, +(((w - 6) / L.W) * 0.85).toFixed(2)))); };
   useEffect(() => { if (!ajustou.current && ref.current && ref.current.clientWidth > 0) { ajustou.current = true; ajustar(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
   // zoom com o scroll do mouse (em torno do cursor)
   useEffect(() => {
@@ -6683,7 +6683,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
           </div>
         </div>
       </div>
-      <PainelInfo info={info} calc={calc} aberto={ladoAberto} setAberto={setLadoAberto} total={total} ent={ent} setAlvoDesc={setAlvoDesc} temDesc={temDesc} />
+      <PainelInfo info={info} calc={calc} aberto={ladoAberto} setAberto={setLadoAberto} total={total} ent={ent} conteudo={conteudo} />
       <div className="mp-zoom">
         <button type="button" title="Ajustar à tela" onClick={ajustar}>⤢</button>
         <button type="button" onClick={() => setZoom(Math.max(0.4, +(zoom - 0.1).toFixed(2)))}>−</button>
@@ -6768,7 +6768,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     setSel({ raiz: true, fixoHab: "u:" + id });
   };
   const mesmo = (a, b) => JSON.stringify(a) === JSON.stringify(b);
-  const clicar = (x) => { if (mesmo(sel, x)) setSel(null); else { setSel(x); if (!x.pal) setLadoAberto(true); } setPaleta(false); };
+  const clicar = (x) => { if (mesmo(sel, x)) setSel(null); else { setSel(x); setLadoAberto(true); } setPaleta(false); };
   const remHab = (h) => { setSel(null); if (h.id.startsWith("u:")) onMudar({ ...ataque, usoVariaveis: ataque.usoVariaveis.filter((x) => x.id !== h.id.slice(2)) }); else onMudar(LEG_HAB[h.id].off(ataque)); };
   const remMod = (b, m) => { setSel(null); if (m.fixa) { if (LEG_TODOS[m.id]) onMudar(LEG_TODOS[m.id].off(ataque)); else atualizarBloco(b, LEG_EFEITO[m.id].off(b.item)); } else atualizarBloco(b, { ...b.item, mods: (b.item.mods || []).filter((_, j) => j !== m.idx) }); };
   const temDescAtivo = !!sel && !sel.pal;
@@ -6782,7 +6782,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
         onRemover={() => { onMudar({ ...ataque, usoVariaveis: ataque.usoVariaveis.filter((x) => x.id !== uid0) }); setSel({ raiz: true }); }} /> : null;
     }
     else if (sel.fixoHab) inspetor = <InspetorLegado id={sel.fixoHab} item={ataque} ehHab onMudar={onMudar} onRemover={() => { onMudar(LEG_HAB[sel.fixoHab].off(ataque)); setSel({ raiz: true }); }} grad={0} />;
-    else inspetor = <InspetorHabilidade ataque={ataque} onMudar={onMudar} onNovoEfeito={() => { setSel(null); setPaleta(true); }} />;
+    else inspetor = <InspetorHabilidade ataque={ataque} onMudar={onMudar} onNovoEfeito={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} />;
   } else if (bSel) {
     if (sel.pal) {
       inspetor = <PaletaMods ataque={ataque} bloco={bSel} idCat={bSel.idCat} item={bSel.item} ativo={bSel.ativo} ocultar={bSel.def ? modsOcultosDoPassivo(bSel.def) : undefined} onAdd={(m) => addMod(bSel, m)} />;
@@ -6804,30 +6804,30 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
       );
     }
   }
-  return (
-    <DescCtx.Provider value={temDescAtivo ? alvoDesc : null}>
-    <div className={"vb-shell" + (cheio ? " cheio" : "")}>
-      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} setAlvoDesc={setAlvoDesc} temDesc={!!sel && !sel.pal} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onNovo={() => { setSel(null); setPaleta(true); }} total={total}
-        zoom={zoom} setZoom={setZoom} onGrad={onGrad} info={info} calc={calc} ent={ent} cheio={cheio} setCheio={setCheio} ladoAberto={ladoAberto} setLadoAberto={setLadoAberto} />
-      <div className="vb-inspetor">
-        {inspetor}
-        {paleta && (
-          <div className="vb-paleta-efeitos">
-            <input type="text" placeholder="Buscar efeito…" value={busca} onChange={(e) => setBusca(e.target.value)} />
-            {Object.entries(grupos).map(([t, lst]) => (
-              <div key={t} className="vb-grupo" style={{ "--vb-cor": COR_NEN[t] || COR_NEN.coringa }}>
-                <div className="vb-grupo-t">{capNen(t)}</div>
-                <div className="vb-pecas">
-                  {lst.map((e) => <button type="button" key={e.id} className="vb-opcao" style={{ background: COR_NEN[t] || COR_NEN.coringa, color: COR_TXT_NEN[t] || "#fff" }} onClick={() => addBloco(e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>)}
-                </div>
+  const conteudo = (inspetor || paleta) ? (
+    <>
+      {inspetor}
+      {paleta && (
+        <div className="vb-paleta-efeitos">
+          <div className="px-titulo">Novo efeito</div>
+          <input type="text" placeholder="Buscar efeito…" value={busca} onChange={(e) => setBusca(e.target.value)} />
+          {Object.entries(grupos).map(([t, lst]) => (
+            <div key={t} className="vb-grupo" style={{ "--vb-cor": COR_NEN[t] || COR_NEN.coringa }}>
+              <div className="vb-grupo-t">{capNen(t)}</div>
+              <div className="vb-pecas">
+                {lst.map((e) => <button type="button" key={e.id} className="vb-opcao" style={{ background: COR_NEN[t] || COR_NEN.coringa, color: COR_TXT_NEN[t] || "#fff" }} onClick={() => addBloco(e.id)}>{e.nome}<i>{typeof e.base === "object" ? "var." : `${e.base}/g`}</i></button>)}
               </div>
-            ))}
-          </div>
-        )}
-        {!inspetor && !paleta && <div className="vb-vazio">Toque num bloco do mapa para ver a descrição na aba lateral. Use os triângulos ▲▼ do bloco para mudar a graduação e o × para remover.</div>}
-      </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  ) : null;
+  return (
+    <div className={"vb-shell" + (cheio ? " cheio" : "")}>
+      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
+        zoom={zoom} setZoom={setZoom} onGrad={onGrad} info={info} calc={calc} ent={ent} cheio={cheio} setCheio={setCheio} ladoAberto={ladoAberto} setLadoAberto={setLadoAberto} />
     </div>
-    </DescCtx.Provider>
   );
 }
 
