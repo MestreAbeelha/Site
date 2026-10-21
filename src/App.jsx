@@ -780,6 +780,10 @@ const GlobalStyle = () => (
     .mm3 .mp-no { cursor:grab; touch-action:none; }
     .mm3 .mp-area.movendo .mp-no { cursor:grabbing; transition:none; animation:none; }
     .mm3 .mp-no.marc { outline:3px solid #5cc3f5; outline-offset:3px; }
+    .mm3 .mp-menu { position:fixed; z-index:300; background:#1b1b24; border:1px solid #3a3a4c; border-radius:12px; padding:6px; min-width:190px; max-height:60vh; overflow:auto; box-shadow:0 10px 28px rgba(0,0,0,.55); display:flex; flex-direction:column; gap:2px; }
+    .mm3 .mp-menu-t { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:#8a90a0; padding:6px 10px 4px; }
+    .mm3 .mp-menu button { font:inherit; font-size:.85rem; text-align:left; background:transparent; color:#fff; border:none; border-radius:8px; padding:8px 10px; cursor:pointer; }
+    .mm3 .mp-menu button:hover { background:#e8c84a; color:#1a1a1a; }
     .mm3 .mp-caixa { position:absolute; border:1.5px solid #5cc3f5; background:rgba(92,195,245,.14); pointer-events:none; z-index:5; border-radius:4px; }
     .mm3 .mp-zoom button.off { background:#e8c84a; color:#1a1a1a; }
     .mm3 .mp-x { position:absolute; left:-9px; top:-9px; width:19px; height:19px; border-radius:50%; border:2px solid #0f0f16; background:#2a2a36; color:#fff; font-size:.8rem; line-height:1; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:4; }
@@ -1695,13 +1699,21 @@ function temFundamento(ent, idFundamento) {
 /* Lista efeitos colaterais atualmente "em jogo": efeitos passivos ativos, e efeitos de
    habilidades ativas que estejam sendo sustentadas (a.sustentado). Cada item retornado
    é { ataque, item } onde "item" é o efeito/instância que carrega o .colateral. */
+/* um efeito pode ter vários Efeitos Colaterais: o principal (item.colateral) e extras (item.colateraisExtra).
+   Cada um vira um "item virtual" com id próprio (id#n), para o resto do código tratá-los como itens independentes. */
+function colateraisDeItem(it) {
+  const out = [];
+  if (it?.colateral?.ativo) out.push(it);
+  (it?.colateraisExtra || []).forEach((c, n) => out.push({ ...it, id: it.id + "#" + (n + 1), colateral: { ...c, ativo: true }, __orig: it }));
+  return out;
+}
 function efeitosColateraisAtivos(ent) {
   const out = [];
   (ent?.ataques || []).forEach((a) => {
     if (a.tipo === "passiva" && passivaEstaAtiva(a)) {
-      passivosDe(a).forEach((inst) => { if (inst?.colateral?.ativo && !(ent?.efeitosPerdidos || {})[inst.id]) out.push({ ataque: a, item: inst }); });
+      passivosDe(a).forEach((inst) => { if (!(ent?.efeitosPerdidos || {})[inst.id]) colateraisDeItem(inst).forEach((v) => out.push({ ataque: a, item: v })); });
     } else if (a.tipo !== "passiva" && a.sustentado && a.sustentando) {
-      itensDaHabilidade(a).forEach((ef) => { if (ef?.colateral?.ativo && !(ent?.efeitosPerdidos || {})[ef.id]) out.push({ ataque: a, item: ef }); });
+      itensDaHabilidade(a).forEach((ef) => { if (!(ent?.efeitosPerdidos || {})[ef.id]) colateraisDeItem(ef).forEach((v) => out.push({ ataque: a, item: v })); });
     }
   });
   return out;
@@ -1821,7 +1833,7 @@ function imunidadeBloqueia(alvo, efeito, nomeHab) {
 }
 function itensColaterais(ataque) {
   const lista = itensDaHabilidade(ataque);
-  return lista.filter((i) => i?.colateral?.ativo && i.colateral.condicao);
+  return lista.flatMap(colateraisDeItem).filter((i) => i.colateral.condicao);
 }
 /* liga/desliga a condição de um efeito colateral, lembrando (colateraisAplicados) o que ele mesmo aplicou */
 function mutarColateral(e, itemId, nome, ligar) {
@@ -2101,6 +2113,7 @@ function modsDoEfeito(ef, a) {
   const m = (ef.mods || []).map((x) => ({ ...x }));
   const der = (id, valor) => m.push({ id, valor, derivado: true });
   if (ef.colateral?.ativo) der("efeito_colateral", custoColateral(ef.colateral.condicao, ef.colateral.comTeste));
+  (ef.colateraisExtra || []).forEach((c) => der("efeito_colateral", custoColateral(c.condicao, c.comTeste)));
   if (ef.exigirTeste?.ativo) der("exigir_teste", -Math.max(1, ef.exigirTeste.graduacoes || 1));
   if (ef.peculiaridade?.ativo) der("peculiaridade", ef.peculiaridade.bonus === 5 ? -2 : -1);
   if (ef.aquecimento?.ativo) der("aquecimento", -(ef.aquecimento.turnos || 3));
@@ -5130,7 +5143,7 @@ export default function MesaMM3() {
     // Efeito Colateral das habilidades que continuam sustentadas
     const colatOps = [];
     efeitosColateraisAtivos(ent).forEach(({ ataque: a, item }) => {
-      if (paradas.includes(a.id) || idsPerdidos.includes(item.id)) return;
+      if (paradas.includes(a.id) || idsPerdidos.includes(item.__orig?.id || item.id)) return;
       const col = item.colateral;
       if (!col.condicao) return;
       let ligar = true;
@@ -5179,7 +5192,7 @@ export default function MesaMM3() {
       if (perdidosNovos.length) {
         n.efeitosPerdidos = { ...(n.efeitosPerdidos || {}), ...Object.fromEntries(idsPerdidos.map((id) => [id, true])) };
         n.avisosPerdidos = [...(n.avisosPerdidos || []), ...avisosNovos];
-        perdidosNovos.forEach((it) => { if (it.colateral?.ativo && it.colateral.condicao) n = mutarColateral(n, it.id, it.colateral.condicao, false); });
+        perdidosNovos.flatMap(colateraisDeItem).forEach((it) => { if (it.colateral?.condicao) n = mutarColateral(n, it.id, it.colateral.condicao, false); });
       }
       if (teveExplosao) {
         n.ataques = (n.ataques || []).map((a) => (a.tipo === "passiva" ? { ...a, passivos: passivosDe(a).map((p) => ({ ...p, explosaoLigada: false })) } : a));
@@ -6089,6 +6102,8 @@ function valorModTxt(m) {
   return `${v > 0 ? "+" : ""}${v}${(cat?.k || "g") === "g" ? "/g" : " fixo"}`;
 }
 const NOTA_MODS = ["limitado", "area", "depender_sentido", "ativacao", "carregamento", "ponto_fraco", "retroalimentacao", "incontrolavel", "perceptivel", "efeito_secundario", "contagioso"];
+const SEM_NOTA_NO_MAPA = new Set(["limitado", "incontrolavel", "area"]);
+const FORMAS_AREA = ["Cone", "Cilindro", "Explosão", "Linha", "Nuvem"];
 function ModsEfeito({ efeito, onMudar, res, idCat: idCatProp, ocultar }) {
   const idCat = idCatProp || CAT_PARA_EFEITO[efeito.categoria] || CAT_UTIL_PARA_EFEITO[efeito.categoria];
   if (!idCat) return null;
@@ -6170,7 +6185,7 @@ const chaveGrad = (ativo, it) => (ativo && it.categoria === "Nulificar" ? "gradu
 const objAtivo = (k, padrao = {}) => ({ ativo: (o) => !!o[k]?.ativo, on: (o) => ({ ...o, [k]: { ...padrao, ...(o[k] || {}), ativo: true } }), off: (o) => ({ ...o, [k]: { ...(o[k] || {}), ativo: false } }) });
 const boolAtivo = (k) => ({ ativo: (o) => !!o[k], on: (o) => ({ ...o, [k]: true }), off: (o) => ({ ...o, [k]: false }) });
 const LEG_EFEITO = {
-  efeito_colateral: objAtivo("colateral", { condicao: "", comTeste: false }),
+  efeito_colateral: { ...objAtivo("colateral", { condicao: "", comTeste: false }), on: (o) => (o.colateral?.ativo ? { ...o, colateraisExtra: [...(o.colateraisExtra || []), { condicao: "", comTeste: false }] } : { ...o, colateral: { condicao: "", comTeste: false, ...(o.colateral || {}), ativo: true } }) },
   exigir_teste: objAtivo("exigirTeste", { graduacoes: 1 }),
   peculiaridade: objAtivo("peculiaridade", { bonus: 2 }),
   aquecimento: objAtivo("aquecimento", { turnos: 3 }),
@@ -6294,9 +6309,9 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     if (LEG_TODOS[m.id]) return !!ataque && !LEG_TODOS[m.id].ativo(ataque) && elegivelTodos(m.id, bloco) && !(m.id === "dividido" && ataque.extras?.multiataque) && !(m.id === "multiataque" && ataque.extras?.dividido);
     if (LEG_HAB[m.id]) return false;
     if (ocultar && ocultar.has(m.id)) return false;
-    if (LEG_EFEITO[m.id]) return !LEG_EFEITO[m.id].ativo(item) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria)));
+    if (LEG_EFEITO[m.id]) return (m.id === "efeito_colateral" || !LEG_EFEITO[m.id].ativo(item)) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria)));
     if (MODS_LEGADO.has(m.id)) return false;
-    return m.mult || !mods.some((x) => x.id === m.id);
+    return m.mult || m.id === "limitado" || !mods.some((x) => x.id === m.id);
   };
   const q = semAcento(busca);
   const base = (aba === "extra" ? disp.extras : disp.falhas).filter(livre);
@@ -6367,9 +6382,9 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover }) {
   return (
     <div className="px">
       <DescBonita cor={neg ? "#d93636" : "#2fb84f"} titulo={c.nome} selo={neg ? "Falha" : "Extra"} seloClasse={neg ? "falha" : "extra"}
-        chips={[["Custo", valorModTxt(m)], ...((m.vezes || 1) > 1 ? [["Vezes", "×" + m.vezes]] : [])]} texto={DESC_MOD[m.id] || ""} nota={regra || null} />
+        chips={[["Custo", valorModTxt(m)], ...((m.vezes || 1) > 1 ? [["Vezes", "×" + m.vezes]] : [])]} texto={DESC_MOD[m.id] || ""} nota={regra || null} notaTitulo={m.id === "area" ? "Alcance atual" : undefined} />
       <div className="px-ctrl">
-        {c.mult && (
+        {c.mult && m.id !== "limitado" && (
           <div className="px-linha"><span>Quantas vezes</span>
             <span className="vb-stepper"><button type="button" className="small-btn" disabled={(m.vezes || 1) <= 1} onClick={() => upd({ vezes: (m.vezes || 1) - 1 })}>−</button><b>×{m.vezes || 1}</b><button type="button" className="small-btn" onClick={() => upd({ vezes: (m.vezes || 1) + 1 })}>+</button></span>
           </div>
@@ -6381,7 +6396,14 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover }) {
             </select>
           </div>
         )}
-        {(NOTA_MODS.includes(m.id) || m.nota) && (
+        {m.id === "area" && (
+          <div className="px-linha"><span>Tipo de área</span>
+            <select className="cb-sel" value={FORMAS_AREA.find((f) => semAcento(f) === semAcento(m.nota || "")) || "Explosão"} onChange={(e) => upd({ nota: e.target.value })}>
+              {FORMAS_AREA.map((f) => <option key={f} value={f}>{f}</option>)}
+            </select>
+          </div>
+        )}
+        {NOTA_MODS.includes(m.id) && !SEM_NOTA_NO_MAPA.has(m.id) && (
           <input type="text" className="cb-nota" placeholder={m.id === "area" ? "Forma: Cone, Cilindro, Explosão, Linha ou Nuvem" : m.id === "depender_sentido" ? "Qual sentido? (visão / audição)" : m.id === "variavel_nen_vida" ? "Gasta Nen ou Vida? (escreva “vida” para Vida)" : "Descreva (ex: só funciona de dia)"} value={m.nota || ""} onChange={(e) => upd({ nota: e.target.value })} />
         )}
       </div>
@@ -6389,10 +6411,18 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover }) {
   );
 }
 /* peça "interruptor" (Efeito Colateral, Exigir Teste, Ponto Fraco…): mostra o editor próprio dela */
-function InspetorLegado({ id, item, onMudar, onRemover, grad, ehHab, todos }) {
+function removerFixoEfeito(item, id) {
+  if (id.startsWith("efeito_colateral#")) { const n = Number(id.split("#")[1]) - 1; return { ...item, colateraisExtra: (item.colateraisExtra || []).filter((_, j) => j !== n) }; }
+  if (id === "efeito_colateral" && (item.colateraisExtra || []).length) { const [prox, ...resto] = item.colateraisExtra; return { ...item, colateral: { ...prox, ativo: true }, colateraisExtra: resto }; }
+  return LEG_EFEITO[id].off(item);
+}
+function InspetorLegado({ id: idCru, item, onMudar, onRemover, grad, ehHab, todos }) {
+  const nCol = idCru.startsWith("efeito_colateral#") ? Number(idCru.split("#")[1]) - 1 : -1;
+  const id = idCru.split("#")[0];
   const c = MOD_POR_ID[id];
   const neg = (c?.v ?? 0) < 0;
   const editor = (() => {
+    if (id === "efeito_colateral" && nCol >= 0) return <ColateralEditor semCheck colateral={{ ...(item.colateraisExtra || [])[nCol], ativo: true }} onMudar={(x) => onMudar({ ...item, colateraisExtra: (item.colateraisExtra || []).map((y, j) => (j === nCol ? x : y)) })} graduacao={grad} />;
     if (id === "efeito_colateral") return <ColateralEditor semCheck colateral={item.colateral} onMudar={(x) => onMudar({ ...item, colateral: x })} graduacao={grad} />;
     if (id === "exigir_teste") return <ExigirTesteEditor valor={item.exigirTeste} onMudar={(x) => onMudar({ ...item, exigirTeste: x })} />;
     if (id === "peculiaridade") return <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />;
@@ -6644,7 +6674,7 @@ function NoGraduacao({ b, onGrad }) {
 function BtnX({ onClick }) {
   return <button type="button" className="mp-x" title="Remover" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onClick(); }}>×</button>;
 }
-function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs }) {
+function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs, onCopiar }) {
   const L = layoutMapa(blocos, habMods.length);
   const ref = useRef(null);
   const gest = useRef(null);
@@ -6656,6 +6686,23 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
   const [drag, setDrag] = useState(null);
   const [caixa, setCaixa] = useState(null);
   const [semLinhas, setSemLinhas] = useState(false);
+  const [menu, setMenu] = useState(null);
+  useEffect(() => {
+    if (!menu) return;
+    const fechar = (e) => { if (!e.target.closest || !e.target.closest(".mp-menu")) setMenu(null); };
+    const tecla = (e) => { if (e.key === "Escape") setMenu(null); };
+    document.addEventListener("pointerdown", fechar); document.addEventListener("keydown", tecla);
+    return () => { document.removeEventListener("pointerdown", fechar); document.removeEventListener("keydown", tecla); };
+  }, [menu]);
+  const ehPeca = (k) => /^[ep][^:]*:(m\d+|f.+)$/.test(k);
+  const contexto = (e) => {
+    e.preventDefault();
+    const no = e.target.closest(".mp-no");
+    if (!no || !no.dataset.k || !ehPeca(no.dataset.k)) return;
+    const k = no.dataset.k;
+    const keys = marc.has(k) ? [...marc].filter(ehPeca) : [k];
+    setMenu({ x: e.clientX, y: e.clientY, keys });
+  };
 
   // retângulos base de todos os quadrados
   const N = {};
@@ -6699,7 +6746,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
   const cena = (e) => { const r = ref.current.getBoundingClientRect(); return { x: (e.clientX - r.left + ref.current.scrollLeft) / zoom, y: (e.clientY - r.top + ref.current.scrollTop) / zoom }; };
   const down = (e) => {
     if (e.target.closest(".mp-lado, .mp-zoom, .mp-x, .mp-grad")) return;
-    if (e.button === 1 || e.button === 2) { gest.current = { t: "pan", x: e.clientX, y: e.clientY, sl: ref.current.scrollLeft, st: ref.current.scrollTop }; ref.current.setPointerCapture?.(e.pointerId); e.preventDefault(); return; }
+    if ((e.button === 1 || e.button === 2) && !(e.button === 2 && e.target.closest(".mp-no"))) { gest.current = { t: "pan", x: e.clientX, y: e.clientY, sl: ref.current.scrollLeft, st: ref.current.scrollTop }; ref.current.setPointerCapture?.(e.pointerId); e.preventDefault(); return; }
     if (e.button !== 0) return;
     const no = e.target.closest(".mp-no");
     if (no && no.dataset.k) {
@@ -6763,7 +6810,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
   const linV = (a, b, cls, key) => <path key={key} className={cls} d={`M${a.x} ${a.y} C${a.x} ${(a.y + b.y) / 2}, ${b.x} ${(a.y + b.y) / 2}, ${b.x} ${b.y}`} />;
   return (
     <div className="mp-wrap">
-      <div className={"mp-area" + (drag ? " movendo" : "")} ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onContextMenu={(e) => e.preventDefault()}>
+      <div className={"mp-area" + (drag ? " movendo" : "")} ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onContextMenu={contexto}>
         <div style={{ width: W * zoom, height: H * zoom }}>
           <div className="mp-cena" style={{ width: W, height: H, transform: `scale(${zoom})` }}>
             {!semLinhas && (
@@ -6818,6 +6865,12 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
           </div>
         </div>
       </div>
+      {menu && (
+        <div className="mp-menu" style={{ left: Math.max(8, Math.min(menu.x, window.innerWidth - 220)), top: Math.max(8, Math.min(menu.y, window.innerHeight - Math.min(360, 60 + blocos.length * 36))) }}>
+          <div className="mp-menu-t">Copiar {menu.keys.length > 1 ? `${menu.keys.length} peças` : "peça"} para…</div>
+          {blocos.map((b) => <button type="button" key={b.key} onClick={() => { onCopiar(menu.keys, b.key); setMenu(null); }}>{b.nome}</button>)}
+        </div>
+      )}
       <PainelInfo info={info} calc={calc} aberto={ladoAberto} setAberto={setLadoAberto} total={total} ent={ent} conteudo={conteudo} />
       <div className="mp-zoom">
         <button type="button" title={semLinhas ? "Mostrar linhas" : "Ocultar linhas"} className={semLinhas ? "off" : ""} onClick={() => setSemLinhas(!semLinhas)}>⌇</button>
@@ -6869,6 +6922,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     const def = b.ativo ? null : PODERES_PASSIVOS.find((p) => p.id === b.item.tipoId);
     const mods = (b.item.mods || []).map((m, idx) => { const c = MOD_POR_ID[m.id]; return c ? { idx, nome: c.nome + ((m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""), neg: (m.valor ?? c.v) < 0 } : null; }).filter(Boolean);
     Object.keys(LEG_EFEITO).filter((id) => LEG_EFEITO[id].ativo(b.item) && (b.ativo || id !== "peculiaridade")).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
+    (b.item.colateraisExtra || []).forEach((_, n) => mods.push({ idx: -1, fixa: true, id: `efeito_colateral#${n + 1}`, nome: "Efeito Colateral", neg: true }));
     Object.keys(LEG_TODOS).filter((id) => LEG_TODOS[id].ativo(ataque) && elegivelTodos(id, b)).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
     return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : (def?.nome || cat?.nome || "Efeito"), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTravada: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo, mods, def };
   });
@@ -6885,8 +6939,8 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   const onGrad = (b, d) => { const k = chaveGrad(b.ativo, b.item); atualizarBloco(b, { ...b.item, [k]: Math.max(0, (b.item[k] || 0) + d) }); };
   const addMod = (b, m) => {
     if (LEG_TODOS[m.id]) { onMudar(LEG_TODOS[m.id].on(ataque)); setSel({ key: b.key, fixo: m.id }); return; }
-    if (LEG_EFEITO[m.id]) { atualizarBloco(b, LEG_EFEITO[m.id].on(b.item)); setSel({ key: b.key, fixo: m.id }); return; }
-    const novos = [...(b.item.mods || []), { id: m.id, vezes: 1, valor: m.v, nota: "" }];
+    if (LEG_EFEITO[m.id]) { const jaTem = m.id === "efeito_colateral" && b.item.colateral?.ativo; atualizarBloco(b, LEG_EFEITO[m.id].on(b.item)); setSel({ key: b.key, fixo: jaTem ? `efeito_colateral#${(b.item.colateraisExtra || []).length + 1}` : m.id }); return; }
+    const novos = [...(b.item.mods || []), { id: m.id, vezes: 1, valor: m.v, nota: m.id === "area" ? "Explosão" : "" }];
     atualizarBloco(b, { ...b.item, mods: novos });
     setSel({ key: b.key, mod: novos.length - 1 });
   };
@@ -6905,7 +6959,38 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   const mesmo = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const clicar = (x) => { if (mesmo(sel, x)) setSel(null); else { setSel(x); setLadoAberto(true); } setPaleta(false); };
   const remHab = (h) => { setSel(null); if (h.id.startsWith("u:")) onMudar({ ...ataque, usoVariaveis: ataque.usoVariaveis.filter((x) => x.id !== h.id.slice(2)) }); else onMudar(LEG_HAB[h.id].off(ataque)); };
-  const remMod = (b, m) => { setSel(null); if (m.fixa) { if (LEG_TODOS[m.id]) onMudar(LEG_TODOS[m.id].off(ataque)); else atualizarBloco(b, LEG_EFEITO[m.id].off(b.item)); } else atualizarBloco(b, { ...b.item, mods: (b.item.mods || []).filter((_, j) => j !== m.idx) }); };
+  const CAMPO_LEG = { efeito_colateral: "colateral", exigir_teste: "exigirTeste", peculiaridade: "peculiaridade", aquecimento: "aquecimento", resistencia_alt_afl: "resistenciaAlternativa", recuperacao_instantanea: "recuperacaoInstantanea", cumulativo_afl: "cumulativo", condicao_extra: "condicaoExtra", grau_limitado_afl: "graus" };
+  const copiarPecas = (keys, alvoKey) => {
+    const alvo = blocos.find((x) => x.key === alvoKey); if (!alvo) return;
+    const disp = modsDisponiveis(alvo.idCat);
+    const idsOk = new Set([...disp.extras, ...disp.falhas].map((x) => x.id));
+    let novo = { ...alvo.item };
+    keys.forEach((k) => {
+      const [bk, resto] = [k.slice(0, k.indexOf(":")), k.slice(k.indexOf(":") + 1)];
+      const fonte = blocos.find((x) => x.key === bk); if (!fonte || fonte.key === alvo.key) return;
+      if (resto.startsWith("m")) {
+        const m = (fonte.item.mods || [])[Number(resto.slice(1))]; if (!m) return;
+        const c = MOD_POR_ID[m.id]; if (!c || !idsOk.has(m.id)) return;
+        if (!(c.mult || m.id === "limitado") && (novo.mods || []).some((x) => x.id === m.id)) return;
+        novo = { ...novo, mods: [...(novo.mods || []), JSON.parse(JSON.stringify(m))] };
+      } else {
+        const id = resto.slice(1), base = id.split("#")[0], campo = CAMPO_LEG[base]; if (!campo) return;
+        if (base === "peculiaridade" && !(alvo.ativo && CATEGORIAS_COM_RESISTENCIA.includes(alvo.item.categoria))) return;
+        if (["resistencia_alt_afl", "recuperacao_instantanea", "cumulativo_afl", "condicao_extra", "grau_limitado_afl"].includes(base) && alvo.item.categoria !== "Aflição") return;
+        const n = id.includes("#") ? Number(id.split("#")[1]) - 1 : -1;
+        const valor = base === "efeito_colateral" && n >= 0 ? { ...(fonte.item.colateraisExtra || [])[n], ativo: true } : fonte.item[campo];
+        if (valor === undefined) return;
+        const copia = JSON.parse(JSON.stringify(valor));
+        if (base === "efeito_colateral") {
+          if (novo.colateral?.ativo) novo = { ...novo, colateraisExtra: [...(novo.colateraisExtra || []), { ...copia, ativo: undefined }] };
+          else novo = { ...novo, colateral: { ...copia, ativo: true } };
+        } else if (typeof copia === "boolean" || typeof copia === "number") novo = { ...novo, [campo]: copia };
+        else novo = { ...novo, [campo]: { ...copia, ativo: true } };
+      }
+    });
+    atualizarBloco(alvo, novo);
+  };
+  const remMod = (b, m) => { setSel(null); if (m.fixa) { if (LEG_TODOS[m.id]) onMudar(LEG_TODOS[m.id].off(ataque)); else atualizarBloco(b, removerFixoEfeito(b.item, m.id)); } else atualizarBloco(b, { ...b.item, mods: (b.item.mods || []).filter((_, j) => j !== m.idx) }); };
   const temDescAtivo = !!sel && !sel.pal;
   let inspetor = null;
   if (sel && sel.raiz) {
@@ -6924,7 +7009,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     } else if (sel.fixo && LEG_TODOS[sel.fixo]) {
       inspetor = <InspetorLegado id={sel.fixo} item={ataque} todos onMudar={onMudar} onRemover={() => { onMudar(LEG_TODOS[sel.fixo].off(ataque)); setSel({ key: bSel.key }); }} grad={0} />;
     } else if (sel.fixo) {
-      inspetor = <InspetorLegado id={sel.fixo} item={bSel.item} grad={gradDe(bSel)} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, LEG_EFEITO[sel.fixo].off(bSel.item)); setSel({ key: bSel.key }); }} />;
+      inspetor = <InspetorLegado id={sel.fixo} item={bSel.item} grad={gradDe(bSel)} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, removerFixoEfeito(bSel.item, sel.fixo)); setSel({ key: bSel.key }); }} />;
     } else if (sel.mod != null) {
       inspetor = <InspetorMod item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, { ...bSel.item, mods: (bSel.item.mods || []).filter((_, j) => j !== sel.mod) }); setSel({ key: bSel.key }); }} />;
     } else {
@@ -6968,7 +7053,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   ) : null;
   return (
     <div className={"vb-shell" + (cheio ? " cheio" : "")}>
-      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} offs={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaPos: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
+      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onCopiar={copiarPecas} offs={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaPos: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
         zoom={zoom} setZoom={setZoom} onGrad={onGrad} info={info} calc={calc} ent={ent} cheio={cheio} setCheio={setCheio} ladoAberto={ladoAberto} setLadoAberto={setLadoAberto} />
     </div>
   );
@@ -7234,7 +7319,8 @@ function PainelFicha({ f }) {
     const alvoCond = [];
     lista.forEach((it) => {
       if ((passiva || sust) && it.tipoId === "regeneracao") regen += it.graduacao || 0;
-      const c = it?.colateral;
+      colateraisDeItem(it).forEach((vi) => {
+      const c = vi.colateral;
       if (c?.ativo && c.condicao) {
         const dano = danoPorTurnoCondicao(c.condicao, f);
         let pFalha = 1;
@@ -7245,6 +7331,7 @@ function PainelFicha({ f }) {
         colaterais.push({ cond: c.condicao, dano, comTeste: !!c.comTeste, pFalha });
         if (ativoPorTurno) danoCondTurno += dano * pFalha;
       }
+      });
       if (it?.aquecimento?.ativo && !it?.exigirTeste?.ativo) {
         const G = Math.floor(it.graduacao ?? it.graduacaoNulificar ?? 0);
         const N = Number(it.aquecimento.turnos) || 3;
