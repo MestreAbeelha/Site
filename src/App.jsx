@@ -17,7 +17,9 @@ import {
 function calcHud(e) {
   try { return { pvMax: pvMaxCalc(e), nenMax: nenMaxCalc(e) }; } catch { return e?.hud || null; }
 }
-const salvarEntidade = (e) => salvarEntidadeBase(e && typeof e === "object" ? { ...e, hud: calcHud(e) } : e);
+// o banco recusa campos "undefined": o roundtrip por JSON remove todos eles antes de gravar
+const semUndefined = (o) => JSON.parse(JSON.stringify(o));
+const salvarEntidade = (e) => salvarEntidadeBase(e && typeof e === "object" ? semUndefined({ ...e, hud: calcHud(e) }) : e);
 
 /* ---------- estilo global ---------- */
 const GlobalStyle = () => (
@@ -818,6 +820,7 @@ const GlobalStyle = () => (
     .mm3 .pi-aviso p { margin:0; }
     .mm3 .pi-aviso.erro { background:#3a1618; border:1px solid #b72c34; color:#ffd5d8; }
     .mm3 .pi-aviso.dica { background:#2a2614; border:1px solid #8a7620; color:#f4e6a8; }
+    .mm3 .pi-sub { font-size:.72rem; color:#8a90a0; margin-top:2px; }
     .mm3 .pi-linha { background:#1f1f2a; border-radius:8px; padding:6px 9px; margin-bottom:5px; font-size:.78rem; color:#dfe2ea; }
     .mm3 .dx { border-radius:14px; background:#1b1b24; border:1px solid #2c2c3a; border-left:6px solid var(--dx-cor, #e8c84a); padding:14px 16px; }
     .mm3 .dx-topo { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
@@ -1251,9 +1254,15 @@ const CONDICOES_LISTA = [
 const NORMALIZAR_CONDICAO = { "Em transe": "Transe", "Em chamas": "Em Chamas" };
 function normalizarCondicao(nome) { return NORMALIZAR_CONDICAO[nome] || nome; }
 
+/* Percepção às Cegas: ids das fichas cujo "Cego" está sendo ignorado na rolagem aberta (checkbox "dentro da área") */
+let CEGO_IGNORADO = new Set();
+function temPercepcaoCegas(ent) {
+  return instanciasPassivasAtivas(ent).some(({ inst }) => inst.tipoId === "sentidos" && (inst.campos?.sentido === "Percepção às Cegas" || (inst.campos?.sentidos || []).includes("Percepção às Cegas")));
+}
 function calcModCondicoes(ent) {
   const mod = { testesGerais: 0, fortitude: 0, vontade: 0, resistencia: 0, apararAj: [], esquivaAj: [] };
   Object.entries(ent?.condicoes || {}).forEach(([nome, qtd]) => {
+    if (nome === "Cego" && CEGO_IGNORADO.has(ent?.id)) return;
     const item = CONDICOES_LISTA.find((c) => c.nome === nome);
     const efeito = item?.efeito;
     if (!efeito) return;
@@ -2031,6 +2040,7 @@ function fmtMods(notas) { const l = (notas || []).filter(Boolean); return l.leng
 function notasCondicoesGerais(ent) {
   const n = [];
   Object.entries(ent?.condicoes || {}).forEach(([nome, qtd]) => {
+    if (nome === "Cego" && CEGO_IGNORADO.has(ent?.id)) return;
     const ef = CONDICOES_LISTA.find((c) => c.nome === nome)?.efeito;
     if (ef?.testesGerais) n.push(`${nome} ${fmtBonus(ef.testesGerais * (qtd || 1))}`);
   });
@@ -2040,6 +2050,7 @@ function notasModsDefesa(ent, key) {
   const n = [];
   const geral = ["fortitude", "vontade", "resistencia"].includes(key);
   Object.entries(ent?.condicoes || {}).forEach(([nome, qtd]) => {
+    if (nome === "Cego" && CEGO_IGNORADO.has(ent?.id)) return;
     const ef = CONDICOES_LISTA.find((c) => c.nome === nome)?.efeito;
     if (!ef) return;
     const q = qtd || 1;
@@ -3089,6 +3100,9 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [exigirTesteR, setExigirTesteR] = useState({});
   const [esquivaArea, setEsquivaArea] = useState({});
   const [desgastanteR, setDesgastanteR] = useState(null);
+  const [pacAtq, setPacAtq] = useState(false);
+  const [pacAlvo, setPacAlvo] = useState(false);
+  useEffect(() => () => { CEGO_IGNORADO = new Set(); }, []);
   const [pfAberto, setPfAberto] = useState(() => contexto.tipo === "ataque" && !!contexto.ataque?.pontoFraco?.ativo);
   // Se uma variável (Munição/Carga) não aguenta o uso, a habilidade não pode ser usada — checado uma vez, na abertura.
   const [bloqueioVar] = useState(() => {
@@ -3103,6 +3117,9 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [aquecSnap] = useState(() => ({ ...(origemAtual.aquecimento || {}) }));
   const oponente = entidades.find((e) => e.id === oponenteId);
   const ehAtaque = contexto.tipo === "ataque";
+  const atqCegoPac = ehAtaque && condicaoAtiva(origemAtual, "Cego") && temPercepcaoCegas(origemAtual);
+  const alvoCegoPac = ehAtaque && !!oponente && condicaoAtiva(oponente, "Cego") && temPercepcaoCegas(oponente);
+  CEGO_IGNORADO = new Set([...(atqCegoPac && pacAtq ? [origemAtual.id] : []), ...(alvoCegoPac && pacAlvo ? [oponente.id] : [])]);
   const fotoAtq = (ehAtaque && contexto.ataque?.imagem) || origemAtual.foto; // a imagem da habilidade substitui o retrato na animação
   const isArea = ehAtaque && (contexto.ataque?.tipoAcerto === "area" || (contexto.ataque?.tipo !== "passiva" && modsDaHabilidade(contexto.ataque).some((m) => m.id === "area")));
   const alvosArea = entidades.filter((e) => e.id !== origemAtual.id && oponentesArea[e.id]);
@@ -3812,6 +3829,13 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           <UtilCartao key={ef.id} ef={ef} ent={origemAtual} registrar={registrar} onMudar={(novo) => atualizarEfeitoMoverObjetos(ef.id, novo)} />
         ))}
 
+        {(atqCegoPac || alvoCegoPac) && (
+          <div className="subcard2" style={{ marginBottom: 8 }}>
+            {atqCegoPac && <label className="checkbox-row"><input type="checkbox" checked={pacAtq} onChange={(e) => setPacAtq(e.target.checked)} />O alvo está dentro da área da percepção às cegas?</label>}
+            {alvoCegoPac && <label className="checkbox-row"><input type="checkbox" checked={pacAlvo} onChange={(e) => setPacAlvo(e.target.checked)} />Você está dentro da área da percepção às cegas?</label>}
+            <div className="field-note">Se marcado, as penalidades da condição Cego não valem para essa rolagem.</div>
+          </div>
+        )}
         {(temMultiataque || temDividido) && (
           <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
             {temMultiataque && <span className="stat-chip ataque-chip" style={{ cursor: "default" }}>⚔ Multiataque — -10 no mesmo alvo / -5 em outro alvo</span>}
@@ -6382,8 +6406,15 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover }) {
   return (
     <div className="px">
       <DescBonita cor={neg ? "#d93636" : "#2fb84f"} titulo={c.nome} selo={neg ? "Falha" : "Extra"} seloClasse={neg ? "falha" : "extra"}
-        chips={[["Custo", valorModTxt(m)], ...((m.vezes || 1) > 1 ? [["Vezes", "×" + m.vezes]] : [])]} texto={DESC_MOD[m.id] || ""} nota={regra || null} notaTitulo={m.id === "area" ? "Alcance atual" : undefined} />
+        chips={[["Custo", valorModTxt(m)], ...(c.tipo ? [["Tipo de Nen", capNen(m.tipo || c.tipo)]] : []), ...((m.vezes || 1) > 1 ? [["Vezes", "×" + m.vezes]] : [])]} texto={DESC_MOD[m.id] || ""} nota={regra || null} notaTitulo={m.id === "area" ? "Alcance atual" : undefined} />
       <div className="px-ctrl">
+        {c.tipo && (
+          <div className="px-linha"><span>Tipo de Nen da peça</span>
+            <select className="cb-sel" value={m.tipo || c.tipo} onChange={(e) => upd({ tipo: e.target.value === c.tipo ? undefined : e.target.value })}>
+              {["coringa", ...TIPOS_NEN_CAT].map((t) => <option key={t} value={t}>{capNen(t) + (t === c.tipo ? " (padrão)" : "")}</option>)}
+            </select>
+          </div>
+        )}
         {c.mult && m.id !== "limitado" && (
           <div className="px-linha"><span>Quantas vezes</span>
             <span className="vb-stepper"><button type="button" className="small-btn" disabled={(m.vezes || 1) <= 1} onClick={() => upd({ vezes: (m.vezes || 1) - 1 })}>−</button><b>×{m.vezes || 1}</b><button type="button" className="small-btn" onClick={() => upd({ vezes: (m.vezes || 1) + 1 })}>+</button></span>
@@ -6618,6 +6649,19 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
             <div className="pi-tit">Avisos</div>
             {erros.map((e, i) => <div key={"e" + i} className="pi-aviso erro"><span>⛔</span><p>{e}</p></div>)}
             {avisos.map((e, i) => <div key={"a" + i} className="pi-aviso dica"><span>💡</span><p>{e}</p></div>)}
+          </div>
+        )}
+        {calc && calc.efeitos.length > 0 && (
+          <div className="pi-sec">
+            <div className="pi-tit">Como o custo foi calculado</div>
+            {calc.efeitos.map((e, i) => (
+              <div key={i} className="pi-linha">
+                <b>{e.nome} {e.grad}</b>: {e.razao} PP por graduação → <b>{e.custo} PP</b>
+                {e.ajG.length > 0 && <div className="pi-sub">{e.ajG.map((x) => `${x.nome} ${x.g > 0 ? "+" : "−"}1/g (${x.rel || "tipo de Nen"})`).join(" · ")}</div>}
+              </div>
+            ))}
+            {calc.fixos.map((f, i) => <div key={"f" + i} className="pi-linha">{f.nome}: <b>{f.valor > 0 ? "+" : ""}{f.valor} PP</b></div>)}
+            <div className="pi-linha">Soma: <b>{calc.bruto} PP</b>{calc.bruto < 1 ? " (mínimo 1)" : ""} · Seu tipo: <b>{ent?.tipoNen || "Nenhum"}</b>, nível {Math.max(1, ent?.nivel || 1)}</div>
           </div>
         )}
         {info && (
@@ -7790,11 +7834,6 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   const eqExcedido = eqGastos > eqMax;
 
   const tentarSalvar = () => {
-    for (const h of f.ataques || []) {
-      if (!(h.efeitos || []).length && !passivosDe(h).length) continue;
-      const r = calcularCustoAtaque(h, f);
-      if (r.erros.length) { setErro(`Habilidade "${h.nome || "sem nome"}": ${r.erros[0]}`); return; }
-    }
     if (pontosPoderGastos(f) > pontosPoderMax(f)) {
       setErro(`Pontos de Poder excedidos! Você gastou ${pontosPoderGastos(f)} de ${pontosPoderMax(f)} disponíveis. Reduza atributos, perícias ou vantagens antes de salvar.`);
       return;
@@ -8011,7 +8050,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
 
       <div style={{ height: 70 }} />
       <div className="ficha-footer-fixa">
-        {erroSalvar && <div className="aviso-erro-salvar">{erroSalvar}</div>}
+        {(erro || erroSalvar) && <div className="aviso-erro-salvar">{erro || erroSalvar}</div>}
         <div className="grid2">
           <button className="btn btn-ghost" onClick={onCancelar}>Cancelar</button>
           <button className="btn btn-accent" disabled={!f.nome.trim()} onClick={tentarSalvar}>Salvar ficha</button>
