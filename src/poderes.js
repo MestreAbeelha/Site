@@ -261,8 +261,8 @@ export function calcularHabilidade(ctx, hab) {
     if (tipoNen === "especialista") ajG.push({ nome: "Especialista", g: -1 });
     else tiposEf.forEach((t) => {
       const r = relacaoNen(tipoNen, t);
-      if (r === "propria") ajG.push({ nome: cap(t), g: -1 });
-      if (r === "oposta") ajG.push({ nome: cap(t), g: +1 });
+      if (r === "propria") ajG.push({ nome: cap(t), g: -1, rel: "do seu tipo" });
+      if (r === "oposta") ajG.push({ nome: cap(t), g: +1, rel: "oposto ao seu tipo" });
     });
     const somaG = mods.filter((m) => m.k === "g").reduce((s, m) => s + m.valor, 0) + ajG.reduce((s, a) => s + a.g, 0);
     const fixosEf = mods.filter((m) => m.k === "f");
