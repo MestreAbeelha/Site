@@ -8,7 +8,7 @@ import {
   migrarDadosAntigos, ouvirErrosSalvamento,
 } from "./firebase.js";
 import {
-  calcularHabilidade, custoColateral, grauCondicao, razaoTxt, modsDisponiveis, MOD_POR_ID, EFEITOS as EFEITOS_CAT, EFEITO_POR_ID as EFEITO_CAT_POR_ID,
+  calcularHabilidade, custoColateral, grauCondicao, CONDICOES_POR_GRAU, razaoTxt, modsDisponiveis, MOD_POR_ID, EFEITOS as EFEITOS_CAT, EFEITO_POR_ID as EFEITO_CAT_POR_ID,
   TIPOS_NEN as TIPOS_NEN_CAT, relacaoNen, EXCLUSIVOS as EXCLUSIVOS_CAT, regraDoMod, DESC_EFEITO, DESC_MOD, descEfeitoCompleta,
 } from "./poderes.js";
 
@@ -2424,9 +2424,9 @@ const EFEITO_CATEGORIAS = ["Dano", "Cura", "Aflição", "Enfraquecer", "Camuflag
 const SALVAMENTOS_ESCOLHA = ["Fortitude", "Vontade"];
 const SALVAMENTOS_ESCOLHA_ALT = ["Fortitude", "Vontade", "Aparar", "Esquiva"];
 const temModEf = (ef, id) => (ef?.mods || []).some((m) => m.id === id);
-const AFLICOES_G1 = ["Adoecido", "Caído", "Impedido", "Machucado", "Tonto", "Vulnerável"];
-const AFLICOES_G2 = ["Atordoado", "Compelido", "Em chamas", "Envenenado", "Imóvel", "Indefeso", "Sangrando", "Em transe"];
-const AFLICOES_G3 = ["Controlado", "Incapacitado", "Paralisado"];
+const AFLICOES_G1 = CONDICOES_POR_GRAU[1].filter((n) => CONDICOES_LISTA.some((c) => c.nome === n));
+const AFLICOES_G2 = CONDICOES_POR_GRAU[2].filter((n) => CONDICOES_LISTA.some((c) => c.nome === n));
+const AFLICOES_G3 = CONDICOES_POR_GRAU[3].filter((n) => CONDICOES_LISTA.some((c) => c.nome === n));
 
 function efeitoPadrao(categoria) {
   if (categoria === "Dano") return { categoria, graduacao: 0, baseadoAtivo: false, atributoBase: "", danoAdicional: 0 };
@@ -5691,7 +5691,7 @@ function ColateralEditor({ colateral, onMudar, graduacao, semCheck }) {
           <label className="label">Condição</label>
           <SearchableSelect value={col.condicao || ""} onChange={(e) => upd("condicao", e.target.value)}>
             <option value="">Escolha…</option>
-            {[1, 2, 3].map((g) => <optgroup key={g} label={`Grau ${g}`}>{CONDICOES_LISTA.filter((c) => (grauCondicao(c.nome) || 1) === g).map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}</optgroup>)}
+            {[1, 2, 3].map((g) => <optgroup key={g} label={`Grau ${g}`}>{CONDICOES_LISTA.filter((c) => grauCondicao(c.nome) === g).map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}</optgroup>)}
           </SearchableSelect>
           <label className="checkbox-row"><input type="checkbox" checked={!!col.comTeste} onChange={(e) => upd("comTeste", e.target.checked)} />Colateral com Teste</label>
           {col.comTeste && (
