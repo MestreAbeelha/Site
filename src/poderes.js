@@ -173,15 +173,17 @@ export function modsDisponiveis(efeitoId) {
 
 /* ---------- Efeito Colateral: custo por grau da condição (dobra se automático) ---------- */
 const COLATERAL_GRAU = {
-  1: ["adoecido", "caído", "caido", "impedido", "machucado", "tonto", "vulnerável", "vulneravel"],
-  2: ["atordoado", "compelido", "em chamas", "envenenado", "imóvel", "imovel", "indefeso", "sangrando", "em transe", "transe"],
-  3: ["paralisado", "nulificado"],
+  1: ["Adoecido", "Compelido", "Impedido", "Machucado", "Molhado", "Prejudicado", "Prendendo a Respiração", "Surdo", "Tonto", "Vulnerável", "Agarrado", "Caído"],
+  2: ["Atordoado", "Debilitado", "Em Chamas", "Envenenado", "Imóvel", "Indefeso", "Sangrando", "Sufocando", "Cego", "Transe"],
+  3: ["Controlado", "Zetsu", "Amarrado", "Morrendo", "Paralisado", "Nulificado"],
 };
-export function grauCondicao(nome) {
-  const n = String(nome || "").toLowerCase().trim();
-  for (const g of [1, 2, 3]) if (COLATERAL_GRAU[g].includes(n)) return g;
-  return null;
-}
+// Exausto, Fatigado, Furtivo, Incapacitado e Surpreso não podem ser usados em Aflição nem em Efeito Colateral.
+const semAcentoGrau = (t) => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+const GRAU_POR_NOME = {};
+[1, 2, 3].forEach((g) => COLATERAL_GRAU[g].forEach((n) => { GRAU_POR_NOME[semAcentoGrau(n)] = g; }));
+GRAU_POR_NOME["em transe"] = 2;
+export function grauCondicao(nome) { return GRAU_POR_NOME[semAcentoGrau(nome)] || null; }
+export const CONDICOES_POR_GRAU = COLATERAL_GRAU;
 /** valor (negativo, por graduação) do Efeito Colateral. Condição fora da tabela -> grau 1 (aviso na tela). */
 export function custoColateral(condicao, comTeste) {
   const g = grauCondicao(condicao) || 1;
