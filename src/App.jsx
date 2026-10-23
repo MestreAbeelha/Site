@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo, createContext, useContext } from "react";
-import { createPortal } from "react-dom";
 import {
   auth, ouvirAuth, cadastrar, entrar, sair, getPersonal, setPersonal,
   getShared, setShared, ouvirShared,
@@ -86,7 +85,6 @@ const GlobalStyle = () => (
     .mm3 .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
     .mm3 .grid3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
     .mm3 .grid4 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr; gap:10px; }
-    .mm3 .grid5 { display:grid; grid-template-columns:1fr 1fr 1fr 1fr 1fr; gap:10px; }
     @media (max-width: 480px) { .mm3 .grid4, .mm3 .grid5 { grid-template-columns:1fr 1fr; } }
 
     .mm3 .btn {
@@ -156,11 +154,6 @@ const GlobalStyle = () => (
     .mm3 .ataque-chip b { color:var(--accent); }
     .mm3 .item-quebrado { opacity:0.65; border-style:dashed; }
     .mm3 .vantagem-chip.ativo { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
-    .mm3 .passiva-chip { gap:7px; }
-    .mm3 .passiva-chip-dot { width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .15s ease, box-shadow .15s ease; }
-    .mm3 .passiva-chip.ativo { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
-    .mm3 .passiva-chip.ativo .passiva-chip-dot { background:var(--accent); box-shadow:0 0 6px var(--accent); }
-    .mm3 .passiva-chip:disabled { cursor:default; opacity:0.85; }
 
     .mm3 .sync-erro-banner {
       position:fixed; top:14px; left:50%; transform:translateX(-50%); z-index:950;
@@ -181,7 +174,6 @@ const GlobalStyle = () => (
     .mm3 .vantagem-row { display:grid; grid-template-columns:1fr 70px auto; gap:8px; align-items:center; margin-bottom:6px; }
     .mm3 .vantagem-row select, .mm3 .vantagem-row .ssel input[type="text"] { font-size:0.85rem; }
     .mm3 .foto-thumb { border-radius:8px; object-fit:cover; flex-shrink:0; }
-    .mm3 .foto-upload-row { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
     .mm3 .foto-preview { width:72px; height:72px; border-radius:12px; object-fit:cover; background:var(--surface3); border:1px solid var(--border); flex-shrink:0; }
 
     .mm3 .hist-item { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:9px 12px; margin-bottom:6px;
@@ -325,10 +317,6 @@ const GlobalStyle = () => (
     .mm3 .ed-hab-img { background:var(--surface2); border:1px dashed var(--border); border-radius:12px; padding:10px; }
     .mm3 .ed-hab-img .foto-preview { width:84px; height:84px; }
     .mm3 .ed-sub { font-family:'Bebas Neue',sans-serif; font-size:1.05rem !important; letter-spacing:0.05em; color:var(--text) !important; text-transform:none !important; margin-top:6px; }
-    .mm3 .ed-colapso-head { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:8px 12px; margin-bottom:8px; }
-    .mm3 .ed-colapso-head .section-title { color:var(--text); }
-    .mm3 .ed-colapso-head:hover { border-color:var(--accent); }
-    .mm3 .ed-efeito { border-left:3px solid var(--danger-border); background:var(--surface3); }
     @media (max-width:560px) { .mm3 .ficha-edit { padding:0.7rem; } .mm3 .ed-sec { padding:12px 10px 6px; } .mm3 .ed-hero input.ed-nome { font-size:1.6rem; } .mm3 .ed-sec .pericias-grid { grid-template-columns:1fr; } }
 
     /* ---- ajuste de imagem ---- */
@@ -367,7 +355,6 @@ const GlobalStyle = () => (
     .mm3 .dash-chip.off small { text-decoration:none; }
     .mm3 .dash-dot { display:inline-block; width:10px; height:10px; border-radius:50%; flex-shrink:0; margin-right:6px; vertical-align:middle; }
     .mm3 .dash-chip .dash-dot { margin-right:0; }
-    .mm3 .dash-acoes { display:flex; gap:6px; margin-top:10px; }
     .mm3 .dash-svg { width:100%; height:auto; display:block; }
     .mm3 .dash-grade { stroke:var(--border); stroke-width:1; }
     .mm3 .dash-eixo { fill:var(--muted); font-size:10.5px; font-family:'DM Sans',sans-serif; }
@@ -512,16 +499,6 @@ const GlobalStyle = () => (
       cursor:pointer; font-family:'Bebas Neue',sans-serif; letter-spacing:0.04em; color:var(--muted); font-size:0.95rem; }
     .mm3 .tab-btn.sel { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
 
-    .mm3 .tipo-toggle { display:inline-flex; background:var(--surface3); border:1px solid var(--border); border-radius:999px; padding:3px; gap:2px; flex-shrink:0; }
-    .mm3 .tipo-toggle button {
-      border:none; background:none; color:var(--muted); font-family:'Bebas Neue',sans-serif; letter-spacing:0.04em;
-      font-size:0.85rem; padding:8px 16px; border-radius:999px; cursor:pointer;
-      display:inline-flex; align-items:center; gap:6px; transition:background .15s ease, color .15s ease;
-    }
-    .mm3 .tipo-toggle button .dot { width:6px; height:6px; border-radius:50%; background:currentColor; opacity:0.55; }
-    .mm3 .tipo-toggle button:not(.sel):hover { color:var(--text); }
-    .mm3 .tipo-toggle button.sel { background:var(--accent); color:#0e0e12; }
-    .mm3 .tipo-toggle button.sel .dot { opacity:1; }
 
     .mm3 .init-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
     .mm3 .init-rodada { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; color:var(--accent); }
@@ -544,15 +521,11 @@ const GlobalStyle = () => (
     .mm3 .modal-box::-webkit-scrollbar-thumb, .mm3 .split-col::-webkit-scrollbar-thumb, .mm3 .rich-editor::-webkit-scrollbar-thumb { background: var(--border); border-radius:8px; }
     .mm3 .modal-box::-webkit-scrollbar-thumb:hover, .mm3 .split-col::-webkit-scrollbar-thumb:hover, .mm3 .rich-editor::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-    .mm3 .oponente-toggle { display:flex; align-items:center; gap:6px; font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-bottom:8px; }
-    .mm3 .oponente-toggle input { width:auto; }
     .mm3 .status-toggle-row { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:10px; }
     .mm3 .status-toggle { display:inline-flex; align-items:center; gap:7px; font-size:0.68rem; font-weight:700; letter-spacing:0.05em; text-transform:uppercase; color:var(--muted); background:var(--surface3); border:1px solid var(--border); border-radius:999px; padding:7px 13px 7px 10px; cursor:pointer; user-select:none; transition:border-color .15s ease, background .15s ease, color .15s ease; }
     .mm3 .status-toggle:hover { border-color:var(--muted); }
     .mm3 .status-toggle input { display:none; width:0; height:0; }
     .mm3 .status-toggle-dot { width:8px; height:8px; border-radius:50%; background:var(--muted); flex-shrink:0; transition:background .15s ease, box-shadow .15s ease; }
-    .mm3 .status-toggle-danger.ativo { color:var(--danger); background:var(--danger-bg); border-color:var(--danger-border); }
-    .mm3 .status-toggle-danger.ativo .status-toggle-dot { background:var(--danger); box-shadow:0 0 6px var(--danger); }
     .mm3 .status-toggle-crit.ativo { color:var(--crit); background:var(--crit-bg); border-color:var(--crit-border); }
     .mm3 .status-toggle-crit.ativo .status-toggle-dot { background:var(--crit); box-shadow:0 0 6px var(--crit); }
     .mm3 .rich-toolbar { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:6px; }
@@ -647,97 +620,21 @@ const GlobalStyle = () => (
       opacity:0; animation:anim-fade-in 0.3s ease forwards; text-align:center; }
   
     /* ---- construtor de poder ---- */
-    .mm3 .cb-mods { display:flex; flex-direction:column; gap:8px; }
     .mm3 .cb-linha { display:grid; grid-template-columns:auto 1fr; gap:10px; align-items:center; }
-    .mm3 .cb-chip { border:1px solid var(--border); border-left-width:3px; border-radius:10px; padding:8px 10px; background:var(--surface); }
-    .mm3 .cb-chip.extra { border-left-color:var(--success); }
-    .mm3 .cb-chip.falha { border-left-color:var(--danger); }
-    .mm3 .cb-chip-topo { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
-    .mm3 .cb-chip-topo > b:first-child { flex:1 1 auto; min-width:120px; }
-    .mm3 .cb-val { font-family:'Bebas Neue',sans-serif; letter-spacing:.04em; font-size:1.05rem; }
-    .mm3 .cb-chip.extra .cb-val { color:var(--success); }
-    .mm3 .cb-chip.falha .cb-val { color:var(--danger); }
-    .mm3 .cb-step { display:inline-flex; align-items:center; gap:6px; }
     .mm3 .cb-sel { width:auto; padding:4px 6px; }
-    .mm3 .cb-badge { font-size:.62rem; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); border:1px dashed var(--border); border-radius:6px; padding:1px 6px; }
     .mm3 .cb-nota { margin-top:6px; }
-    .mm3 .cb-derivados { display:flex; flex-wrap:wrap; gap:6px; }
-    .mm3 .cb-tag { font-size:.72rem; border-radius:999px; padding:2px 9px; border:1px solid var(--border); background:var(--surface3); }
-    .mm3 .cb-tag.extra { color:var(--success); border-color:var(--success-border); }
-    .mm3 .cb-tag.falha { color:var(--danger); border-color:var(--danger-border); }
-    .mm3 .cb-custo-ef { display:flex; flex-wrap:wrap; gap:6px 12px; align-items:baseline; font-size:.78rem; color:var(--muted); background:var(--surface3); border-radius:8px; padding:7px 10px; }
-    .mm3 .cb-custo-ef b { color:var(--accent); font-family:'Bebas Neue',sans-serif; font-size:1.05rem; letter-spacing:.04em; margin-left:auto; }
-    .mm3 .cb-dica { flex-basis:100%; color:var(--accent); }
-    .mm3 .cb-painel { border:1px solid var(--border); border-radius:12px; padding:12px; background:var(--surface2); margin:6px 0 12px; }
-    .mm3 .cb-painel.cb-off { display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap; font-size:.85rem; }
-    .mm3 .cb-total { color:var(--accent); font-family:'Bebas Neue',sans-serif; font-size:1.3rem; letter-spacing:.04em; }
-    .mm3 .cb-tab { width:100%; border-collapse:collapse; margin:8px 0; font-size:.84rem; }
-    .mm3 .cb-tab td { padding:5px 4px; border-bottom:1px solid var(--border); }
-    .mm3 .cb-tab td:last-child { text-align:right; width:56px; }
-    .mm3 .cb-tab tr.fixo td { color:var(--muted); }
-    .mm3 .cb-erro { color:var(--danger); }
-    .mm3 .cb-aviso { color:var(--accent); }
     .mm3 .ed-efeito-bloco { display:flex; flex-direction:column; gap:8px; }
-    .mm3 .vb-canvas { display:flex; flex-direction:column; gap:10px; margin-bottom:12px; }
-    .mm3 .vb-resumo { position:sticky; top:0; z-index:5; display:flex; gap:12px; align-items:center; padding:10px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:12px; box-shadow:0 4px 14px rgba(0,0,0,.35); }
-    .mm3 .vb-total { display:flex; align-items:baseline; gap:4px; }
-    .mm3 .vb-total b { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; color:var(--accent); letter-spacing:.03em; }
-    .mm3 .vb-total span { color:var(--muted); font-size:.75rem; }
-    .mm3 .vb-resumo-info { flex:1; font-size:.76rem; color:var(--muted); display:flex; flex-direction:column; gap:5px; }
-    .mm3 .vb-meter { height:5px; border-radius:99px; background:var(--surface3); overflow:hidden; }
-    .mm3 .vb-meter > div { height:100%; background:var(--accent); border-radius:99px; }
-    .mm3 .vb-vazio { border:1px dashed var(--border); border-radius:12px; padding:18px; text-align:center; color:var(--muted); font-size:.85rem; }
-    .mm3 .vb-bloco { position:relative; background:var(--surface2); border:1px solid var(--border); border-left:6px solid var(--vb-cor); border-radius:12px; padding:10px 12px 10px 12px; display:flex; flex-direction:column; gap:9px; }
-    .mm3 .vb-bloco.passivo { border-style:solid; background:linear-gradient(90deg, color-mix(in srgb, var(--vb-cor) 7%, var(--surface2)), var(--surface2)); }
-    .mm3 .vb-topo { display:flex; align-items:center; justify-content:space-between; gap:8px; }
-    .mm3 .vb-nome { display:flex; flex-wrap:wrap; align-items:center; gap:7px; min-width:0; }
-    .mm3 .vb-nome b { font-size:1rem; }
-    .mm3 .vb-dot { width:10px; height:10px; border-radius:50%; background:var(--vb-cor); box-shadow:0 0 8px var(--vb-cor); }
-    .mm3 .vb-tipo { font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--vb-cor); border:1px solid var(--vb-cor); border-radius:99px; padding:1px 7px; }
-    .mm3 .vb-tag { font-size:.62rem; color:var(--muted); }
     .mm3 .vb-acoes { display:flex; gap:4px; flex-shrink:0; }
-    .mm3 .vb-linha { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
-    .mm3 .vb-grad { display:flex; align-items:center; gap:6px; }
-    .mm3 .vb-lbl { font-size:.65rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); margin-right:2px; }
-    .mm3 .vb-grad input { width:58px; text-align:center; padding:6px 4px; font-weight:700; }
-    .mm3 .vb-step { width:34px; height:34px; border-radius:9px; border:1px solid var(--border); background:var(--surface3); color:var(--text); font-size:1.2rem; line-height:1; cursor:pointer; }
-    .mm3 .vb-step:disabled { opacity:.35; }
-    .mm3 .vb-custo { text-align:right; }
-    .mm3 .vb-custo b { font-family:'Bebas Neue',sans-serif; font-size:1.6rem; color:var(--accent); letter-spacing:.03em; }
-    .mm3 .vb-custo span { display:block; font-size:.68rem; color:var(--muted); margin-top:-4px; }
     .mm3 .vb-pecas { display:flex; flex-wrap:wrap; gap:6px; }
-    .mm3 .vb-peca { font:inherit; font-size:.76rem; border-radius:8px; padding:5px 9px; border:1px solid; cursor:pointer; background:var(--surface3); color:var(--text); display:inline-flex; gap:5px; align-items:center; }
-    .mm3 .vb-peca i { font-style:normal; font-weight:700; }
-    .mm3 .vb-peca.extra { border-color:var(--success-border); background:var(--success-bg); }
-    .mm3 .vb-peca.extra i { color:var(--success); }
-    .mm3 .vb-peca.falha { border-color:var(--danger-border); background:var(--danger-bg); }
-    .mm3 .vb-peca.falha i { color:var(--danger); }
-    .mm3 .vb-peca.sel { outline:2px solid var(--accent); }
-    .mm3 .vb-peca.fixa { cursor:default; opacity:.8; border-style:dashed; }
-    .mm3 .vb-add { font:inherit; font-size:.74rem; border-radius:8px; padding:5px 10px; border:1px dashed; background:transparent; cursor:pointer; }
-    .mm3 .vb-add.extra { color:var(--success); border-color:var(--success-border); }
-    .mm3 .vb-add.falha { color:var(--danger); border-color:var(--danger-border); }
-    .mm3 .vb-edit { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:9px 10px; display:flex; flex-direction:column; gap:7px; }
     .mm3 .vb-stepper { display:inline-flex; align-items:center; gap:8px; }
-    .mm3 .vb-paleta { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:9px 10px; display:flex; flex-direction:column; gap:8px; }
-    .mm3 .vb-rodape { font-size:.72rem; color:var(--muted); display:flex; flex-wrap:wrap; gap:4px 10px; }
-    .mm3 .vb-det { font:inherit; font-size:.76rem; text-align:left; background:none; border:none; color:var(--muted); cursor:pointer; padding:2px 0; }
-    .mm3 .vb-detalhes { border-top:1px solid var(--border); padding-top:10px; }
-    .mm3 .vb-novo { font:inherit; border:2px dashed var(--accent); background:var(--accent-soft); color:var(--accent); border-radius:12px; padding:13px; font-weight:700; cursor:pointer; }
     .mm3 .vb-paleta-efeitos { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:10px; display:flex; flex-direction:column; gap:10px; }
     .mm3 .vb-grupo { border-left:4px solid var(--vb-cor); padding-left:10px; }
     .mm3 .vb-grupo-t { font-size:.65rem; text-transform:uppercase; letter-spacing:.1em; color:var(--vb-cor); margin-bottom:5px; }
     .mm3 .vb-opcao { font:inherit; font-size:.8rem; border-radius:9px; padding:7px 11px; border:1px solid var(--vb-cor); background:color-mix(in srgb, var(--vb-cor) 12%, var(--surface3)); color:var(--text); cursor:pointer; display:inline-flex; gap:7px; align-items:center; }
     .mm3 .vb-opcao i { font-style:normal; color:var(--muted); font-size:.7rem; }
-    .mm3 .vb-bloco { background:#1b1b24 !important; border-top-color:#33333f; border-right-color:#33333f; border-bottom-color:#33333f; }
-    .mm3 .vb-bloco.passivo { background:#1b1b24 !important; }
-    .mm3 .vb-peca { background:#262633; }
-    .mm3 .vb-peca.extra { border-color:#2fb84f; background:#14341f; }
-    .mm3 .vb-peca.falha { border-color:#d93636; background:#3a1618; }
     .mm3 .vb-opcao { border:2px solid rgba(0,0,0,.25); font-weight:700; }
     .mm3 .vb-opcao i { color:inherit; opacity:.7; }
     .mm3 .vb-grupo { border-left-width:5px; }
-    .mm3 .vb-novo { background:#2a2614; }
     .mm3 .mp-wrap { position:relative; border:1px solid #2c2c3a; border-radius:16px; background:#0f0f16; overflow:hidden; }
     .mm3 .mp-area { user-select:none; overflow:auto; max-height:74vh; min-height:220px; cursor:grab; background-image:radial-gradient(#25253299 1.2px, transparent 1.2px); background-size:22px 22px; -webkit-overflow-scrolling:touch; scroll-behavior:smooth; }
     .mm3 .mp-cena { position:relative; transform-origin:0 0; transition:transform .25s ease; }
@@ -770,7 +667,6 @@ const GlobalStyle = () => (
     .mm3 .mp-zoom button { width:30px; height:30px; border:none; background:#262633; color:#fff; border-radius:8px; font-size:1.05rem; cursor:pointer; }
     .mm3 .mp-zoom button:hover { background:#34344a; }
     .mm3 .mp-zoom span { font-size:.72rem; color:#cfd2dc; min-width:42px; text-align:center; }
-    .mm3 .mp-inspetor { display:flex; flex-direction:column; }
     .mm3 .vb-shell { display:flex; flex-direction:column; gap:12px; }
     .mm3 .vb-shell.cheio { position:fixed; inset:0; width:100vw; height:100vh; height:100dvh; z-index:200; background:#0b0b11; padding:0; display:flex; flex-direction:column; }
     .mm3 .vb-shell.cheio .mp-wrap { flex:1; min-height:0; border-radius:0; border:none; }
@@ -791,7 +687,6 @@ const GlobalStyle = () => (
     .mm3 .mp-x { position:absolute; left:-9px; top:-9px; width:19px; height:19px; border-radius:50%; border:2px solid #0f0f16; background:#2a2a36; color:#fff; font-size:.8rem; line-height:1; padding:0; cursor:pointer; display:flex; align-items:center; justify-content:center; z-index:4; }
     .mm3 .mp-x:hover { background:#d93636; }
     .mm3 .mp-lado-corpo.com-desc .pi-info { display:none; }
-    .mm3 .mp-lado-corpo:not(.com-desc) .pi-desc { display:none; }
     .mm3 .pi-info { display:flex; flex-direction:column; gap:12px; }
     .mm3 .mp-grad { position:absolute; right:-21px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:3px; }
     .mm3 .mp-grad button { width:17px; height:17px; border-radius:5px; border:2px solid #0f0f16; background:#e8c84a; color:#1a1a1a; font-size:.5rem; line-height:1; cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; }
@@ -820,6 +715,9 @@ const GlobalStyle = () => (
     .mm3 .pi-aviso p { margin:0; }
     .mm3 .pi-aviso.erro { background:#3a1618; border:1px solid #b72c34; color:#ffd5d8; }
     .mm3 .pi-aviso.dica { background:#2a2614; border:1px solid #8a7620; color:#f4e6a8; }
+    .mm3 .pi-btn { width:100%; font:inherit; font-size:.82rem; font-weight:700; text-align:left; background:#262633; color:#fff; border:1px solid #33333f; border-radius:10px; padding:9px 12px; cursor:pointer; }
+    .mm3 .pi-btn:hover { border-color:#e8c84a; }
+    .mm3 .pi-calc { margin-top:8px; }
     .mm3 .pi-sub { font-size:.72rem; color:#8a90a0; margin-top:2px; }
     .mm3 .pi-linha { background:#1f1f2a; border-radius:8px; padding:6px 9px; margin-bottom:5px; font-size:.78rem; color:#dfe2ea; }
     .mm3 .dx { border-radius:14px; background:#1b1b24; border:1px solid #2c2c3a; border-left:6px solid var(--dx-cor, #e8c84a); padding:14px 16px; }
@@ -858,9 +756,6 @@ const GlobalStyle = () => (
     .mm3 .px-add { font:inherit; font-weight:800; letter-spacing:.08em; background:#e8c84a; color:#1a1a1a; border:none; border-radius:10px; padding:10px; cursor:pointer; }
     .mm3 .px-add:hover { filter:brightness(1.08); }
     .mm3 .ssel-grupo { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); padding:7px 10px 3px; }
-    .mm3 .vb-vazio { color:var(--muted); font-size:.85rem; text-align:center; padding:10px; }
-    .mm3 .cb-auto-custo { padding:9px 12px; background:var(--surface3); border-radius:8px; }
-    .mm3 .cb-auto-custo span { color:var(--muted); font-size:.75rem; margin-left:6px; }
 `}</style>
 );
 
@@ -1096,8 +991,6 @@ const ACOES_TIPOS = [
   { k: "livre", nome: "Ação Livre", curto: "livre", cor: "#5fcf80" },
   { k: "reacao", nome: "Reação", curto: "reação", cor: "#b07be0" },
 ];
-const ACOES_USO_OPCOES = ["Ação Padrão", "Ação Livre", "Ação de Movimento", "Reação"];
-const ACOES_SUSTENTAR_OPCOES = ["Ação Padrão", "Ação Livre", "Reação", "Nenhuma"];
 function chaveAcaoDeNome(nome) {
   const n = String(nome || "");
   if (n.startsWith("Ação Padrão")) return "padrao";
@@ -1629,24 +1522,6 @@ function construirFundamento(def) {
   };
 }
 
-function custoPassivo(inst, def) {
-  if (!def) return 0;
-  const g = Math.max(0, inst?.graduacao || 0);
-  let base = def.custoBasePorAbrangencia ? (def.custoBasePorAbrangencia[inst?.campos?.abrangencia] || def.custoBase) : def.custoBase;
-  let total = base * g;
-  (def.extras || []).forEach((ex) => {
-    if (!inst?.extrasAtivos?.[ex.chave]) return;
-    if (ex.custoFixo) total += ex.custoFixo;
-    else if (ex.custoPorGrad) total += ex.custoPorGrad * g * (ex.pontos ? Math.max(1, inst?.extrasPontos?.[ex.chave] || 1) : 1);
-  });
-  (def.falhas || []).forEach((fa) => {
-    if (!inst?.extrasAtivos?.[fa.chave]) return;
-    if (fa.custoDinamico) total += fa.custoDinamico(g);
-    else if (fa.custoFixo) total += fa.custoFixo;
-    else if (fa.custoPorGrad) total += fa.custoPorGrad * g;
-  });
-  return Math.max(1, total);
-}
 
 function acumuladorPassivoVazio() {
   return {
@@ -1685,10 +1560,6 @@ function instanciasPassivasAtivas(ent) {
     passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id]) out.push({ ataque: a, inst: comAquecimento(inst, ent), idx }); });
   });
   return out;
-}
-function habilidadesPassivasAtivas(ent) {
-  const vistos = new Set();
-  return instanciasPassivasAtivas(ent).map((x) => x.ataque).filter((a) => (vistos.has(a.id) ? false : (vistos.add(a.id), true)));
 }
 function rotuloPassivos(ataque) {
   const nomes = passivosDe(ataque).map((p) => PODERES_PASSIVOS.find((x) => x.id === p.tipoId)?.nome).filter(Boolean);
@@ -1794,12 +1665,12 @@ function aplicarUsoMods(ent, ataque, atualizarCampo, registrar) {
   });
   ms.filter((m) => m.id === "incontrolavel").forEach((m) => {
     const semTeste = (Number(m.valor) || -3) <= -6;
-    const g = Math.max(0, ...(m.item?.graduacao ? [m.item.graduacao] : [0]));
+    const g = Math.max(0, Number(m.item?.graduacao ?? m.item?.graduacaoNulificar) || 0);
     if (semTeste) { log(`"${nome}" foge do controle`, "Incontrolável (sem teste)", "O mestre decide como o efeito se comporta", "hd"); return; }
     const cd = 10 + g, dado = rolarD20(), bonus = salvBonus(ent, "Vontade"), r = montarTeste(dado, bonus, cd);
     log(`${ent.nome} tenta controlar "${nome}" (Vontade)`, `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? "Controlou" : "Perdeu o controle — o mestre decide o efeito", r.sucesso ? "hs" : "hd");
   });
-  const LEMBRETES = { teleguiado: "Teleguiado: se errar, o projétil persegue o alvo e ataca de novo no próximo turno sem custo", contagioso: "Contagioso: o efeito passa a quem tocar o alvo", ricochete: "Ricochete: pode quicar para atingir alvos atrás de cobertura", preciso: "Preciso: ignora cobertura/camuflagem parcial", permear: "Permear: atravessa barreiras", indireto: "Indireto: pode partir de outro ponto", seletivo: "Seletivo: escolha quem é afetado" };
+  const LEMBRETES = { automatizado: "Automatizado: dispara sozinho, sem ação, nas condições do extra", baseado_agarrar: "Baseado em Agarrar: só funciona contra um alvo que você esteja agarrando", teleguiado: "Teleguiado: se errar, o projétil persegue o alvo e ataca de novo no próximo turno sem custo", contagioso: "Contagioso: o efeito passa a quem tocar o alvo", ricochete: "Ricochete: pode quicar para atingir alvos atrás de cobertura", preciso: "Preciso: ignora cobertura/camuflagem parcial", permear: "Permear: atravessa barreiras", indireto: "Indireto: pode partir de outro ponto", seletivo: "Seletivo: escolha quem é afetado" };
   const lem = [...new Set(ms.map((m) => m.id))].filter((id) => LEMBRETES[id]).map((id) => LEMBRETES[id]);
   if (lem.length) log(`Propriedades de "${nome}"`, lem.join(" · "), "Lembrete", "hs");
   if (ms.some((m) => m.id === "retroalimentacao")) log(`Retroalimentação em "${nome}"`, "Você também sofre o efeito", "Aplique o efeito em si mesmo", "hd");
@@ -1925,14 +1796,6 @@ function bonusAtributoPassivo(ent, key) {
     total += acc.atributos[key] || 0;
   });
   return total;
-}
-function tamanhoPassivo(ent) { return modificadoresPassivos(ent).tamanho; }
-function deslocamentoIndexPara(ent, chave) {
-  const acc = modificadoresPassivos(ent);
-  if (chave === "voo") return acc.deslocamentos.voo > 0 ? acc.deslocamentos.voo : null;
-  if (chave === "natacao") return acc.deslocamentos.natacao !== 0 ? acc.deslocamentos.natacao : null;
-  if (chave === "escavacao") return acc.deslocamentos.escavacao !== -3 ? acc.deslocamentos.escavacao : null;
-  return null;
 }
 function deslocamentoTextoDe(idx) {
   const gi = Math.max(-2, Math.min(24, Math.round(idx || 0)));
@@ -2136,7 +1999,6 @@ function modsDoEfeito(ef, a) {
     const g = ef.graus || 3;
     if (g < 3) der("grau_limitado_afl", g === 2 ? -1 : -2);
   }
-  if (ef.categoria === "Nulificar" && ef.graus && ef.graus < 3) { /* reservado */ }
   if (a?.pontoFraco?.ativo) der("ponto_fraco", -4);
   return m;
 }
@@ -2151,6 +2013,7 @@ function fixosDoAtaque(a, ent) {
     const n = Math.abs(u.delta);
     if (v.tipo === "municao" && u.delta < 0) f.push({ nome: "Variável (Munição)", valor: -2 * n });
     else if (v.tipo !== "municao" && u.delta > 0) f.push({ nome: "Variável (Carga)", valor: n });
+    else if (v.tipo !== "municao" && u.delta < 0) f.push({ nome: `Variável (${v.nome || "Carga"}) gasta`, valor: -n });
   });
   (a.usoVariaveis || []).filter((u) => u.kind === "nen" || u.kind === "vida").forEach((u) => f.push({ nome: `Variável (${u.kind === "vida" ? "Vida" : "Nen"})`, valor: -Math.max(1, Math.abs(u.delta || 1)) }));
   if (a.ppManual) f.push({ nome: "Ajuste manual", valor: a.ppManual });
@@ -2322,24 +2185,6 @@ function infoEfeitoUtil(ef, ent) {
 }
 
 
-/** Painel "Regras desta habilidade": texto com números de cada extra/falha usado */
-function PainelRegras({ habilidade }) {
-  const itens = [...(habilidade.efeitos || []).map((e) => ({ rot: e.categoria, grad: e.graduacao ?? e.graduacaoNulificar, mods: e.mods })),
-    ...passivosDe(habilidade).map((p) => ({ rot: PODERES_PASSIVOS.find((x) => x.id === p.tipoId)?.nome || "Efeito", grad: p.graduacao, mods: p.mods }))];
-  const linhas = [];
-  itens.forEach((it) => (it.mods || []).forEach((m) => {
-    const t = regraDoMod(m.id, m.vezes, m.valor, it.grad, { nota: m.nota, mods: it.mods, dist: graduacaoParaDistancia });
-    const nome = MOD_POR_ID[m.id]?.nome || m.nome;
-    if (t || nome) linhas.push(`${it.rot}: ${t || nome}${m.nota ? ` (${m.nota})` : ""}`);
-  }));
-  if (!linhas.length) return null;
-  return (
-    <div className="subcard2" style={{ marginBottom: 10 }}>
-      <div className="section-title">Regras desta habilidade</div>
-      <div className="field-note">{linhas.map((l, i) => <div key={i}>• {l}</div>)}</div>
-    </div>
-  );
-}
 function UtilCampos({ ef, onMudar }) {
   const campos = ef.campos || {};
   const setC = (k, v) => onMudar({ ...ef, campos: { ...campos, [k]: v } });
@@ -2420,7 +2265,6 @@ function UtilCartao({ ef, ent, onMudar, registrar }) {
     </div>
   );
 }
-const EFEITO_CATEGORIAS = ["Dano", "Cura", "Aflição", "Enfraquecer", "Camuflagem", "Nulificar", "Leitura Mental", "Mover Objetos", ...UTIL_CATS];
 const SALVAMENTOS_ESCOLHA = ["Fortitude", "Vontade"];
 const SALVAMENTOS_ESCOLHA_ALT = ["Fortitude", "Vontade", "Aparar", "Esquiva"];
 const temModEf = (ef, id) => (ef?.mods || []).some((m) => m.id === id);
@@ -5447,22 +5291,14 @@ function TelaIdentidade({ onEscolher }) {
 }
 
 /* ---------- efeito (form) ---------- */
-function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo }) {
+function EfeitoForm({ efeito, onMudar, onCriarArremesso }) {
   const upd = (campo, valor) => onMudar({ ...efeito, [campo]: valor });
-  const mudarCategoria = (cat) => onMudar({ id: efeito.id, ...efeitoPadrao(cat), colateral: efeito.colateral, exigirTeste: efeito.exigirTeste, peculiaridade: efeito.peculiaridade, aquecimento: efeito.aquecimento, mods: efeito.mods, nen: efeito.nen });
   const addSentido = () => upd("sentidos", [...(efeito.sentidos || []), ""]);
   const updSentido = (i, v) => { const arr = [...efeito.sentidos]; arr[i] = v; upd("sentidos", arr); };
   const rmSentido = (i) => upd("sentidos", efeito.sentidos.filter((_, idx) => idx !== i));
 
   return (
-    <div className={modo === "bloco" ? "ed-efeito-bloco" : "subcard2 ed-efeito"}>
-      {modo !== "bloco" && (
-      <div className="row-inline">
-        <SearchableSelect value={efeito.categoria} onChange={(e) => mudarCategoria(e.target.value)}>{EFEITO_CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}</SearchableSelect>
-        <button className="small-btn" onClick={onRemover}>×</button>
-      </div>
-      )}
-
+    <div className="ed-efeito-bloco">
       {efeito.categoria === "Dano" && (
         <>
           <label className="checkbox-row"><input type="checkbox" checked={!!efeito.baseadoAtivo} onChange={(e) => upd("baseadoAtivo", e.target.checked)} />Dano Baseado Em</label>
@@ -5477,36 +5313,13 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
               <input type="number" value={efeito.danoAdicional || 0} onChange={(e) => upd("danoAdicional", Number(e.target.value))} />
               <div className="field-note">A graduação do dano é o valor atual do atributo escolhido + o dano adicional (que não varia com o atributo). Ela conta na CD; o dano em si continua limitado pelo nível do atacante.</div>
             </>
-          ) : (
-            modo !== "bloco" && <>
-              <label className="label">Graduação de Dano</label>
-              <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
-            </>
-          )}
-        </>
-      )}
-      {efeito.categoria === "Cura" && (
-        modo !== "bloco" && <>
-          <label className="label">Graduação de Cura</label>
-          <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
+          ) : null}
         </>
       )}
       {efeito.categoria === "Aflição" && (
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
             <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(efeito.resistenciaAlternativa ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
-            {modo !== "bloco" && <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>}
-          </div>
-          <label className="checkbox-row"><input type="checkbox" checked={!!efeito.resistenciaAlternativa} onChange={(e) => { const ativo = e.target.checked; const precisaResetar = !ativo && (efeito.salvamento === "Aparar" || efeito.salvamento === "Esquiva"); onMudar({ ...efeito, resistenciaAlternativa: ativo, ...(precisaResetar ? { salvamento: "Fortitude" } : {}) }); }} />Resistência Alternativa (permite Aparar/Esquiva como salvamento)</label>
-          <label className="checkbox-row"><input type="checkbox" checked={!!efeito.recuperacaoInstantanea} onChange={(e) => upd("recuperacaoInstantanea", e.target.checked)} />Recuperação Instantânea</label>
-          <div className="field-note" style={{ marginBottom: 10 }}>A condição aplicada por esta aflição é recuperada no começo do turno do alvo. Em Chamas e Sangrando causam o dano antes de acabar.</div>
-          <label className="checkbox-row"><input type="checkbox" checked={!!efeito.cumulativo} onChange={(e) => upd("cumulativo", e.target.checked)} />Cumulativo</label>
-          <div className="field-note" style={{ marginBottom: 10 }}>Ao impor uma condição de grau 1 em um alvo que já está com uma condição de grau 1 imposta por você (com este efeito), ela se torna uma de grau 2. O mesmo se aplica pro grau 2 (vira grau 3).</div>
-          <label className="checkbox-row"><input type="checkbox" checked={!!efeito.condicaoExtra} onChange={(e) => upd("condicaoExtra", e.target.checked)} />Condição extra</label>
-          <div className="row-inline" style={{ marginBottom: 6, alignItems: "center" }}>
-            <label className="label" style={{ margin: 0 }}>Graus de falha: {grausAflicao(efeito)}</label>
-            <button type="button" className="small-btn" title="Adicionar grau" disabled={grausAflicao(efeito) >= 3} onClick={() => upd("graus", grausAflicao(efeito) + 1)}>+</button>
-            <button type="button" className="small-btn" title="Remover o último grau" disabled={grausAflicao(efeito) <= 1} onClick={() => upd("graus", grausAflicao(efeito) - 1)}>×</button>
           </div>
           <label className="label">Falha (um grau)</label>
           <div className={efeito.condicaoExtra ? "grid2" : ""} style={{ marginBottom: 8 }}>
@@ -5537,7 +5350,6 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
             <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(temModEf(efeito, "resistencia_alternativa") ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
-            {modo !== "bloco" && <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>}
           </div>
           <label className="label">Característica afetada</label>
           <input type="text" value={efeito.caracteristica} onChange={(e) => upd("caracteristica", e.target.value)} />
@@ -5547,7 +5359,6 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
         <>
           <div className="grid2" style={{ marginBottom: 8 }}>
             <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(temModEf(efeito, "resistencia_alternativa") ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
-            {modo !== "bloco" && <div><label className="label">Graduação</label><input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} /></div>}
           </div>
           <label className="label">Sentidos afetados</label>
           {(efeito.sentidos || []).map((s, i) => (
@@ -5564,16 +5375,6 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
             <option value="Fortitude">Fortitude</option>
           </SearchableSelect>
           <div className="field-note">CD: 10 + {efeito.salvamento || "Vontade"} do alvo</div>
-          {modo !== "bloco" && <>
-          <label className="label">Graduação de Nulificar</label>
-          <input type="number" value={efeito.graduacaoNulificar} onChange={(e) => upd("graduacaoNulificar", Number(e.target.value))} />
-          </>}
-        </>
-      )}
-      {efeito.categoria === "Leitura Mental" && (
-        modo !== "bloco" && <>
-          <label className="label">Graduação de Leitura Mental</label>
-          <input type="number" value={efeito.graduacao} onChange={(e) => upd("graduacao", Number(e.target.value))} />
         </>
       )}
       {efeito.categoria === "Outros" && (
@@ -5592,9 +5393,6 @@ function EfeitoForm({ efeito, res, onMudar, onRemover, onCriarArremesso, modo })
         </>
       )}
       {UTIL_CATS.includes(efeito.categoria) && <UtilCampos ef={efeito} onMudar={onMudar} />}
-      <div className="divider" />
-      <FalhasEfeito item={efeito} onMudar={onMudar} graduacao={efeito.graduacao ?? efeito.graduacaoNulificar} mostrarPeculiaridade={CATEGORIAS_COM_RESISTENCIA.includes(efeito.categoria)} />
-      {modo !== "bloco" && <><div className="divider" /><ModsEfeito efeito={efeito} onMudar={onMudar} res={res} /></>}
     </div>
   );
 }
@@ -5665,27 +5463,15 @@ function PeculiaridadeEditor({ valor, onMudar }) {
   );
 }
 const CATEGORIAS_COM_RESISTENCIA = ["Dano", "Aflição", "Enfraquecer", "Camuflagem", "Leitura Mental", "Nulificar"];
-function FalhasEfeito({ item, onMudar, graduacao, mostrarPeculiaridade }) {
-  return (
-    <>
-      <div className="section-title" style={{ marginTop: 4 }}>Falhas</div>
-      <ExigirTesteEditor valor={item.exigirTeste} onMudar={(x) => onMudar({ ...item, exigirTeste: x })} />
-      {mostrarPeculiaridade && <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />}
-      <AquecimentoEditor valor={item.aquecimento} onMudar={(x) => onMudar({ ...item, aquecimento: x })} />
-      <ColateralEditor colateral={item.colateral} onMudar={(c) => onMudar({ ...item, colateral: c })} graduacao={graduacao} />
-    </>
-  );
-}
 
 /* ---------- Efeito Colateral (usado tanto em efeitos ativos quanto em efeitos passivos) ----------
    Tudo automático: sem teste, a condição é aplicada ao usar/ativar e removida quando a habilidade para.
    Com teste, rola ao usar e de novo no começo de cada turno enquanto sustentada. */
-function ColateralEditor({ colateral, onMudar, graduacao, semCheck }) {
+function ColateralEditor({ colateral, onMudar, graduacao }) {
   const col = colateral || {};
   const upd = (campo, valor) => onMudar({ ...col, [campo]: valor });
   return (
     <>
-      {!semCheck && <label className="checkbox-row"><input type="checkbox" checked={!!col.ativo} onChange={(e) => upd("ativo", e.target.checked)} />Efeito Colateral</label>}
       {col.ativo && (
         <>
           <label className="label">Condição</label>
@@ -5767,20 +5553,6 @@ function RichTextEditor({ value, onChange, placeholder }) {
    juntos) — igual uma habilidade ativa pode ter vários efeitos. PassivoEditor
    gerencia a LISTA (adicionar/remover), e PassivoInstanceEditor edita UM efeito
    passivo dentro dela. */
-function PassivoEditor({ passivos, onMudar, resLista }) {
-  const lista = passivos || [];
-  const updInst = (idx, novo) => { const arr = [...lista]; arr[idx] = novo; onMudar(arr); };
-  const addInst = () => onMudar([...lista, { id: uid(), tipoId: "", graduacao: 1, campos: {}, extrasAtivos: {} }]);
-  const rmInst = (idx) => onMudar(lista.filter((_, i) => i !== idx));
-  return (
-    <>
-      {lista.map((inst, i) => (
-        <PassivoInstanceEditor key={inst.id || i} passivo={inst} res={resLista?.[i]} onMudar={(novo) => updInst(i, novo)} onRemover={() => rmInst(i)} />
-      ))}
-      <button className="btn btn-ghost btn-sm" onClick={addInst} style={{ marginBottom: 12 }}>+ Efeito passivo</button>
-    </>
-  );
-}
 function RapidezLoja({ passivo, onMudar }) {
   const compras = passivo.campos?.compras || {};
   const escolhas = passivo.campos?.escolhas || {};
@@ -5835,25 +5607,15 @@ function modsOcultosDoPassivo(def) {
   if ((def.falhas || []).some((x) => x.chave === "limitado")) ids.push("limitado");
   return new Set(ids);
 }
-function PassivoInstanceEditor({ passivo, res, onMudar, onRemover, modo }) {
+function PassivoInstanceEditor({ passivo, onMudar }) {
   const def = PODERES_PASSIVOS.find((p) => p.id === passivo?.tipoId);
   const upd = (campo, valor) => onMudar({ ...passivo, [campo]: valor });
   const updCampo = (chave, valor) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), [chave]: valor } });
-  const toggleExtra = (chave) => onMudar({ ...passivo, extrasAtivos: { ...(passivo.extrasAtivos || {}), [chave]: !passivo.extrasAtivos?.[chave] } });
-  const mudarTipo = (novoId) => onMudar({ id: passivo?.id || uid(), tipoId: novoId, graduacao: 1, campos: {}, extrasAtivos: {}, colateral: passivo?.colateral, exigirTeste: passivo?.exigirTeste, aquecimento: passivo?.aquecimento, mods: passivo?.mods, nen: passivo?.nen });
   return (
-    <div className={modo === "bloco" ? "ed-efeito-bloco" : "subcard2"} style={modo === "bloco" ? undefined : { marginBottom: 10 }}>
-      {modo !== "bloco" && <div className="row-inline">
-        <SearchableSelect value={passivo?.tipoId || ""} onChange={(e) => mudarTipo(e.target.value)}>
-          <option value="">Escolha um efeito…</option>
-          {[...PODERES_PASSIVOS].filter((p) => !p.oculto || p.id === passivo?.tipoId).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")).map((p) => <option key={p.id} value={p.id}>{p.nome}</option>)}
-        </SearchableSelect>
-        <button className="small-btn" onClick={onRemover}>×</button>
-      </div>}
+    <div className="ed-efeito-bloco">
       {def && (
         <>
           <div className="field-note" style={{ marginBottom: 8 }}>{def.desc}</div>
-          {modo !== "bloco" && <div style={{ marginBottom: 8 }}><label className="label">{def.id === "rapidez" ? "Pontos de Rapidez" : "Graduação"}</label><input type="number" min={0} value={passivo.graduacao || 0} onChange={(e) => upd("graduacao", Math.max(0, Number(e.target.value)))} /></div>}
           {def.id === "rapidez" && <RapidezLoja passivo={passivo} onMudar={onMudar} />}
           {def.campoEscolha && !def.campoEscolha.multi && (
             <div style={{ marginBottom: 8 }}>
@@ -5882,36 +5644,6 @@ function PassivoInstanceEditor({ passivo, res, onMudar, onRemover, modo }) {
               ))}
             </div>
           )}
-          {(def.extras || []).length > 0 && (
-            <div style={{ marginBottom: 8 }}>
-              <div className="label">Extras</div>
-              {def.extras.map((ex) => (
-                <label className="checkbox-row" key={ex.chave}>
-                  <input type="checkbox" checked={!!passivo.extrasAtivos?.[ex.chave]} onChange={() => toggleExtra(ex.chave)} />
-                  {ex.label}
-                  {ex.pontos && passivo.extrasAtivos?.[ex.chave] && (
-                    <input type="number" min={1} title="Pontos (cada ponto = +2 na CD no crítico)" value={passivo.extrasPontos?.[ex.chave] || 1} style={{ width: 64, marginLeft: 8 }}
-                      onClick={(e) => e.stopPropagation()}
-                      onChange={(e) => onMudar({ ...passivo, extrasPontos: { ...(passivo.extrasPontos || {}), [ex.chave]: Math.max(1, Math.round(Number(e.target.value) || 1)) } })} />
-                  )}
-                </label>
-              ))}
-            </div>
-          )}
-          {(def.falhas || []).length > 0 && (
-            <div style={{ marginBottom: 8 }}>
-              <div className="label">Falhas</div>
-              {def.falhas.map((fa) => (
-                <label className="checkbox-row" key={fa.chave}>
-                  <input type="checkbox" checked={!!passivo.extrasAtivos?.[fa.chave]} onChange={() => toggleExtra(fa.chave)} />
-                  {fa.label}
-                </label>
-              ))}
-            </div>
-          )}
-          <div className="divider" />
-          <FalhasEfeito item={passivo} onMudar={onMudar} graduacao={passivo.graduacao} mostrarPeculiaridade={false} />
-          {modo !== "bloco" && <><div className="divider" /><ModsEfeito efeito={passivo} idCat={PASSIVO_PARA_CAT[passivo.tipoId]} ocultar={modsOcultosDoPassivo(def)} res={res} onMudar={onMudar} /></>}
         </>
       )}
     </div>
@@ -5934,10 +5666,6 @@ function MoverObjetosCampos({ mo, onMudar, onCriarArremesso }) {
   return (
     <>
       <div className="grid2" style={{ marginBottom: 8 }}>
-        <div>
-          <label className="label">Graduação (Força efetiva)</label>
-          <input type="number" min={0} value={mo.graduacao || 0} onChange={(e) => updMO("graduacao", Math.max(0, Number(e.target.value)))} />
-        </div>
         <div>
           <label className="label">Capacidade de carga</label>
           <input type="text" disabled value={`${capacidadeKg} kg${mo.concentracao ? " (com Concentração)" : ""}`} />
@@ -6043,158 +5771,20 @@ function DesgastanteEditor({ desgastante, onMudar }) {
   );
 }
 
-/* ---------- campos de variável (Munição / Carga) usados pela habilidade ---------- */
-function VariaveisUsoEditor({ usos, variaveis, onMudarUsos, onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
-  const lista = usos || [];
-  const updUso = (id, patch) => onMudarUsos(lista.map((u) => (u.id === id ? { ...u, ...patch } : u)));
-  return (
-    <div style={{ marginBottom: 10 }}>
-      {lista.map((u) => {
-        const v = variaveis.find((x) => x.id === u.variavelId);
-        const aumenta = (u.delta || 0) > 0;
-        return (
-          <div className="subcard2" key={u.id} style={{ marginBottom: 8 }}>
-            <div className="row-inline">
-              <SearchableSelect value={u.variavelId || ""} onChange={(e) => {
-                if (e.target.value === "__nova__") {
-                  const nv = { id: uid(), nome: "Variável", tipo: "carga", atributo: "forca" };
-                  onCriarVariavel(nv);
-                  updUso(u.id, { variavelId: nv.id });
-                } else updUso(u.id, { variavelId: e.target.value });
-              }}>
-                <option value="">Escolha a variável…</option>
-                {variaveis.map((x) => <option key={x.id} value={x.id}>{x.nome || "Variável"}</option>)}
-                <option value="__nova__">+ Nova variável</option>
-              </SearchableSelect>
-              <button type="button" className="small-btn" title="Tirar este campo da habilidade" onClick={() => onMudarUsos(lista.filter((x) => x.id !== u.id))}>×</button>
-            </div>
-            {v && (
-              <>
-                <div className="grid2" style={{ marginTop: 8 }}>
-                  <div><label className="label">Nome</label><input type="text" value={v.nome} onChange={(e) => onMudarVariavel(v.id, { nome: e.target.value })} /></div>
-                  <div>
-                    <label className="label">Tipo</label>
-                    <SearchableSelect value={v.tipo || "carga"} onChange={(e) => onMudarVariavel(v.id, { tipo: e.target.value, valor: undefined })}>
-                      <option value="municao">Munição (baseada em atributo)</option>
-                      <option value="carga">Carga (começa em 0)</option>
-                    </SearchableSelect>
-                  </div>
-                </div>
-                {v.tipo === "municao" && (
-                  <div style={{ marginTop: 8 }}>
-                    <label className="label">Atributo (valor máximo)</label>
-                    <SearchableSelect value={v.atributo || "forca"} onChange={(e) => onMudarVariavel(v.id, { atributo: e.target.value })}>
-                      {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
-                    </SearchableSelect>
-                  </div>
-                )}
-                <div className="grid2" style={{ marginTop: 8 }}>
-                  <div>
-                    <label className="label">Ao usar a habilidade</label>
-                    <SearchableSelect value={aumenta ? "aumenta" : "reduz"} onChange={(e) => updUso(u.id, { delta: (e.target.value === "aumenta" ? 1 : -1) * Math.max(1, Math.abs(u.delta || 1)) })}>
-                      <option value="reduz">Reduz</option>
-                      <option value="aumenta">Aumenta</option>
-                    </SearchableSelect>
-                  </div>
-                  <div>
-                    <label className="label">Quantidade</label>
-                    <input type="number" min={1} value={Math.max(1, Math.abs(u.delta || 1))} onChange={(e) => updUso(u.id, { delta: (aumenta ? 1 : -1) * Math.max(1, Number(e.target.value) || 1) })} />
-                  </div>
-                </div>
-                <div className="field-note">Não pode ficar negativa: se a habilidade reduzir além do que há, ela não pode ser usada.{v.tipo === "municao" ? " Munição nunca passa do máximo." : ""}</div>
-                <button type="button" className="btn btn-ghost btn-sm" style={{ marginTop: 6 }} onClick={() => onExcluirVariavel(v.id)}>Excluir variável da ficha</button>
-              </>
-            )}
-          </div>
-        );
-      })}
-      <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMudarUsos([...lista, { id: uid(), variavelId: "", delta: -1 }])}>+ Campo (variável)</button>
-    </div>
-  );
-}
 
 /* ---------- Construtor de poder: extras/falhas por efeito + painel de custo da habilidade ---------- */
 const MODS_LEGADO = new Set(["efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "ponto_fraco", "dividido", "multiataque", "desgastante", "efeito_alternativo",
   "resistencia_alt_afl", "recuperacao_instantanea", "cumulativo_afl", "condicao_extra", "grau_limitado_afl", "variavel_nen_vida", "variavel_carga", "variavel_municao"]);
-const MODS_COM_EFEITO = new Set(["sobrecarregado"]); // os demais ainda entram só no custo (sem efeito automático no combate)
 const capNen = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
-const ACAO_TXT = { padrao: "padrão", livre: "livre", movimento: "movimento", reacao: "reação", nenhuma: "nenhuma" };
 const DUR_TXT = { instantaneo: "instantâneo", sustentado: "sustentado", permanente: "permanente" };
 function valorModTxt(m) {
   const cat = MOD_POR_ID[m.id];
   const v = (m.valor ?? cat?.v ?? 0) * (m.vezes || 1);
   return `${v > 0 ? "+" : ""}${v}${(cat?.k || "g") === "g" ? "/g" : " fixo"}`;
 }
-const NOTA_MODS = ["limitado", "area", "depender_sentido", "ativacao", "carregamento", "ponto_fraco", "retroalimentacao", "incontrolavel", "perceptivel", "efeito_secundario", "contagioso"];
-const SEM_NOTA_NO_MAPA = new Set(["limitado", "incontrolavel", "area"]);
+const NOTA_MODS = ["limitado", "area", "depender_sentido", "ativacao", "ponto_fraco", "retroalimentacao", "incontrolavel", "perceptivel", "efeito_secundario", "contagioso"];
+const SEM_NOTA_NO_MAPA = new Set(["incontrolavel", "area"]);
 const FORMAS_AREA = ["Cone", "Cilindro", "Explosão", "Linha", "Nuvem"];
-function ModsEfeito({ efeito, onMudar, res, idCat: idCatProp, ocultar }) {
-  const idCat = idCatProp || CAT_PARA_EFEITO[efeito.categoria] || CAT_UTIL_PARA_EFEITO[efeito.categoria];
-  if (!idCat) return null;
-  const mods = efeito.mods || [];
-  const cat = EFEITO_CAT_POR_ID[idCat];
-  const disp = modsDisponiveis(idCat);
-  const livre = (m) => !MODS_LEGADO.has(m.id) && !(ocultar && ocultar.has(m.id)) && (m.mult || !mods.some((x) => x.id === m.id));
-  const opcoes = [
-    ...disp.extras.filter(livre).map((m) => ({ m, rot: "Extra" })),
-    ...disp.falhas.filter(livre).map((m) => ({ m, rot: "Falha" })),
-  ];
-  const setMods = (novos) => onMudar({ ...efeito, mods: novos });
-  const add = (id) => { if (!id) return; const m = MOD_POR_ID[id]; setMods([...mods, { id, vezes: 1, valor: m.v, nota: "" }]); };
-  const upd = (i, patch) => setMods(mods.map((x, j) => (j === i ? { ...x, ...patch } : x)));
-  const rm = (i) => setMods(mods.filter((_, j) => j !== i));
-  const derivados = (res?.mods || []).filter((m) => m.derivado);
-  const tipoPadrao = cat?.tipo || "coringa";
-  const tipoAtual = efeito.nen || tipoPadrao;
-  return (
-    <div className="cb-mods">
-      <div className="section-title" style={{ marginTop: 4 }}>Extras e falhas (custo)</div>
-      <div className="cb-linha">
-        <label className="label" style={{ margin: 0 }}>Tipo de Nen do efeito</label>
-        <SearchableSelect value={tipoAtual} onChange={(e) => onMudar({ ...efeito, nen: e.target.value === tipoPadrao ? undefined : e.target.value })}>
-          {["coringa", ...TIPOS_NEN_CAT].map((t) => <option key={t} value={t}>{capNen(t) + (t === tipoPadrao ? " (padrão)" : "")}</option>)}
-        </SearchableSelect>
-      </div>
-      {mods.map((m, i) => {
-        const c = MOD_POR_ID[m.id]; if (!c) return null;
-        const valorNeg = (m.valor ?? c.v) < 0;
-        return (
-          <div key={i} className={"cb-chip " + (valorNeg ? "falha" : "extra")}>
-            <div className="cb-chip-topo">
-              <b>{c.nome}</b>
-              <span className="cb-val">{valorModTxt(m)}</span>
-              {c.mult && <span className="cb-step"><button type="button" className="small-btn" disabled={(m.vezes || 1) <= 1} onClick={() => upd(i, { vezes: (m.vezes || 1) - 1 })}>−</button><b>×{m.vezes || 1}</b><button type="button" className="small-btn" onClick={() => upd(i, { vezes: (m.vezes || 1) + 1 })}>+</button></span>}
-              {c.opcoes && c.opcoes.length > 1 && (
-                <select className="cb-sel" value={String(m.valor ?? c.v)} onChange={(e) => upd(i, { valor: Number(e.target.value) })}>
-                  {[...new Set(c.opcoes)].map((v) => <option key={v} value={v}>{v > 0 ? "+" : ""}{v}{c.k === "g" ? "/g" : ""}</option>)}
-                </select>
-              )}
-              {!MODS_COM_EFEITO.has(m.id) && <span className="cb-badge" title="Já conta no custo, mas ainda não tem efeito automático no combate (vale como descrição).">só custo</span>}
-              <button type="button" className="small-btn" onClick={() => rm(i)}>×</button>
-            </div>
-            {(NOTA_MODS.includes(m.id) || m.nota) && <input type="text" className="cb-nota" placeholder={m.id === "area" ? "Forma: Cone, Cilindro, Explosão, Linha ou Nuvem" : m.id === "depender_sentido" ? "Qual sentido? (visão / audição)" : "Descreva (ex: só funciona de dia)"} value={m.nota || ""} onChange={(e) => upd(i, { nota: e.target.value })} />}
-          </div>
-        );
-      })}
-      {derivados.length > 0 && (
-        <div className="cb-derivados">
-          {derivados.map((m, i) => <span key={i} className={"cb-tag " + (m.valor < 0 ? "falha" : "extra")} title="Definido nos campos deste efeito / da habilidade">{m.nome} {m.valor > 0 ? "+" : ""}{Math.round(m.valor * 100) / 100}{m.k === "g" ? "/g" : " fixo"}</span>)}
-        </div>
-      )}
-      <SearchableSelect value="" onChange={(e) => add(e.target.value)} placeholder="+ Adicionar extra ou falha…">
-        <option value="">+ Adicionar extra ou falha…</option>
-        {opcoes.map(({ m, rot }) => <option key={m.id} value={m.id}>{`${rot} · ${m.nome} (${m.v > 0 ? "+" : ""}${m.v}${m.k === "g" ? "/g" : " fixo"})`}</option>)}
-      </SearchableSelect>
-      {res && (
-        <div className="cb-custo-ef">
-          <span>{res.grad}g · base {res.base}{res.ajG.length ? " · " + res.ajG.map((a) => `${a.nome} ${a.g > 0 ? "+" : ""}${a.g}`).join(" · ") : ""}</span>
-          <b>{res.razao} → {res.custo} PP</b>
-          {res.dicaNivel && <span className="cb-dica">pode ir para lvl {res.dicaNivel} pelo mesmo custo</span>}
-        </div>
-      )}
-    </div>
-  );
-}
 
 
 /* ---------- CONSTRUTOR VISUAL: cada efeito é um bloco colorido com extras (verde) e falhas (vermelho) como peças ---------- */
@@ -6295,8 +5885,7 @@ function frasesDe(texto) {
   const m = t.match(/[^.!?]+[.!?]+(?:\s+|$)|[^.!?]+$/g) || [t];
   return m.map((x) => x.replace(/ex§:/g, "ex.:").replace(/ex§/g, "ex.").trim()).filter(Boolean);
 }
-const DescCtx = createContext(null);
-function DescBonita(props) { const alvo = useContext(DescCtx); return alvo ? createPortal(<DescBonitaInner {...props} />, alvo) : <DescBonitaInner {...props} />; }
+const DescBonita = (props) => <DescBonitaInner {...props} />;
 function DescBonitaInner({ cor, titulo, selo, seloClasse, chips, texto, notaTitulo, nota, destaque }) {
   return (
     <div className="dx" style={cor ? { "--dx-cor": cor } : undefined}>
@@ -6322,8 +5911,11 @@ function CartaoOpcao({ cor, titulo, selo, seloClasse, chips, texto, onAdd }) {
     </div>
   );
 }
+const custoX = (ex) => (ex.custoPorGrad != null ? `${ex.custoPorGrad > 0 ? "+" : ""}${ex.custoPorGrad}/g` : ex.custoFixo != null ? `${ex.custoFixo > 0 ? "+" : ""}${ex.custoFixo} fixo` : ex.custoDinamico ? "variável" : "sem custo");
+const nomeX = (ex) => String(ex.label).split(" (")[0];
 const custoModTxt = (c) => (c ? `${c.v > 0 ? "+" : ""}${c.v}${c.k === "g" ? "/g" : " fixo"}` : "");
 function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
+  const defP = bloco && !bloco.ativo ? bloco.def : null;
   const [aba, setAba] = useState("extra");
   const [busca, setBusca] = useState("");
   const [aberta, setAberta] = useState(null);
@@ -6338,7 +5930,8 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     return m.mult || m.id === "limitado" || !mods.some((x) => x.id === m.id);
   };
   const q = semAcento(busca);
-  const base = (aba === "extra" ? disp.extras : disp.falhas).filter(livre);
+  const xs = defP ? (aba === "extra" ? defP.extras : defP.falhas || []).filter((e) => !item.extrasAtivos?.[e.chave]).map((e) => ({ id: "x:" + e.chave, nome: nomeX(e), v: aba === "extra" ? 1 : -1, k: "g", _custo: custoX(e), _texto: e.label })) : [];
+  const base = [...(aba === "extra" ? disp.extras : disp.falhas).filter(livre), ...xs];
   const lista = base.filter((m) => !q || semAcento(m.nome).includes(q));
   return (
     <div className="px-paleta">
@@ -6351,7 +5944,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
         {lista.map((m) => (
           <React.Fragment key={m.id}>
             <button type="button" className={"px-chip " + aba + (aberta === m.id ? " on" : "")} onClick={() => setAberta(aberta === m.id ? null : m.id)}>{m.nome}</button>
-            {aberta === m.id && <CartaoOpcao cor={aba === "extra" ? "#2fb84f" : "#d93636"} titulo={m.nome} selo={aba === "extra" ? "Extra" : "Falha"} seloClasse={aba} chips={[["Custo", custoModTxt(m)]]} texto={DESC_MOD[m.id] || ""} onAdd={() => onAdd(m)} />}
+            {aberta === m.id && <CartaoOpcao cor={aba === "extra" ? "#2fb84f" : "#d93636"} titulo={m.nome} selo={aba === "extra" ? "Extra" : "Falha"} seloClasse={aba} chips={[["Custo", m._custo || custoModTxt(m)]]} texto={m._texto || DESC_MOD[m.id] || ""} onAdd={() => onAdd(m)} />}
           </React.Fragment>
         ))}
         {!lista.length && <span className="field-note">Nada por aqui.</span>}
@@ -6453,8 +6046,8 @@ function InspetorLegado({ id: idCru, item, onMudar, onRemover, grad, ehHab, todo
   const c = MOD_POR_ID[id];
   const neg = (c?.v ?? 0) < 0;
   const editor = (() => {
-    if (id === "efeito_colateral" && nCol >= 0) return <ColateralEditor semCheck colateral={{ ...(item.colateraisExtra || [])[nCol], ativo: true }} onMudar={(x) => onMudar({ ...item, colateraisExtra: (item.colateraisExtra || []).map((y, j) => (j === nCol ? x : y)) })} graduacao={grad} />;
-    if (id === "efeito_colateral") return <ColateralEditor semCheck colateral={item.colateral} onMudar={(x) => onMudar({ ...item, colateral: x })} graduacao={grad} />;
+    if (id === "efeito_colateral" && nCol >= 0) return <ColateralEditor colateral={{ ...(item.colateraisExtra || [])[nCol], ativo: true }} onMudar={(x) => onMudar({ ...item, colateraisExtra: (item.colateraisExtra || []).map((y, j) => (j === nCol ? x : y)) })} graduacao={grad} />;
+    if (id === "efeito_colateral") return <ColateralEditor colateral={item.colateral} onMudar={(x) => onMudar({ ...item, colateral: x })} graduacao={grad} />;
     if (id === "exigir_teste") return <ExigirTesteEditor valor={item.exigirTeste} onMudar={(x) => onMudar({ ...item, exigirTeste: x })} />;
     if (id === "peculiaridade") return <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />;
     if (id === "aquecimento") return <AquecimentoEditor valor={item.aquecimento} onMudar={(x) => onMudar({ ...item, aquecimento: x })} />;
@@ -6539,7 +6132,7 @@ function PaletaHab({ ataque, onAdd, onAddVar }) {
               chips={k === "nen" || k === "vida" ? [["Custo", "−1 fixo por unidade"]] : []}
               texto={k === "nen" ? "Ao usar a habilidade, você gasta Nen. Cada unidade retirada é −1 ponto fixo no custo." : k === "vida" ? "Ao usar a habilidade, você gasta Vida. Cada unidade retirada é −1 ponto fixo no custo."
                 : k === "municao" ? `Cria uma variável de munição, com máximo baseado num atributo. Ao usar a habilidade, a munição ${aba === "extra" ? "aumenta" : "diminui"}.${aba === "falha" ? " Se não houver o suficiente, a habilidade não pode ser usada." : ""}`
-                : k === "carga" ? `Cria uma variável de carga (começa em 0). Ao usar a habilidade, a carga ${aba === "extra" ? "aumenta" : "diminui"}.${aba === "falha" ? " Não pode ficar negativa." : ""}`
+                : k === "carga" ? `Cria uma variável de carga (começa em 0). Ao usar a habilidade, a carga ${aba === "extra" ? "aumenta" : "diminui"}.${aba === "falha" ? " Não pode ficar negativa. Cada unidade retirada é −1 ponto fixo no custo." : " Cada unidade adicionada é +1 ponto fixo no custo."}`
                 : `Cria uma variável com o nome e o tipo que você escolher. Ao usar a habilidade, ela ${aba === "extra" ? "aumenta" : "diminui"}.`}
               onAdd={() => onAddVar(k, aba === "extra" ? 1 : -1)} />}
           </React.Fragment>
@@ -6631,6 +6224,7 @@ function layoutMapa(blocos, nHab) {
 const curva = (x1, y1, x2, y2) => `M${x1} ${y1} C${x1 + (x2 - x1) / 2} ${y1}, ${x1 + (x2 - x1) / 2} ${y2}, ${x2} ${y2}`;
 
 function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
+  const [calcAberto, setCalcAberto] = useState(false);
   const erros = calc?.erros || [], avisos = calc?.avisos || [];
   const alertas = erros.length + avisos.length;
   return (
@@ -6653,15 +6247,31 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
         )}
         {calc && calc.efeitos.length > 0 && (
           <div className="pi-sec">
-            <div className="pi-tit">Como o custo foi calculado</div>
-            {calc.efeitos.map((e, i) => (
-              <div key={i} className="pi-linha">
-                <b>{e.nome} {e.grad}</b>: {e.razao} PP por graduação → <b>{e.custo} PP</b>
-                {e.ajG.length > 0 && <div className="pi-sub">{e.ajG.map((x) => `${x.nome} ${x.g > 0 ? "+" : "−"}1/g (${x.rel || "tipo de Nen"})`).join(" · ")}</div>}
+            <button type="button" className="pi-btn" onClick={() => setCalcAberto(!calcAberto)}>{calcAberto ? "▼ Esconder o cálculo completo" : "▶ Ver o cálculo completo"}</button>
+            {calcAberto && (
+              <div className="pi-calc">
+                {calc.efeitos.map((e, i) => (
+                  <div key={i} className="pi-linha">
+                    <b>{e.nome} · graduação {e.grad}</b> <span className="pi-sub">(limite {e.limite})</span>
+                    <div className="pi-sub">Custo base: {e.base} por graduação</div>
+                    {e.mods.map((m, k) => (
+                      <div key={k} className="pi-sub">{m.nome}{m.vezes > 1 ? ` ×${m.vezes}` : ""}: {m.valor > 0 ? "+" : ""}{m.valor}{m.k === "g" ? " por graduação" : " fixo"}{m.tipo ? ` (${capNen(m.tipo)})` : ""}</div>
+                    ))}
+                    {e.ajG.map((x, k) => <div key={"a" + k} className="pi-sub">Tipo de Nen — {x.nome} ({x.rel}): {x.g > 0 ? "+" : "−"}1 por graduação</div>)}
+                    <div className="pi-sub">Custo por graduação final: {e.c} → razão {e.razao}</div>
+                    <div>{e.grad} graduações → <b>{e.custo} PP</b></div>
+                    {e.fixos.length > 0 && <div className="pi-sub">Fixos deste efeito (somam à habilidade): {e.fixos.map((m) => `${m.nome} ${m.valor > 0 ? "+" : ""}${m.valor}`).join(", ")}</div>}
+                  </div>
+                ))}
+                <div className="pi-linha">
+                  <div>Soma dos efeitos: <b>{calc.somaEfeitos} PP</b></div>
+                  {calc.fixos.map((f, i) => <div key={i} className="pi-sub">{f.nome}: {f.valor > 0 ? "+" : ""}{f.valor} PP</div>)}
+                  <div>Itens fixos: <b>{calc.somaFixos > 0 ? "+" : ""}{calc.somaFixos} PP</b></div>
+                  <div>Total: <b>{calc.bruto} PP</b>{calc.bruto < 1 ? " → mínimo 1 PP" : ""}</div>
+                  <div className="pi-sub">Seu tipo de Nen: {ent?.tipoNen || "Nenhum"} · nível {Math.max(1, ent?.nivel || 1)}</div>
+                </div>
               </div>
-            ))}
-            {calc.fixos.map((f, i) => <div key={"f" + i} className="pi-linha">{f.nome}: <b>{f.valor > 0 ? "+" : ""}{f.valor} PP</b></div>)}
-            <div className="pi-linha">Soma: <b>{calc.bruto} PP</b>{calc.bruto < 1 ? " (mínimo 1)" : ""} · Seu tipo: <b>{ent?.tipoNen || "Nenhum"}</b>, nível {Math.max(1, ent?.nivel || 1)}</div>
+            )}
           </div>
         )}
         {info && (
@@ -6718,7 +6328,7 @@ function NoGraduacao({ b, onGrad }) {
 function BtnX({ onClick }) {
   return <button type="button" className="mp-x" title="Remover" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onClick(); }}>×</button>;
 }
-function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs, onCopiar }) {
+function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs, onCopiar, onDeletar }) {
   const L = layoutMapa(blocos, habMods.length);
   const ref = useRef(null);
   const gest = useRef(null);
@@ -6753,20 +6363,37 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
   const add = (k, x, y, w, h) => { N[k] = { x, y, w, h }; };
   add("raiz", L.ROOT_X, L.rootCy - 36, L.ROOT_W, 72);
   habMods.forEach((h, k) => add("h:" + h.id, L.ROOT_X - 4, L.habY[k] - 21, 92, 42));
-  add("h+", L.ROOT_X + L.ROOT_W / 2 - 17, L.habPlusY - 17, 34, 34);
   blocos.forEach((b, i) => {
     add(b.key, L.EF_X, L.pos[i].cy - L.EF_H / 2, L.EF_W, L.EF_H);
     b.mods.forEach((m, k) => add(modKey(b, m), L.MOD_X, L.pos[i].modsY[k] - L.MOD_H / 2, largMod(m.nome), L.MOD_H));
-    add(b.key + ":+", L.MOD_X, L.pos[i].plusY - 17, 34, 34);
   });
-  add("novo", L.EF_X, L.novoY - 23, 46, 46);
+  // botões "+": fixos (não se movem), sempre junto do último quadrado do seu grupo
+  const ehMais = (k) => k === "novo" || k === "h+" || k.endsWith(":+");
+  const posMais = (k) => {
+    if (k === "novo") {
+      if (!blocos.length) return { x: L.EF_X, y: L.novoY - 23, w: 46, h: 46 };
+      const u = R(blocos[blocos.length - 1].key);
+      return { x: u.x + u.w / 2 - 23, y: u.y + u.h + 22, w: 46, h: 46 };
+    }
+    if (k === "h+") {
+      if (!habMods.length) { const r = R("raiz"); return { x: r.x + r.w / 2 - 17, y: r.y + r.h + 26, w: 34, h: 34 }; }
+      const u = R("h:" + habMods[habMods.length - 1].id);
+      return { x: u.x + u.w / 2 - 17, y: u.y + u.h + 14, w: 34, h: 34 };
+    }
+    const b = blocos.find((x) => x.key === k.slice(0, -2));
+    if (b.mods.length) { const u = R(modKey(b, b.mods[b.mods.length - 1])); return { x: u.x + u.w + 14, y: u.y + u.h / 2 - 17, w: 34, h: 34 }; }
+    const e = R(b.key);
+    return { x: e.x + e.w + 40, y: e.y + e.h / 2 - 17, w: 34, h: 34 };
+  };
   const R = (k) => {
+    if (ehMais(k)) return posMais(k);
     const n = N[k], o = (offs && offs[k]) || {};
     const d = drag && drag.keys.has(k) ? drag : null;
     return { x: n.x + (o.x || 0) + (d ? d.dx : 0), y: n.y + (o.y || 0) + (d ? d.dy : 0), w: n.w, h: n.h };
   };
   let W = L.W, H = L.H;
-  Object.keys(N).forEach((k) => { const r = R(k); W = Math.max(W, r.x + r.w + 30); H = Math.max(H, r.y + r.h + 30); });
+  const maisKeys = ["novo", "h+", ...blocos.map((b) => b.key + ":+")];
+  [...Object.keys(N), ...maisKeys].forEach((k) => { const r = R(k); W = Math.max(W, r.x + r.w + 30); H = Math.max(H, r.y + r.h + 30); });
 
   const ajustar = () => { const w = ref.current ? ref.current.clientWidth : 0; if (w > 0) setZoom(Math.max(0.4, Math.min(1.1, +(((w - 6) / L.W) * 0.85).toFixed(2)))); };
   useEffect(() => { if (!ajustou.current && ref.current && ref.current.clientWidth > 0) { ajustou.current = true; ajustar(); } }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -6793,6 +6420,8 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
     if ((e.button === 1 || e.button === 2) && !(e.button === 2 && e.target.closest(".mp-no"))) { gest.current = { t: "pan", x: e.clientX, y: e.clientY, sl: ref.current.scrollLeft, st: ref.current.scrollTop }; ref.current.setPointerCapture?.(e.pointerId); e.preventDefault(); return; }
     if (e.button !== 0) return;
     const no = e.target.closest(".mp-no");
+    if (ref.current) ref.current.focus({ preventScroll: true });
+    if (no && no.dataset.k && ehMais(no.dataset.k)) return;
     if (no && no.dataset.k) {
       const k = no.dataset.k;
       let keys = marc;
@@ -6835,6 +6464,13 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
     } else if (g.t === "caixa" && !g.moveu) setMarc(new Set());
     setDrag(null); setCaixa(null);
   };
+  const teclar = (e) => {
+    if (e.key !== "Delete" || e.target !== ref.current) return;
+    e.preventDefault();
+    const keys = [...marc].filter((k) => k !== "raiz" && !ehMais(k));
+    onDeletar(keys.length ? keys : null);
+    setMarc(new Set());
+  };
   const clique = (fn) => () => { if (ignora.current) return; fn(); };
 
   const raizSel = selecionado && selecionado.raiz;
@@ -6854,7 +6490,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
   const linV = (a, b, cls, key) => <path key={key} className={cls} d={`M${a.x} ${a.y} C${a.x} ${(a.y + b.y) / 2}, ${b.x} ${(a.y + b.y) / 2}, ${b.x} ${b.y}`} />;
   return (
     <div className="mp-wrap">
-      <div className={"mp-area" + (drag ? " movendo" : "")} ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onContextMenu={contexto}>
+      <div className={"mp-area" + (drag ? " movendo" : "")} ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onContextMenu={contexto} tabIndex={0} onKeyDown={teclar}>
         <div style={{ width: W * zoom, height: H * zoom }}>
           <div className="mp-cena" style={{ width: W, height: H, transform: `scale(${zoom})` }}>
             {!semLinhas && (
@@ -6927,7 +6563,6 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
 const modKey = (b, m) => (m.fixa ? `${b.key}:f${m.id}` : `${b.key}:m${m.idx}`);
 
 function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
-  const [alvoDesc, setAlvoDesc] = useState(null);
   const efs = ataque.efeitos || [];
   const pas = passivosDe(ataque);
   const ehPassiva = efs.length === 0 && pas.length > 0;
@@ -6966,6 +6601,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     const def = b.ativo ? null : PODERES_PASSIVOS.find((p) => p.id === b.item.tipoId);
     const mods = (b.item.mods || []).map((m, idx) => { const c = MOD_POR_ID[m.id]; return c ? { idx, nome: c.nome + ((m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""), neg: (m.valor ?? c.v) < 0 } : null; }).filter(Boolean);
     Object.keys(LEG_EFEITO).filter((id) => LEG_EFEITO[id].ativo(b.item) && (b.ativo || id !== "peculiaridade")).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
+    if (!b.ativo && def) [...(def.extras || []).map((e) => ({ e, neg: false })), ...(def.falhas || []).map((e) => ({ e, neg: true }))].forEach(({ e, neg }) => { if (b.item.extrasAtivos?.[e.chave]) mods.push({ idx: -1, fixa: true, id: "x:" + e.chave, nome: nomeX(e), neg }); });
     (b.item.colateraisExtra || []).forEach((_, n) => mods.push({ idx: -1, fixa: true, id: `efeito_colateral#${n + 1}`, nome: "Efeito Colateral", neg: true }));
     Object.keys(LEG_TODOS).filter((id) => LEG_TODOS[id].ativo(ataque) && elegivelTodos(id, b)).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
     return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : (def?.nome || cat?.nome || "Efeito"), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTravada: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo, mods, def };
@@ -6982,6 +6618,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   const setLista = (b, arr) => (b.ativo ? setEfs(arr) : setPas(arr));
   const onGrad = (b, d) => { const k = chaveGrad(b.ativo, b.item); atualizarBloco(b, { ...b.item, [k]: Math.max(0, (b.item[k] || 0) + d) }); };
   const addMod = (b, m) => {
+    if (m.id.startsWith("x:")) { atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: true } }); setSel({ key: b.key, fixo: m.id }); return; }
     if (LEG_TODOS[m.id]) { onMudar(LEG_TODOS[m.id].on(ataque)); setSel({ key: b.key, fixo: m.id }); return; }
     if (LEG_EFEITO[m.id]) { const jaTem = m.id === "efeito_colateral" && b.item.colateral?.ativo; atualizarBloco(b, LEG_EFEITO[m.id].on(b.item)); setSel({ key: b.key, fixo: jaTem ? `efeito_colateral#${(b.item.colateraisExtra || []).length + 1}` : m.id }); return; }
     const novos = [...(b.item.mods || []), { id: m.id, vezes: 1, valor: m.v, nota: m.id === "area" ? "Explosão" : "" }];
@@ -7004,6 +6641,53 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   const clicar = (x) => { if (mesmo(sel, x)) setSel(null); else { setSel(x); setLadoAberto(true); } setPaleta(false); };
   const remHab = (h) => { setSel(null); if (h.id.startsWith("u:")) onMudar({ ...ataque, usoVariaveis: ataque.usoVariaveis.filter((x) => x.id !== h.id.slice(2)) }); else onMudar(LEG_HAB[h.id].off(ataque)); };
   const CAMPO_LEG = { efeito_colateral: "colateral", exigir_teste: "exigirTeste", peculiaridade: "peculiaridade", aquecimento: "aquecimento", resistencia_alt_afl: "resistenciaAlternativa", recuperacao_instantanea: "recuperacaoInstantanea", cumulativo_afl: "cumulativo", condicao_extra: "condicaoExtra", grau_limitado_afl: "graus" };
+  const deletarChaves = (keysIn) => {
+    let keys = keysIn;
+    if (!keys) {
+      if (!sel) return;
+      if (sel.raiz) keys = sel.fixoHab ? ["h:" + sel.fixoHab] : [];
+      else if (sel.pal) keys = [];
+      else if (sel.fixo) keys = [`${sel.key}:f${sel.fixo}`];
+      else if (sel.mod != null) keys = [`${sel.key}:m${sel.mod}`];
+      else keys = sel.key ? [sel.key] : [];
+    }
+    if (!keys.length) return;
+    let novoA = { ...ataque };
+    const blocosRem = new Set(keys.filter((k) => blocos.some((b) => b.key === k)));
+    const porBloco = {};
+    keys.forEach((k) => {
+      if (blocosRem.has(k)) return;
+      if (k.startsWith("h:")) {
+        const id = k.slice(2);
+        if (id.startsWith("u:")) novoA = { ...novoA, usoVariaveis: (novoA.usoVariaveis || []).filter((x) => x.id !== id.slice(2)) };
+        else if (LEG_HAB[id]) novoA = LEG_HAB[id].off(novoA);
+        return;
+      }
+      const i = k.indexOf(":"); if (i < 0) return;
+      const bk = k.slice(0, i), r = k.slice(i + 1);
+      if (blocosRem.has(bk) || r === "+") return;
+      (porBloco[bk] = porBloco[bk] || []).push(r);
+    });
+    const efsN = [...efs], pasN = [...pas];
+    Object.entries(porBloco).forEach(([bk, rs]) => {
+      const b = blocos.find((x) => x.key === bk); if (!b) return;
+      let item = b.item;
+      const idxs = new Set(rs.filter((r) => r.startsWith("m")).map((r) => Number(r.slice(1))));
+      const fixos = rs.filter((r) => r.startsWith("f")).map((r) => r.slice(1));
+      fixos.filter((id) => LEG_TODOS[id]).forEach((id) => { novoA = LEG_TODOS[id].off(novoA); });
+      fixos.filter((id) => id.startsWith("x:")).forEach((id) => { item = { ...item, extrasAtivos: { ...(item.extrasAtivos || {}), [id.slice(2)]: false } }; });
+      fixos.filter((id) => id.startsWith("efeito_colateral#")).sort((a, c) => Number(c.split("#")[1]) - Number(a.split("#")[1])).forEach((id) => { item = removerFixoEfeito(item, id); });
+      fixos.filter((id) => LEG_EFEITO[id] && !id.includes("#")).forEach((id) => { item = removerFixoEfeito(item, id); });
+      if (idxs.size) item = { ...item, mods: (item.mods || []).filter((_, j) => !idxs.has(j)) };
+      if (b.ativo) efsN[b.i] = item; else pasN[b.i] = item;
+    });
+    const efsF = efsN.filter((_, i) => !blocosRem.has("e" + efs[i].id));
+    const pasF = pasN.filter((x, i) => !blocosRem.has("p" + (pas[i].id || i)));
+    novoA = { ...novoA, efeitos: efsF };
+    if (ataque.passivos !== undefined || pasF.length !== pas.length) novoA.passivos = pasF;
+    onMudar(novoA);
+    setSel(null);
+  };
   const copiarPecas = (keys, alvoKey) => {
     const alvo = blocos.find((x) => x.key === alvoKey); if (!alvo) return;
     const disp = modsDisponiveis(alvo.idCat);
@@ -7034,8 +6718,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     });
     atualizarBloco(alvo, novo);
   };
-  const remMod = (b, m) => { setSel(null); if (m.fixa) { if (LEG_TODOS[m.id]) onMudar(LEG_TODOS[m.id].off(ataque)); else atualizarBloco(b, removerFixoEfeito(b.item, m.id)); } else atualizarBloco(b, { ...b.item, mods: (b.item.mods || []).filter((_, j) => j !== m.idx) }); };
-  const temDescAtivo = !!sel && !sel.pal;
+  const remMod = (b, m) => { setSel(null); if (m.fixa) { if (m.id.startsWith("x:")) atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: false } }); else if (LEG_TODOS[m.id]) onMudar(LEG_TODOS[m.id].off(ataque)); else atualizarBloco(b, removerFixoEfeito(b.item, m.id)); } else atualizarBloco(b, { ...b.item, mods: (b.item.mods || []).filter((_, j) => j !== m.idx) }); };
   let inspetor = null;
   if (sel && sel.raiz) {
     if (sel.pal) inspetor = <PaletaHab ataque={ataque} onAdd={(id) => { onMudar(LEG_HAB[id].on(ataque)); setSel({ raiz: true, fixoHab: id }); }} onAddVar={addUso} />;
@@ -7050,6 +6733,19 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   } else if (bSel) {
     if (sel.pal) {
       inspetor = <PaletaMods ataque={ataque} bloco={bSel} idCat={bSel.idCat} item={bSel.item} ativo={bSel.ativo} ocultar={bSel.def ? modsOcultosDoPassivo(bSel.def) : undefined} onAdd={(m) => addMod(bSel, m)} />;
+    } else if (sel.fixo && sel.fixo.startsWith("x:") && bSel.def) {
+      const ex = [...(bSel.def.extras || []), ...(bSel.def.falhas || [])].find((e) => e.chave === sel.fixo.slice(2));
+      const negX = (bSel.def.falhas || []).includes(ex);
+      inspetor = ex ? (
+        <div className="px">
+          <DescBonita cor={negX ? "#d93636" : "#2fb84f"} titulo={nomeX(ex)} selo={(negX ? "Falha" : "Extra") + " · deste efeito"} seloClasse={negX ? "falha" : "extra"} chips={[["Custo", custoX(ex)]]} texto={ex.label} />
+          {ex.pontos && (
+            <div className="px-ctrl"><div className="px-linha"><span>Pontos</span>
+              <input type="number" min={1} style={{ maxWidth: 90 }} value={bSel.item.extrasPontos?.[ex.chave] || 1} onChange={(e) => atualizarBloco(bSel, { ...bSel.item, extrasPontos: { ...(bSel.item.extrasPontos || {}), [ex.chave]: Math.max(1, Math.round(Number(e.target.value) || 1)) } })} />
+            </div></div>
+          )}
+        </div>
+      ) : null;
     } else if (sel.fixo && LEG_TODOS[sel.fixo]) {
       inspetor = <InspetorLegado id={sel.fixo} item={ataque} todos onMudar={onMudar} onRemover={() => { onMudar(LEG_TODOS[sel.fixo].off(ataque)); setSel({ key: bSel.key }); }} grad={0} />;
     } else if (sel.fixo) {
@@ -7062,8 +6758,8 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
           onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => removerBloco(bSel)}
           onSubir={bSel.i > 0 ? () => setLista(bSel, mover(lista(bSel), bSel.i, -1)) : null} onDescer={bSel.i < lista(bSel).length - 1 ? () => setLista(bSel, mover(lista(bSel), bSel.i, 1)) : null}>
           {bSel.ativo
-            ? <EfeitoForm modo="bloco" efeito={bSel.item} res={bSel.res} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => {}} onCriarArremesso={onCriarArremesso} />
-            : <PassivoInstanceEditor modo="bloco" passivo={bSel.item} res={bSel.res} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => {}} />}
+            ? <EfeitoForm efeito={bSel.item} onMudar={(n) => atualizarBloco(bSel, n)} onCriarArremesso={onCriarArremesso} />
+            : <PassivoInstanceEditor passivo={bSel.item} onMudar={(n) => atualizarBloco(bSel, n)} />}
         </InspetorEfeito>
       );
     }
@@ -7097,7 +6793,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   ) : null;
   return (
     <div className={"vb-shell" + (cheio ? " cheio" : "")}>
-      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onCopiar={copiarPecas} offs={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaPos: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
+      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onCopiar={copiarPecas} onDeletar={deletarChaves} offs={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaPos: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
         zoom={zoom} setZoom={setZoom} onGrad={onGrad} info={info} calc={calc} ent={ent} cheio={cheio} setCheio={setCheio} ladoAberto={ladoAberto} setLadoAberto={setLadoAberto} />
     </div>
   );
@@ -7834,12 +7530,8 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   const eqExcedido = eqGastos > eqMax;
 
   const tentarSalvar = () => {
-    if (pontosPoderGastos(f) > pontosPoderMax(f)) {
-      setErro(`Pontos de Poder excedidos! Você gastou ${pontosPoderGastos(f)} de ${pontosPoderMax(f)} disponíveis. Reduza atributos, perícias ou vantagens antes de salvar.`);
-      return;
-    }
     setErro("");
-    onSalvar(f);
+    onSalvar(f.nome.trim() ? f : { ...f, nome: "Sem nome" });
   };
 
   return (
@@ -8053,7 +7745,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         {(erro || erroSalvar) && <div className="aviso-erro-salvar">{erro || erroSalvar}</div>}
         <div className="grid2">
           <button className="btn btn-ghost" onClick={onCancelar}>Cancelar</button>
-          <button className="btn btn-accent" disabled={!f.nome.trim()} onClick={tentarSalvar}>Salvar ficha</button>
+          <button className="btn btn-accent" onClick={tentarSalvar}>Salvar ficha</button>
         </div>
       </div>
     </div>
