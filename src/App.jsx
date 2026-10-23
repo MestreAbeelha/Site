@@ -750,6 +750,7 @@ const GlobalStyle = () => (
     .mm3 .px-chip { font:inherit; font-size:.78rem; font-weight:700; border-radius:99px; border:none; padding:7px 13px; color:#fff; cursor:pointer; }
     .mm3 .px-chip.extra { background:#1f9a43; }
     .mm3 .px-chip.falha { background:#b72c34; }
+    .mm3 .px-chip.excl { box-shadow:0 0 0 2.5px #e8c84a; }
     .mm3 .px-chip:hover { filter:brightness(1.15); }
     .mm3 .px-chip.on, .mm3 .vb-opcao.on { box-shadow:0 0 0 3px #e8c84a; }
     .mm3 .px-opcao-card { flex-basis:100%; width:100%; display:flex; flex-direction:column; gap:8px; margin:4px 0 8px; }
@@ -1557,7 +1558,7 @@ function instanciasPassivasAtivas(ent) {
   (ent?.ataques || []).forEach((a) => {
     // passiva: vale quando está ligada; ativa: os efeitos de aprimoramento valem enquanto ela é sustentada
     if (a.tipo === "passiva" ? !passivaEstaAtiva(a) : !(a.sustentado && a.sustentando)) return;
-    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id]) out.push({ ataque: a, inst: comAquecimento(inst, ent), idx }); });
+    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id]) out.push({ ataque: a, inst: comReducaoHab(comAquecimento(inst, ent), ent, a.id), idx }); });
   });
   return out;
 }
@@ -1999,6 +2000,7 @@ function modsDoEfeito(ef, a) {
     const g = ef.graus || 3;
     if (g < 3) der("grau_limitado_afl", g === 2 ? -1 : -2);
   }
+  (a?.alcances || []).filter((x) => x.efeitoId === ef.id).forEach((x) => der(x.tipo === "red" ? "alcance_reduzido" : "alcance_estendido", x.tipo === "red" ? -1 : 1));
   if (a?.pontoFraco?.ativo) der("ponto_fraco", -4);
   return m;
 }
@@ -2367,6 +2369,18 @@ function comAquecimento(item, ent, snap) {
   if (typeof item.graduacaoNulificar === "number") out.graduacaoNulificar = graduacaoAquecida(item.graduacaoNulificar, item.aquecimento.turnos, c);
   return out;
 }
+/* Enfraquecer + Amplo: o nível de uma habilidade do alvo foi reduzido (cai a graduação de todos os efeitos dela) */
+function reducaoNivelHab(ent, habId) {
+  return (ent?.duracoes || []).filter((d) => d.tipo === "habilidade" && d.habId === habId).reduce((t, d) => t + (d.valor || 0), 0);
+}
+function comReducaoHab(item, ent, habId) {
+  const r = reducaoNivelHab(ent, habId);
+  if (!r || !item) return item;
+  const out = { ...item };
+  if (typeof item.graduacao === "number") out.graduacao = Math.max(0, item.graduacao - r);
+  if (typeof item.graduacaoNulificar === "number") out.graduacaoNulificar = Math.max(0, item.graduacaoNulificar - r);
+  return out;
+}
 function montarTeste(dado, bonus, cd, limiarCrit = 20) {
   const total = dado + bonus;
   const diff = total - cd;
@@ -2500,6 +2514,26 @@ function usarDesgastante(ent, ataque, atualizarCampo, registrar, animar) {
 }
 
 /* ---------- resultado visual ---------- */
+function EscolhaEnfraquecer({ esc }) {
+  const [sels, setSels] = useState(Array.from({ length: esc.n }, () => ""));
+  const [feito, setFeito] = useState(false);
+  if (feito) return <div className="field-note">Aplicado em {esc.alvoNome}: {sels.filter(Boolean).map((s) => esc.opcoes.find((o) => o.v === s)?.l.replace("Habilidade: ", "")).join(", ")}.</div>;
+  const validas = sels.filter(Boolean);
+  const repetida = new Set(validas).size !== validas.length;
+  return (
+    <div style={{ marginTop: 8 }}>
+      <div className="field-note">Escolha o que reduzir em {esc.alvoNome} (−{esc.perda}){esc.n > 1 ? ` — até ${esc.n} opções` : ""}:</div>
+      {sels.map((s, i) => (
+        <select key={i} className="cb-sel" style={{ width: "100%", marginTop: 4 }} value={s} onChange={(e) => setSels(sels.map((x, j) => (j === i ? e.target.value : x)))}>
+          <option value="">Escolha…</option>
+          {esc.opcoes.map((o) => <option key={o.v} value={o.v}>{o.l}</option>)}
+        </select>
+      ))}
+      {repetida && <div className="field-note" style={{ color: "var(--danger)" }}>Escolha opções diferentes.</div>}
+      <button type="button" className="btn btn-sm" style={{ marginTop: 6 }} disabled={!validas.length || repetida} onClick={() => { esc.aplicar(validas); setFeito(true); }}>Aplicar</button>
+    </div>
+  );
+}
 function ResultadoCard({ r, efeito }) {
   if (!r) return null;
   return (
@@ -2522,6 +2556,7 @@ function ResultadoCard({ r, efeito }) {
           <div className="efeito-t">{efeito.titulo}</div>
           {efeito.valor !== undefined && <div className="efeito-n">{efeito.valor}</div>}
           <div className="efeito-f">{efeito.formula}</div>
+          {efeito.escolha && <EscolhaEnfraquecer esc={efeito.escolha} />}
         </div>
       )}
     </div>
@@ -3128,7 +3163,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const efeitoOriginal = efeito;
     // Dano Baseado Em: a graduação vem do atributo (+ dano adicional) do atacante, ao vivo.
     if (efeito.categoria === "Dano") efeito = { ...efeito, graduacao: graduacaoEfetiva(efeito, origemAtual), baseadoAtivo: false };
-    efeito = comAquecimento(efeito, origemAtual, aquecSnap); // Aquecimento: graduação reduzida nos primeiros usos/turnos
+    efeito = comReducaoHab(comAquecimento(efeito, origemAtual, aquecSnap), origemAtual, contexto.ataque?.id); // Aquecimento: graduação reduzida nos primeiros usos/turnos
     const brutal = critico ? bonusBrutal(origemAtual, contexto.ataque, efeitoOriginal) : 0;
     const dados = dadosEfeito(efeito, alvo, critico, brutal);
     const notasRes = [];
@@ -3307,15 +3342,29 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     if (efeito.categoria === "Enfraquecer") {
       extra.perda = r.sucesso ? 0 : Math.min(Math.abs(r.diff), efeito.graduacao || 0);
       if (extra.perda > 0 && atualizarCampo) {
-        const sim = somaVezes(efeito.mods, "simultaneo"), pers = temModEf(efeito, "persistente");
-        const nomes = String(efeito.caracteristica || "").split(/[,;]| e /).map((x) => x.trim()).filter(Boolean).slice(0, 1 + sim);
-        const novas = [], aplic = [];
-        nomes.forEach((nm) => {
-          const at = ATRIBUTOS.find((a) => semAcento(a.l) === semAcento(nm) || a.k === semAcento(nm));
-          if (at) { novas.push({ id: uid(), tipo: "atributo", chave: at.k, valor: extra.perda, quando: "recupera", turnoDeId: alvo.id, origem: contexto.ataque?.nome || "Enfraquecer", persistente: pers }); aplic.push(at.l); }
-        });
-        if (novas.length) atualizarCampo(alvo.id, "duracoes", (l) => [...(l || []), ...novas]);
-        extra.aplicado = novas.length ? `${aplic.join(", ")} −${extra.perda} (${pers ? "só recupera com descanso" : "recupera 1 por turno"})` : null;
+        // quem atacou escolhe o que reduzir (atributos; com Amplo, também as habilidades do alvo)
+        const n = 1 + somaVezes(efeito.mods, "simultaneo"), pers = temModEf(efeito, "persistente"), amplo = temModEf(efeito, "amplo");
+        const origemNome = contexto.ataque?.nome || "Enfraquecer";
+        const opcoes = [
+          ...ATRIBUTOS.map((at) => ({ v: "a:" + at.k, l: at.l })),
+          ...(amplo ? (alvo.ataques || []).filter((h) => h.id).map((h) => ({ v: "h:" + h.id, l: `Habilidade: ${h.nome || "Sem nome"}` })) : []),
+        ];
+        const perda = extra.perda;
+        extra.escolha = {
+          perda, n, opcoes, pers, alvoNome: alvo.nome,
+          aplicar: (sels) => {
+            const novas = [], nomes = [];
+            sels.forEach((s) => {
+              const o = opcoes.find((x) => x.v === s); if (!o) return;
+              if (s.startsWith("a:")) novas.push({ id: uid(), tipo: "atributo", chave: s.slice(2), valor: perda, quando: "recupera", turnoDeId: alvo.id, origem: origemNome, persistente: pers });
+              else novas.push({ id: uid(), tipo: "habilidade", habId: s.slice(2), nome: o.l.replace("Habilidade: ", ""), valor: perda, quando: "recupera", turnoDeId: alvo.id, origem: origemNome, persistente: pers });
+              nomes.push(o.l.replace("Habilidade: ", ""));
+            });
+            if (!novas.length) return;
+            atualizarCampo(alvo.id, "duracoes", (l) => [...(l || []), ...novas]);
+            registrar({ tipo: "rolagem", desc: `${origemAtual.nome} enfraquece ${alvo.nome}`, detalhe: `${nomes.join(", ")} −${perda} (${pers ? "só recupera com descanso" : "recupera 1 por turno"})`, total: "Enfraquecido", tipoClasse: "hd" });
+          },
+        };
       }
     }
     extra.notasMods = notasExclusivos(efeito, CAT_PARA_EFEITO[efeito.categoria], efeito.graduacao ?? efeito.graduacaoNulificar);
@@ -3454,7 +3503,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     if (efeito.categoria === "Nulificar") return { classe: res.r.sucesso ? "dano" : "ok", titulo: res.texto };
     if (efeito.categoria === "Aflição") return { classe: res.r.sucesso ? "ok" : "dano", titulo: res.texto };
     if (efeito.categoria === "Leitura Mental") return { classe: res.r.sucesso ? "ok" : "dano", titulo: res.texto };
-    if (efeito.categoria === "Enfraquecer") return { classe: res.perda > 0 ? "dano" : "ok", titulo: res.perda > 0 ? `-${res.perda} em ${efeito.caracteristica || "característica"}` : "Sem efeito", formula: res.perda > 0 ? (res.aplicado || (res.notasMods || []).join(" · ")) : undefined };
+    if (efeito.categoria === "Enfraquecer") return { classe: res.perda > 0 ? "dano" : "ok", titulo: res.perda > 0 ? `Enfraquecido −${res.perda}` : "Sem efeito", formula: res.perda > 0 ? (res.notasMods || []).join(" · ") : undefined, escolha: res.escolha };
     if (efeito.categoria === "Camuflagem") return { classe: res.sentidos.length ? "dano" : "ok", titulo: res.sentidos.length ? `Perde: ${res.sentidos.filter(Boolean).join(", ")}` : "Sem efeito" };
     return null;
   };
@@ -5019,7 +5068,7 @@ export default function MesaMM3() {
       else log(`${ent.nome} segue ${col.condicao} (Efeito Colateral de "${a.nome}")`, "Aplicado automaticamente", col.condicao);
       colatOps.push([item.id, col.condicao, ligar]);
     });
-    (ent.duracoes || []).filter((d) => d.quando === "recupera" && !d.persistente).forEach((d) => log(`${ent.nome} recupera de Enfraquecer`, `${d.chave} −${d.valor} → −${Math.max(0, d.valor - 1)}`, "Recuperando", "hs"));
+    (ent.duracoes || []).filter((d) => d.quando === "recupera" && !d.persistente).forEach((d) => log(`${ent.nome} recupera de Enfraquecer`, `${d.chave || d.nome} −${d.valor} → −${Math.max(0, d.valor - 1)}`, "Recuperando", "hs"));
     // Ciclo: habilidade sustentada com Ciclo dispara sozinha no começo do turno, sem custo de ação
     const avisosCiclo = [];
     (ent.ataques || []).forEach((a) => {
@@ -5351,8 +5400,7 @@ function EfeitoForm({ efeito, onMudar, onCriarArremesso }) {
           <div className="grid2" style={{ marginBottom: 8 }}>
             <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(temModEf(efeito, "resistencia_alternativa") ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
           </div>
-          <label className="label">Característica afetada</label>
-          <input type="text" value={efeito.caracteristica} onChange={(e) => upd("caracteristica", e.target.value)} />
+          <div className="field-note">Quando o alvo falha, quem usa a habilidade escolhe na rolagem qual atributo é reduzido (com Amplo, também as habilidades do alvo; com Simultâneo, mais de uma opção).</div>
         </>
       )}
       {efeito.categoria === "Camuflagem" && (
@@ -5773,13 +5821,13 @@ function DesgastanteEditor({ desgastante, onMudar }) {
 
 
 /* ---------- Construtor de poder: extras/falhas por efeito + painel de custo da habilidade ---------- */
-const MODS_LEGADO = new Set(["efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "ponto_fraco", "dividido", "multiataque", "desgastante", "efeito_alternativo",
+const MODS_LEGADO = new Set(["alcance_estendido", "alcance_reduzido", "alcance_diminuido", "efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "ponto_fraco", "dividido", "multiataque", "desgastante", "efeito_alternativo",
   "resistencia_alt_afl", "recuperacao_instantanea", "cumulativo_afl", "condicao_extra", "grau_limitado_afl", "variavel_nen_vida", "variavel_carga", "variavel_municao"]);
 const capNen = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
 const DUR_TXT = { instantaneo: "instantâneo", sustentado: "sustentado", permanente: "permanente" };
 function valorModTxt(m) {
   const cat = MOD_POR_ID[m.id];
-  const v = (m.valor ?? cat?.v ?? 0) * (m.vezes || 1);
+  const v = ((m.valor ?? cat?.v ?? 0) + (m.id === "reacao" && m.sust ? 1 : 0)) * (m.vezes || 1);
   return `${v > 0 ? "+" : ""}${v}${(cat?.k || "g") === "g" ? "/g" : " fixo"}`;
 }
 const NOTA_MODS = ["limitado", "area", "depender_sentido", "ativacao", "ponto_fraco", "retroalimentacao", "incontrolavel", "perceptivel", "efeito_secundario", "contagioso"];
@@ -5855,7 +5903,7 @@ function derivarHabilidade(a, calc, ent) {
   const acaoEng = acoes.length ? acoes.sort((x, y) => ordem.indexOf(y) - ordem.indexOf(x))[0] : null;
   const acao = acaoEng ? ACAO_ENGINE_PARA_NOME[acaoEng] : (a.acao || "Ação Livre");
   const ms = modsDaHabilidade(a);
-  const acaoSustentar = sustentado ? (ms.some((m) => m.id === "concentracao") ? "Ação Padrão" : "Nenhuma") : "Nenhuma";
+  const acaoSustentar = sustentado ? (ms.some((m) => m.id === "concentracao") ? "Ação Padrão" : ms.some((m) => m.id === "reacao" && m.sust) ? "Reação" : "Nenhuma") : "Nenhuma";
   const temArea = ms.some((m) => m.id === "area");
   const alvoLinha = ativosLinhas.find((l) => l.alcance && l.alcance !== "pessoal" && l.alcance !== "graduacao");
   let tipoAcerto = "percepcao";
@@ -5929,6 +5977,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     if (MODS_LEGADO.has(m.id)) return false;
     return m.mult || m.id === "limitado" || !mods.some((x) => x.id === m.id);
   };
+  const excl = new Set([...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
   const q = semAcento(busca);
   const xs = defP ? (aba === "extra" ? defP.extras : defP.falhas || []).filter((e) => !item.extrasAtivos?.[e.chave]).map((e) => ({ id: "x:" + e.chave, nome: nomeX(e), v: aba === "extra" ? 1 : -1, k: "g", _custo: custoX(e), _texto: e.label })) : [];
   const base = [...(aba === "extra" ? disp.extras : disp.falhas).filter(livre), ...xs];
@@ -5943,7 +5992,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
       <div className="px-chips">
         {lista.map((m) => (
           <React.Fragment key={m.id}>
-            <button type="button" className={"px-chip " + aba + (aberta === m.id ? " on" : "")} onClick={() => setAberta(aberta === m.id ? null : m.id)}>{m.nome}</button>
+            <button type="button" className={"px-chip " + aba + (excl.has(m.id) ? " excl" : "") + (aberta === m.id ? " on" : "")} title={excl.has(m.id) ? "Específico deste efeito" : undefined} onClick={() => setAberta(aberta === m.id ? null : m.id)}>{m.nome}</button>
             {aberta === m.id && <CartaoOpcao cor={aba === "extra" ? "#2fb84f" : "#d93636"} titulo={m.nome} selo={aba === "extra" ? "Extra" : "Falha"} seloClasse={aba} chips={[["Custo", m._custo || custoModTxt(m)]]} texto={m._texto || DESC_MOD[m.id] || ""} onAdd={() => onAdd(m)} />}
           </React.Fragment>
         ))}
@@ -5988,14 +6037,14 @@ function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, 
     </div>
   );
 }
-function InspetorMod({ item, grad, idx, onMudar, onRemover }) {
+function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra }) {
   const mods = item.mods || [];
   const m = mods[idx];
   const c = m ? MOD_POR_ID[m.id] : null;
   if (!m || !c) return null;
   const upd = (patch) => onMudar({ ...item, mods: mods.map((x, j) => (j === idx ? { ...x, ...patch } : x)) });
   const neg = (m.valor ?? c.v) < 0;
-  const regra = regraDoMod(m.id, m.vezes, m.valor, grad, { nota: m.nota, mods, dist: graduacaoParaDistancia });
+  const regra = regraDoMod(m.id, m.vezes, (m.valor ?? c.v) + (m.id === "reacao" && m.sust ? 1 : 0), grad, { nota: m.nota, mods, dist: graduacaoParaDistancia, sust: !!m.sust, passosExtra });
   return (
     <div className="px">
       <DescBonita cor={neg ? "#d93636" : "#2fb84f"} titulo={c.nome} selo={neg ? "Falha" : "Extra"} seloClasse={neg ? "falha" : "extra"}
@@ -6016,9 +6065,12 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover }) {
         {c.opcoes && c.opcoes.length > 1 && (
           <div className="px-linha"><span>Opção</span>
             <select className="cb-sel" value={String(m.valor ?? c.v)} onChange={(e) => upd({ valor: Number(e.target.value) })}>
-              {[...new Set(c.opcoes)].map((v) => <option key={v} value={v}>{v > 0 ? "+" : ""}{v}{c.k === "g" ? "/g" : ""}</option>)}
+              {[...new Set(c.opcoes)].map((v) => <option key={v} value={v}>{m.id === "reacao" ? (v === 0 ? "Não reduz a ação (+0/g)" : `Reduz ${v} degrau${v > 1 ? "s" : ""} (+${v}/g)`) : `${v > 0 ? "+" : ""}${v}${c.k === "g" ? "/g" : ""}`}</option>)}
             </select>
           </div>
+        )}
+        {m.id === "reacao" && (
+          <label className="checkbox-row"><input type="checkbox" checked={!!m.sust} onChange={(e) => upd({ sust: e.target.checked })} />Sustentar com reação, em vez de ação livre (+1/g)</label>
         )}
         {m.id === "area" && (
           <div className="px-linha"><span>Tipo de área</span>
@@ -6104,7 +6156,7 @@ function nomeUso(u, variaveis) {
   const v = (variaveis || []).find((x) => x.id === u.variavelId);
   return `${v?.nome || "Variável"} ${sinal}${n}`;
 }
-function PaletaHab({ ataque, onAdd, onAddVar }) {
+function PaletaHab({ ataque, onAdd, onAddVar, onAddAlc }) {
   const [aba, setAba] = useState("extra");
   const [aberta, setAberta] = useState(null);
   const lista = Object.keys(LEG_HAB).filter((id) => !LEG_HAB[id].ativo(ataque) && ((MOD_POR_ID[id].v < 0) === (aba === "falha")));
@@ -6122,6 +6174,12 @@ function PaletaHab({ ataque, onAdd, onAddVar }) {
             {aberta === id && <CartaoOpcao cor={aba === "extra" ? "#2fb84f" : "#d93636"} titulo={MOD_POR_ID[id].nome} selo={(aba === "extra" ? "Extra" : "Falha") + " · da habilidade inteira"} seloClasse={aba} chips={[["Custo", custoModTxt(MOD_POR_ID[id])]]} texto={DESC_MOD[id] || ""} onAdd={() => onAdd(id)} />}
           </React.Fragment>
         ))}
+        {(() => { const id = aba === "extra" ? "alcance_estendido" : "alcance_reduzido"; return (
+          <React.Fragment key={id}>
+            <button type="button" className={"px-chip " + aba + (aberta === id ? " on" : "")} onClick={() => setAberta(aberta === id ? null : id)}>{MOD_POR_ID[id].nome}</button>
+            {aberta === id && <CartaoOpcao cor={aba === "extra" ? "#2fb84f" : "#d93636"} titulo={MOD_POR_ID[id].nome} selo={(aba === "extra" ? "Extra" : "Falha") + " · da habilidade inteira"} seloClasse={aba} chips={[["Custo", custoModTxt(MOD_POR_ID[id])]]} texto={DESC_MOD[id]} onAdd={() => onAddAlc(aba === "extra" ? "est" : "red")} />}
+          </React.Fragment>
+        ); })()}
       </div>
       <div className="label" style={{ marginTop: 4 }}>Variável</div>
       <div className="px-chips">
@@ -6139,6 +6197,24 @@ function PaletaHab({ ataque, onAdd, onAddVar }) {
         ))}
       </div>
       <div className="field-note">{aba === "extra" ? "Extra de variável: usar a habilidade aumenta a variável (ex.: ganha carga)." : "Falha de variável: usar a habilidade reduz a variável (ex.: gasta carga, Nen ou Vida)."} Estas peças valem para a habilidade inteira.</div>
+    </div>
+  );
+}
+function InspetorAlcance({ x, efs, onMudar, onRemover }) {
+  const red = x.tipo === "red", id = red ? "alcance_reduzido" : "alcance_estendido", c = MOD_POR_ID[id];
+  return (
+    <div className="px">
+      <DescBonita cor={red ? "#d93636" : "#2fb84f"} titulo={c.nome} selo={(red ? "Falha" : "Extra") + " · da habilidade inteira"} seloClasse={red ? "falha" : "extra"}
+        chips={[["Custo", custoModTxt(c)], ...(red ? [] : [["Tipo de Nen", "Emissor"]])]} texto={DESC_MOD[id]} />
+      <div className="px-ctrl">
+        <div className="px-linha"><span>Efeito afetado</span>
+          <select className="cb-sel" value={x.efeitoId || ""} onChange={(e) => onMudar({ ...x, efeitoId: e.target.value })}>
+            {!efs.length && <option value="">(adicione um efeito)</option>}
+            {efs.map((e, i) => <option key={e.id} value={e.id}>{e.categoria}{efs.filter((y) => y.categoria === e.categoria).length > 1 ? ` (${i + 1})` : ""}</option>)}
+          </select>
+        </div>
+        <button type="button" className="btn btn-ghost btn-sm" onClick={onRemover}>Remover</button>
+      </div>
     </div>
   );
 }
@@ -6328,7 +6404,7 @@ function NoGraduacao({ b, onGrad }) {
 function BtnX({ onClick }) {
   return <button type="button" className="mp-x" title="Remover" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onClick(); }}>×</button>;
 }
-function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs, onCopiar, onDeletar }) {
+function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs, onCopiar, onDeletar, nasce }) {
   const L = layoutMapa(blocos, habMods.length);
   const ref = useRef(null);
   const gest = useRef(null);
@@ -6391,6 +6467,26 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
     const d = drag && drag.keys.has(k) ? drag : null;
     return { x: n.x + (o.x || 0) + (d ? d.dx : 0), y: n.y + (o.y || 0) + (d ? d.dy : 0), w: n.w, h: n.h };
   };
+  // quadrado recém-criado: nasce 30px à direita do último extra (ou da última falha) do mesmo efeito
+  useEffect(() => {
+    const sp = nasce && nasce.current;
+    if (!sp || !N[sp.key]) return;
+    nasce.current = null;
+    if (offs && offs[sp.key]) return;
+    const b = blocos.find((x) => x.key === sp.bloco);
+    if (!b) return;
+    const lista = b.mods.map((m) => ({ m, k: modKey(b, m) })).filter((x) => N[x.k]);
+    const eu = lista.find((x) => x.k === sp.key);
+    if (!eu) return;
+    const outros = lista.filter((x) => x.k !== sp.key);
+    const iguais = outros.filter((x) => x.m.neg === eu.m.neg);
+    const me = N[sp.key];
+    let tx, ty;
+    if (iguais.length) { const u = R(iguais[iguais.length - 1].k); tx = u.x + u.w + 30; ty = u.y + (u.h - me.h) / 2; }
+    else if (outros.length) { const u = R(outros[outros.length - 1].k); tx = u.x; ty = u.y + u.h + 14; }
+    else { const e = R(b.key); tx = e.x + e.w + 60; ty = e.y + (e.h - me.h) / 2; }
+    onOffs({ ...(offs || {}), [sp.key]: { x: tx - me.x, y: ty - me.y } });
+  });
   let W = L.W, H = L.H;
   const maisKeys = ["novo", "h+", ...blocos.map((b) => b.key + ":+")];
   [...Object.keys(N), ...maisKeys].forEach((k) => { const r = R(k); W = Math.max(W, r.x + r.w + 30); H = Math.max(H, r.y + r.h + 30); });
@@ -6608,21 +6704,25 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   });
   const habMods = [
     ...Object.keys(LEG_HAB).filter((id) => LEG_HAB[id].ativo(ataque)).map((id) => ({ id, nome: MOD_POR_ID[id]?.nome || id, neg: (MOD_POR_ID[id]?.v ?? 0) < 0 })),
+    ...(ataque.alcances || []).map((x) => ({ id: "a:" + x.id, nome: (x.tipo === "red" ? "Alcance Reduzido" : "Alcance Estendido") + (efs.find((e) => e.id === x.efeitoId) ? " · " + efs.find((e) => e.id === x.efeitoId).categoria : ""), neg: x.tipo === "red" })),
     ...(ataque.usoVariaveis || []).map((u) => ({ id: "u:" + u.id, nome: nomeUso(u, variaveis), neg: (u.delta || 0) < 0 })),
   ];
 
   const bSel = sel && sel.key ? blocos.find((b) => b.key === sel.key) : null;
   const atualizarBloco = (b, novo) => (b.ativo ? setEfs(efs.map((x, j) => (j === b.i ? novo : x))) : setPas(pas.map((x, j) => (j === b.i ? novo : x))));
-  const removerBloco = (b) => { setSel(null); b.ativo ? setEfs(efs.filter((_, j) => j !== b.i)) : setPas(pas.filter((_, j) => j !== b.i)); };
+  const removerBloco = (b) => { setSel(null); if (b.ativo) { onMudar({ ...ataque, efeitos: efs.filter((_, j) => j !== b.i), alcances: (ataque.alcances || []).filter((x) => x.efeitoId !== b.item.id) }); } else setPas(pas.filter((_, j) => j !== b.i)); };
   const lista = (b) => (b.ativo ? efs : pas);
   const setLista = (b, arr) => (b.ativo ? setEfs(arr) : setPas(arr));
   const onGrad = (b, d) => { const k = chaveGrad(b.ativo, b.item); atualizarBloco(b, { ...b.item, [k]: Math.max(0, (b.item[k] || 0) + d) }); };
+  const nasce = useRef(null);
   const addMod = (b, m) => {
-    if (m.id.startsWith("x:")) { atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: true } }); setSel({ key: b.key, fixo: m.id }); return; }
-    if (LEG_TODOS[m.id]) { onMudar(LEG_TODOS[m.id].on(ataque)); setSel({ key: b.key, fixo: m.id }); return; }
-    if (LEG_EFEITO[m.id]) { const jaTem = m.id === "efeito_colateral" && b.item.colateral?.ativo; atualizarBloco(b, LEG_EFEITO[m.id].on(b.item)); setSel({ key: b.key, fixo: jaTem ? `efeito_colateral#${(b.item.colateraisExtra || []).length + 1}` : m.id }); return; }
+    const nk = (k) => { nasce.current = { bloco: b.key, key: k }; };
+    if (m.id.startsWith("x:")) { atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: true } }); nk(`${b.key}:f${m.id}`); setSel({ key: b.key, fixo: m.id }); return; }
+    if (LEG_TODOS[m.id]) { onMudar(LEG_TODOS[m.id].on(ataque)); nk(`${b.key}:f${m.id}`); setSel({ key: b.key, fixo: m.id }); return; }
+    if (LEG_EFEITO[m.id]) { const jaTem = m.id === "efeito_colateral" && b.item.colateral?.ativo; atualizarBloco(b, LEG_EFEITO[m.id].on(b.item)); nk(`${b.key}:f${jaTem ? `efeito_colateral#${(b.item.colateraisExtra || []).length + 1}` : m.id}`); setSel({ key: b.key, fixo: jaTem ? `efeito_colateral#${(b.item.colateraisExtra || []).length + 1}` : m.id }); return; }
     const novos = [...(b.item.mods || []), { id: m.id, vezes: 1, valor: m.v, nota: m.id === "area" ? "Explosão" : "" }];
     atualizarBloco(b, { ...b.item, mods: novos });
+    nk(`${b.key}:m${novos.length - 1}`);
     setSel({ key: b.key, mod: novos.length - 1 });
   };
   const gradDe = (b) => b.item[chaveGrad(b.ativo, b.item)] || 0;
@@ -6637,9 +6737,14 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     }
     setSel({ raiz: true, fixoHab: "u:" + id });
   };
+  const addAlc = (tipo) => {
+    const id = uid();
+    onMudar({ ...ataque, alcances: [...(ataque.alcances || []), { id, tipo, efeitoId: efs[0]?.id || null }] });
+    setSel({ raiz: true, fixoHab: "a:" + id });
+  };
   const mesmo = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const clicar = (x) => { if (mesmo(sel, x)) setSel(null); else { setSel(x); setLadoAberto(true); } setPaleta(false); };
-  const remHab = (h) => { setSel(null); if (h.id.startsWith("u:")) onMudar({ ...ataque, usoVariaveis: ataque.usoVariaveis.filter((x) => x.id !== h.id.slice(2)) }); else onMudar(LEG_HAB[h.id].off(ataque)); };
+  const remHab = (h) => { setSel(null); if (h.id.startsWith("a:")) onMudar({ ...ataque, alcances: (ataque.alcances || []).filter((x) => x.id !== h.id.slice(2)) }); else if (h.id.startsWith("u:")) onMudar({ ...ataque, usoVariaveis: ataque.usoVariaveis.filter((x) => x.id !== h.id.slice(2)) }); else onMudar(LEG_HAB[h.id].off(ataque)); };
   const CAMPO_LEG = { efeito_colateral: "colateral", exigir_teste: "exigirTeste", peculiaridade: "peculiaridade", aquecimento: "aquecimento", resistencia_alt_afl: "resistenciaAlternativa", recuperacao_instantanea: "recuperacaoInstantanea", cumulativo_afl: "cumulativo", condicao_extra: "condicaoExtra", grau_limitado_afl: "graus" };
   const deletarChaves = (keysIn) => {
     let keys = keysIn;
@@ -6659,7 +6764,8 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
       if (blocosRem.has(k)) return;
       if (k.startsWith("h:")) {
         const id = k.slice(2);
-        if (id.startsWith("u:")) novoA = { ...novoA, usoVariaveis: (novoA.usoVariaveis || []).filter((x) => x.id !== id.slice(2)) };
+        if (id.startsWith("a:")) novoA = { ...novoA, alcances: (novoA.alcances || []).filter((x) => x.id !== id.slice(2)) };
+        else if (id.startsWith("u:")) novoA = { ...novoA, usoVariaveis: (novoA.usoVariaveis || []).filter((x) => x.id !== id.slice(2)) };
         else if (LEG_HAB[id]) novoA = LEG_HAB[id].off(novoA);
         return;
       }
@@ -6684,6 +6790,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     const efsF = efsN.filter((_, i) => !blocosRem.has("e" + efs[i].id));
     const pasF = pasN.filter((x, i) => !blocosRem.has("p" + (pas[i].id || i)));
     novoA = { ...novoA, efeitos: efsF };
+    if (novoA.alcances) novoA.alcances = novoA.alcances.filter((x) => efsF.some((e) => e.id === x.efeitoId));
     if (ataque.passivos !== undefined || pasF.length !== pas.length) novoA.passivos = pasF;
     onMudar(novoA);
     setSel(null);
@@ -6721,7 +6828,12 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   const remMod = (b, m) => { setSel(null); if (m.fixa) { if (m.id.startsWith("x:")) atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: false } }); else if (LEG_TODOS[m.id]) onMudar(LEG_TODOS[m.id].off(ataque)); else atualizarBloco(b, removerFixoEfeito(b.item, m.id)); } else atualizarBloco(b, { ...b.item, mods: (b.item.mods || []).filter((_, j) => j !== m.idx) }); };
   let inspetor = null;
   if (sel && sel.raiz) {
-    if (sel.pal) inspetor = <PaletaHab ataque={ataque} onAdd={(id) => { onMudar(LEG_HAB[id].on(ataque)); setSel({ raiz: true, fixoHab: id }); }} onAddVar={addUso} />;
+    if (sel.pal) inspetor = <PaletaHab ataque={ataque} onAdd={(id) => { onMudar(LEG_HAB[id].on(ataque)); setSel({ raiz: true, fixoHab: id }); }} onAddVar={addUso} onAddAlc={addAlc} />;
+    else if (sel.fixoHab && sel.fixoHab.startsWith("a:")) {
+      const aid = sel.fixoHab.slice(2), x = (ataque.alcances || []).find((y) => y.id === aid);
+      inspetor = x ? <InspetorAlcance x={x} efs={efs} onMudar={(n) => onMudar({ ...ataque, alcances: ataque.alcances.map((y) => (y.id === aid ? n : y)) })}
+        onRemover={() => { onMudar({ ...ataque, alcances: ataque.alcances.filter((y) => y.id !== aid) }); setSel({ raiz: true }); }} /> : null;
+    }
     else if (sel.fixoHab && sel.fixoHab.startsWith("u:")) {
       const uid0 = sel.fixoHab.slice(2), u = (ataque.usoVariaveis || []).find((x) => x.id === uid0);
       inspetor = u ? <InspetorUso u={u} variaveis={variaveis} onMudarVariavel={onMudarVariavel || (() => {})} onExcluirVariavel={onExcluirVariavel || (() => {})}
@@ -6751,7 +6863,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     } else if (sel.fixo) {
       inspetor = <InspetorLegado id={sel.fixo} item={bSel.item} grad={gradDe(bSel)} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, removerFixoEfeito(bSel.item, sel.fixo)); setSel({ key: bSel.key }); }} />;
     } else if (sel.mod != null) {
-      inspetor = <InspetorMod item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, { ...bSel.item, mods: (bSel.item.mods || []).filter((_, j) => j !== sel.mod) }); setSel({ key: bSel.key }); }} />;
+      inspetor = <InspetorMod passosExtra={(ataque.alcances || []).filter((x) => x.efeitoId === bSel.item.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1), 0)} item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, { ...bSel.item, mods: (bSel.item.mods || []).filter((_, j) => j !== sel.mod) }); setSel({ key: bSel.key }); }} />;
     } else {
       inspetor = (
         <InspetorEfeito key={bSel.key} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat}
@@ -6793,7 +6905,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   ) : null;
   return (
     <div className={"vb-shell" + (cheio ? " cheio" : "")}>
-      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onCopiar={copiarPecas} onDeletar={deletarChaves} offs={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaPos: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
+      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onCopiar={copiarPecas} onDeletar={deletarChaves} nasce={nasce} offs={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaPos: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
         zoom={zoom} setZoom={setZoom} onGrad={onGrad} info={info} calc={calc} ent={ent} cheio={cheio} setCheio={setCheio} ladoAberto={ladoAberto} setLadoAberto={setLadoAberto} />
     </div>
   );
@@ -8314,7 +8426,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
           <div className="chip-row">
             {e.duracoes.map((d) => (
               <button key={d.id} className="stat-chip ajuda-chip" title="Clique para remover agora" onClick={() => editavel && removerDuracao(d)}>
-                {d.tipo === "atributo" ? <>{ATRIBUTOS.find((a) => a.k === d.chave)?.l || d.chave} <b>-{d.valor}</b></> : d.nome}
+                {d.tipo === "atributo" ? <>{ATRIBUTOS.find((a) => a.k === d.chave)?.l || d.chave} <b>-{d.valor}</b></> : d.tipo === "habilidade" ? <>{d.nome} (nível) <b>-{d.valor}</b></> : d.nome}
                 {" "}<span style={{ opacity: 0.7 }}>· até {d.quando === "inicio" ? "o início" : "o fim"} do turno de {nomeDoTurno(d.turnoDeId)}</span>
               </button>
             ))}
