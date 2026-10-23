@@ -3510,8 +3510,21 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
 
   /* ----- agarrar rápido (checkbox em ataques corpo-a-corpo) ----- */
   const podeAgarrarRapido = ehAtaque && !isArea && contexto.ataque?.tipoAcerto === "corpo" && temVantagem(origemAtual, "Agarrar Rápido");
+  /* Limitado a falhar no teste de outro efeito: só rola se o alvo falhou no efeito indicado */
+  const limStatus = (efeito, getRes) => {
+    const m = (efeito.mods || []).find((x) => x.id === "limitado" && x.limFalha && x.limEfeitoId);
+    if (!m) return null;
+    const ref = (contexto.ataque?.efeitos || []).find((e) => e.id === m.limEfeitoId);
+    if (!ref) return null;
+    const rr = getRes(ref.id);
+    if (!rr) return { estado: "espera", nome: ref.categoria };
+    return rr.r && rr.r.sucesso ? { estado: "bloqueado", nome: ref.categoria } : null;
+  };
+  const avisoLim = (st) => (st.estado === "espera"
+    ? <div className="field-note">Limitado: só vale se o alvo falhar no teste de {st.nome}. Role {st.nome} primeiro.</div>
+    : <div className="efeito-card ok"><div className="efeito-t">Não se aplica</div><div className="efeito-f">O alvo resistiu a {st.nome}.</div></div>);
   const efeitosPendentesAgarrar = (contexto.ataque?.efeitos || []).filter((ef) => ef.categoria !== "Outros" && !falhouTeste(ef));
-  const todosEfeitosResolvidos = efeitosPendentesAgarrar.every((ef) => !!efeitosR[ef.id]);
+  const todosEfeitosResolvidos = efeitosPendentesAgarrar.every((ef) => !!efeitosR[ef.id] || limStatus(ef, (id) => efeitosR[id])?.estado === "bloqueado");
   const rolarAgarrao = () => {
     if (!oponente) return;
     const bAt = melhorDe(origemAtual, ["Atletismo"]);
@@ -3776,8 +3789,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                         <div className="efeito-card ok"><div className="efeito-f">{efeito.texto || "(sem descrição)"}</div></div>
                       ) : (
                         <>
-                          {!res && renderProtecaoLimitada(efeito, alvo, key)}
-                          {!res && <button className="btn btn-ghost btn-block" onClick={() => rolarEfeito(efeito, alvo)}>⚄ Rolar Resistência</button>}
+                          {!res && !limStatus(efeito, (id) => efeitosR[`${alvo.id}:${id}`]) && renderProtecaoLimitada(efeito, alvo, key)}
+                          {!res && (limStatus(efeito, (id) => efeitosR[`${alvo.id}:${id}`]) ? avisoLim(limStatus(efeito, (id) => efeitosR[`${alvo.id}:${id}`])) : <button className="btn btn-ghost btn-block" onClick={() => rolarEfeito(efeito, alvo)}>⚄ Rolar Resistência</button>)}
                           {res && <ResultadoCard r={res.r} efeito={montarEfeitoCard(efeito, res)} />}
                         </>
                       )}
@@ -3835,8 +3848,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                         <div className="efeito-card ok"><div className="efeito-f">{efeito.texto || "(sem descrição)"}</div></div>
                       ) : (
                         <>
-                          {!res && renderProtecaoLimitada(efeito, oponente, efeito.id)}
-                          {!res && <button className="btn btn-ghost btn-block" onClick={() => rolarEfeito(efeito)}>⚄ Rolar Resistência</button>}
+                          {!res && !limStatus(efeito, (id) => efeitosR[id]) && renderProtecaoLimitada(efeito, oponente, efeito.id)}
+                          {!res && (limStatus(efeito, (id) => efeitosR[id]) ? avisoLim(limStatus(efeito, (id) => efeitosR[id])) : <button className="btn btn-ghost btn-block" onClick={() => rolarEfeito(efeito)}>⚄ Rolar Resistência</button>)}
                           {res && <ResultadoCard r={res.r} efeito={montarEfeitoCard(efeito, res)} />}
                         </>
                       )}
@@ -3936,8 +3949,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                           const res = ma.efeitosR[efeito.id];
                           return (
                             <div key={efeito.id} style={{ marginBottom: 8 }}>
-                              {!res && renderProtecaoLimitada(efeito, ma.alvo, `multi:${ma.id}:${efeito.id}`)}
-                              {!res && <button className="btn btn-ghost btn-block" onClick={() => rolarEfeitoMulti(ma.id, efeito)}>⚄ Rolar Resistência ({efeito.categoria})</button>}
+                              {!res && !limStatus(efeito, (id) => ma.efeitosR[id]) && renderProtecaoLimitada(efeito, ma.alvo, `multi:${ma.id}:${efeito.id}`)}
+                              {!res && (limStatus(efeito, (id) => ma.efeitosR[id]) ? avisoLim(limStatus(efeito, (id) => ma.efeitosR[id])) : <button className="btn btn-ghost btn-block" onClick={() => rolarEfeitoMulti(ma.id, efeito)}>⚄ Rolar Resistência ({efeito.categoria})</button>)}
                               {res && <ResultadoCard r={res.r} efeito={montarEfeitoCard(efeito, res)} />}
                             </div>
                           );
@@ -6037,7 +6050,7 @@ function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, 
     </div>
   );
 }
-function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra }) {
+function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra, efsLista }) {
   const mods = item.mods || [];
   const m = mods[idx];
   const c = m ? MOD_POR_ID[m.id] : null;
@@ -6071,6 +6084,19 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra }) {
         )}
         {m.id === "reacao" && (
           <label className="checkbox-row"><input type="checkbox" checked={!!m.sust} onChange={(e) => upd({ sust: e.target.checked })} />Sustentar com reação, em vez de ação livre (+1/g)</label>
+        )}
+        {m.id === "limitado" && efsLista && efsLista.length > 0 && (
+          <>
+            <label className="checkbox-row"><input type="checkbox" checked={!!m.limFalha} onChange={(e) => upd({ limFalha: e.target.checked, limEfeitoId: e.target.checked ? (m.limEfeitoId || efsLista[0].id) : undefined })} />Limitado a falhar no teste de…</label>
+            {m.limFalha && (
+              <div className="px-linha"><span>Efeito</span>
+                <select className="cb-sel" value={m.limEfeitoId || efsLista[0].id} onChange={(e) => upd({ limEfeitoId: e.target.value })}>
+                  {efsLista.map((e) => <option key={e.id} value={e.id}>{e.categoria}{efsLista.filter((y) => y.categoria === e.categoria).length > 1 ? ` (${(efsLista.indexOf(e)) + 1})` : ""}</option>)}
+                </select>
+              </div>
+            )}
+            {m.limFalha && <div className="field-note">Este efeito só pode ser rolado se o alvo falhar no teste de resistência do efeito escolhido.</div>}
+          </>
         )}
         {m.id === "area" && (
           <div className="px-linha"><span>Tipo de área</span>
@@ -6863,7 +6889,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     } else if (sel.fixo) {
       inspetor = <InspetorLegado id={sel.fixo} item={bSel.item} grad={gradDe(bSel)} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, removerFixoEfeito(bSel.item, sel.fixo)); setSel({ key: bSel.key }); }} />;
     } else if (sel.mod != null) {
-      inspetor = <InspetorMod passosExtra={(ataque.alcances || []).filter((x) => x.efeitoId === bSel.item.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1), 0)} item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, { ...bSel.item, mods: (bSel.item.mods || []).filter((_, j) => j !== sel.mod) }); setSel({ key: bSel.key }); }} />;
+      inspetor = <InspetorMod efsLista={bSel.ativo ? efs.filter((e) => e.id !== bSel.item.id && !CATS_SEM_ROLAGEM.includes(e.categoria) && e.categoria !== "Outros") : undefined} passosExtra={(ataque.alcances || []).filter((x) => x.efeitoId === bSel.item.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1), 0)} item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, { ...bSel.item, mods: (bSel.item.mods || []).filter((_, j) => j !== sel.mod) }); setSel({ key: bSel.key }); }} />;
     } else {
       inspetor = (
         <InspetorEfeito key={bSel.key} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat}
