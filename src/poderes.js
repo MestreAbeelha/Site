@@ -81,7 +81,7 @@ const M = (id, nome, k, v, extra = {}) => ({ id, nome, k, v, ...extra });
 export const EXTRAS = [
   M("afeta_objetos", "Afeta Objetos", "g", 1, { opcoes: [0, 1] }),
   M("afeta_outros", "Afeta Outros", "g", 1, { opcoes: [0, 1] }),
-  M("alcance_estendido", "Alcance Estendido", "f", 1, { mult: true, tipo: "emissor", muda: "alcance" }),
+  M("alcance_estendido", "Alcance Estendido", "f", 1, { mult: true, tipo: "emissor" }),
   M("area", "Área", "g", 1, { tipo: "emissor", opcoes_area: ["Cone", "Cilindro", "Explosão", "Linha", "Nuvem"] }),
   M("ataque", "Ataque", "g", 0),
   M("automatizado", "Automatizado", "g", 7, { opcoes: [7, 10], muda: "acao" }),
@@ -97,7 +97,7 @@ export const EXTRAS = [
   M("penetrante", "Penetrante", "g", 1, { mult: true }),
   M("permear", "Permear", "g", 1, { tipo: "emissor" }),
   M("preciso", "Preciso", "f", 1),
-  M("reacao", "Reação (reduz a ação)", "g", 1, { opcoes: [1, 2, 3], muda: "acao" }),
+  M("reacao", "Reação", "g", 1, { opcoes: [0, 1, 2, 3], muda: "acao" }),
   M("resistencia_alternativa", "Resistência Alternativa", "g", 1),
   M("ricochete", "Ricochete", "f", 1),
   M("seletivo", "Seletivo", "g", 1, { tipo: "emissor" }),
@@ -111,7 +111,7 @@ export const EXTRAS = [
 export const FALHAS = [
   M("acao_aumentada", "Ação Aumentada", "g", -1, { mult: true, muda: "acao" }),
   M("alcance_diminuido", "Alcance Diminuído", "f", -1, { mult: true, muda: "alcance" }),
-  M("alcance_reduzido", "Alcance Reduzido", "g", -1, { mult: true, muda: "alcance" }),
+  M("alcance_reduzido", "Alcance Reduzido", "f", -1, { mult: true }),
   M("aquecimento", "Aquecimento", "g", -3, { opcoes: [-3, -5, -10] }),
   M("ativacao", "Ativação", "g", -1),
   M("baseado_agarrar", "Baseado em Agarrar", "g", -2),
@@ -199,7 +199,7 @@ export function acaoDoEfeito(acaoBase, mods) {
   const i = ESCALA_ACAO.indexOf(acaoBase);
   if (i < 0) return acaoBase;
   const sobe = mods.filter((m) => m.id === "acao_aumentada").reduce((s, m) => s + (m.vezes || 1), 0);
-  const desce = mods.filter((m) => m.id === "reacao").reduce((s, m) => s + Math.min(3, Math.abs(m.valor ?? 1)), 0);
+  const desce = mods.filter((m) => m.id === "reacao").reduce((s, m) => s + Math.min(3, Math.abs((m.valor ?? 1) - (m.sust ? 1 : 0))), 0);
   return ESCALA_ACAO[Math.max(0, Math.min(3, i + sobe - desce))];
 }
 const ESCALA_ALCANCE = ["pessoal", "perto", "distancia", "percepcao"];
@@ -209,7 +209,7 @@ export function alcanceDoEfeito(alcBase, mods) {
   let j = i;
   if (mods.some((m) => m.id === "ataque") && j === 0) j = 1;
   mods.filter((m) => m.id === "distancia_aumentada").forEach((m) => { j += Math.abs(m.valor ?? 1) >= 2 ? 2 : 1; });
-  mods.filter((m) => m.id === "alcance_reduzido" || m.id === "alcance_diminuido").forEach((m) => { j -= (m.vezes || 1); });
+  mods.filter((m) => m.id === "alcance_diminuido").forEach((m) => { j -= (m.vezes || 1); });
   return ESCALA_ALCANCE[Math.max(0, Math.min(3, j))];
 }
 export function duracaoDoEfeito(durBase, mods) {
@@ -236,10 +236,10 @@ function resolverMod(it) {
   const vezes = it.vezes ?? 1;
   const nome = it.nome || cat?.nome || it.id;
   let k, v;
-  if (cat) { k = cat.k; v = it.valor ?? cat.v; }
+  if (cat) { k = cat.k; v = (it.valor ?? cat.v) + (it.id === "reacao" && it.sust ? 1 : 0); }
   else if (it.g !== undefined) { k = "g"; v = it.g; }
   else { k = "f"; v = it.f ?? it.valor ?? 0; }
-  return { id: it.id, nome, k, valor: v * vezes, vezes, tipo: it.tipo || cat?.tipo || null, muda: cat?.muda, derivado: !!it.derivado };
+  return { id: it.id, nome, k, valor: v * vezes, sust: !!it.sust, vezes, tipo: it.tipo || cat?.tipo || null, muda: cat?.muda, derivado: !!it.derivado };
 }
 
 /**
@@ -307,6 +307,8 @@ export function calcularHabilidade(ctx, hab) {
   const durs = new Set(efeitos.filter((e) => e.duracao !== "permanente").map((e) => e.duracao));
   if (durs.has("sustentado") && durs.size > 1) erros.push("Se a habilidade é sustentada, todos os efeitos precisam ser sustentados.");
 
+  if (efeitos.some((e) => e.mods.some((m) => m.id === "reacao" && m.sust) && e.duracao !== "sustentado"))
+    avisos.push("Reação: sustentar com reação só tem efeito em efeitos sustentados.");
   const somaEfeitos = efeitos.reduce((s, e) => s + e.custo, 0);
   const somaFixos = fixos.reduce((s, f) => s + f.valor, 0);
   const bruto = somaEfeitos + somaFixos;
@@ -322,14 +324,14 @@ export const REGRAS = {
     const base = { cone: 1, cilindro: 0, explosao: 0, linha: 2, nuvem: 0 };
     const nota = String(c?.nota || "explosão").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
     const forma = Object.keys(base).find((k) => nota.includes(k)) || "explosao";
-    const passos = (c?.mods || []).filter((m) => m.id === "alcance_estendido").reduce((t, m) => t + (m.vezes || 1), 0);
+    const passos = Math.max(-base[forma], (c?.mods || []).reduce((t, m) => t + (m.id === "alcance_estendido" ? (m.vezes || 1) : m.id === "alcance_reduzido" ? -(m.vezes || 1) : 0), 0) + (c?.passosExtra || 0));
     const m = c?.dist ? c.dist(base[forma] + passos) : "?";
     const nomeForma = { cone: "Cone", cilindro: "Cilindro", explosao: "Explosão", linha: "Linha", nuvem: "Nuvem" }[forma];
-    return `Alcance da área (${nomeForma}): ${m} m${passos ? ` (com ${passos} passo(s) de Alcance Estendido)` : ""}. Afeta todos na área; cada alvo pode fazer Esquiva (CD 10 + graduação) para reduzir pela metade a CD de resistência.`;
+    return `Alcance da área (${nomeForma}): ${m} m${passos ? ` (${passos > 0 ? "+" : ""}${passos} graduação(ões) de distância por Alcance Estendido/Reduzido)` : ""}. Afeta todos na área; cada alvo pode fazer Esquiva (CD 10 + graduação) para reduzir pela metade a CD de resistência.`;
   },
   afeta_objetos: () => "Afeta Objetos: o efeito também funciona contra objetos.",
   afeta_outros: () => "Afeta Outros: o efeito pode ser aplicado em outra criatura (toque).",
-  alcance_estendido: (n) => `Alcance Estendido ${n}: o alcance (ou o tamanho da área) sobe ${n} graduação(ões) na Tabela de Medidas.`,
+  alcance_estendido: (n) => `Alcance Estendido ${n}: a graduação de distância do efeito escolhido sobe ${n} na Tabela de Medidas (alcance e tamanho de área).`,
   distancia_aumentada: (n) => `Distância Aumentada ${n}: alcance de ataque à distância aumentado.`,
   ataque: () => "Ataque: o efeito de alcance pessoal passa a exigir jogada de ataque contra o alvo.",
   automatizado: () => "Automatizado: sem ação; ativa sempre que o alvo perde PV ou é selecionado como alvo, antes de qualquer rolagem.",
@@ -339,7 +341,7 @@ export const REGRAS = {
   penetrante: (n) => `Penetrante ${n}: ignora ${n} ponto(s) de Proteção/redução de dano do alvo (aplicado automaticamente).`,
   permear: () => "Permear: atravessa barreiras e cobertura.",
   preciso: () => "Preciso: ignora cobertura/camuflagem parciais.",
-  reacao: (n, v) => `Reação: a ação do efeito é reduzida em ${Math.abs(v ?? 1)} degrau(s) (padrão → movimento → livre → reação).`,
+  reacao: (n, v, g, c) => { const d = c?.sust ? Math.max(0, Math.abs(v ?? 1) - 1) : Math.abs(v ?? 1); return [d ? `a ação do efeito é reduzida em ${d} degrau(s) (padrão → movimento → livre → reação)` : "", c?.sust ? "para sustentar você gasta uma reação por turno, em vez de ação livre" : ""].filter(Boolean).map((t, i) => (i ? t : "Reação: " + t)).join("; ") + "."; },
   resistencia_alternativa: () => "Resistência Alternativa: o alvo pode resistir com outro salvamento (ver opções no uso).",
   ricochete: () => "Ricochete: o ataque pode quicar em superfícies para atingir alvos atrás de cobertura.",
   seletivo: () => "Seletivo: escolha quem é afetado numa área.",
@@ -349,7 +351,7 @@ export const REGRAS = {
   // falhas gerais
   acao_aumentada: (n) => `Ação Aumentada ${n}: a ação para usar sobe ${n} degrau(s).`,
   alcance_diminuido: () => "Alcance Diminuído: alcance reduzido um degrau.",
-  alcance_reduzido: () => "Alcance Reduzido: só alcança até um degrau abaixo.",
+  alcance_reduzido: (n) => `Alcance Reduzido ${n || 1}: a graduação de distância do efeito escolhido cai ${n || 1} na Tabela de Medidas (alcance e tamanho de área).`,
   aquecimento: () => "Aquecimento: precisa de turnos de preparo antes de ter efeito total.",
   ativacao: () => "Ativação: o 1º clique ativa (ação de movimento); o 2º usa (automático).",
   baseado_agarrar: () => "Baseado em Agarrar: só funciona contra alvo que você esteja agarrando.",
@@ -383,7 +385,7 @@ Object.assign(REGRAS, {
   mesclar: () => "Mesclar: só camufla em certos ambientes.", parcial: () => "Parcial: camuflagem parcial.", passiva: () => "Passiva: sempre ativa, sem controle.",
   explosao: () => "Explosão: +3 no atributo até o início do próximo turno; depois fica Fatigado.", brutal: () => "Brutal: +2 na CD por ponto ao acertar crítico.",
   energizante: () => "Energizante: a cura também remove Fatigado/Exausto.", empatico: () => "Empático: você sofre o dano que cura.", temporario: () => "Temporário: a cura some depois de um tempo.",
-  amplo: () => "Amplo: enfraquece um grupo de características.", persistente: () => "Persistente: o enfraquecimento não se recupera sozinho.", simultaneo: (n) => `Simultâneo: afeta ${n} característica(s) a mais.`,
+  amplo: () => "Amplo: ao enfraquecer, você também pode escolher uma habilidade do alvo (o nível dela é reduzido).", persistente: () => "Persistente: o enfraquecimento não se recupera sozinho.", simultaneo: (n) => `Simultâneo: você escolhe ${1 + n} opções da lista de Enfraquecer.`,
   concentracao_nul: () => "Concentração: o nulificar dura enquanto você se concentra.",
   quicar: (n) => `Quicar ${n}: divide o salto em ${n + 1} saltos.`, poder_total: () => "Poder Total: o salto gasta todo o seu turno.",
   continuo_criar: () => "Contínuo: os objetos permanecem sem sustentar.", dimensional: () => "Dimensional: cria uma dimensão de bolso.", estacionario: () => "Estacionário: o objeto não pode ser movido.", impenetravel: (n) => `Impenetrável ${n}: +${n} de resistência.`, proporcional: () => "Proporcional: resistência baseada no volume.",
@@ -451,7 +453,7 @@ export const DESC_EFEITO = {
 export const DESC_MOD = {
   afeta_objetos: "O efeito também pode ser usado contra objetos. Custa +1/g; +0 se afetar apenas objetos.",
   afeta_outros: "O efeito pessoal passa a poder ser aplicado em outra criatura (por toque). Custa +1/g; +0 se afetar apenas outros.",
-  alcance_estendido: "Aumenta o alcance (ou o tamanho de uma área) em uma graduação da Tabela de Medidas por vez. Pode ser comprado várias vezes. +1 fixo cada; conta como Emissor.",
+  alcance_estendido: "Extra da habilidade: você escolhe um efeito e a graduação de distância dele (alcance, ou tamanho da área) sobe uma graduação na Tabela de Medidas. Pode ser pego várias vezes. +1 ponto fixo cada; conta como Emissor.",
   area: "O efeito atinge todos numa área (Cone, Cilindro, Explosão, Linha ou Nuvem). Cada alvo pode fazer Esquiva (CD 10 + graduação) para cortar a CD da resistência pela metade. Tamanhos base: Cone 6 m, Cilindro 3 m, Explosão 3 m, Linha 9 m. +1/g.",
   ataque: "Um efeito de alcance pessoal passa a ser um ataque contra outro alvo (exige jogada de acerto). +0/g.",
   automatizado: "O poder deixa de ter ação: dispara sozinho, antes de qualquer rolagem, quando o alvo perde PV (+7/g) ou sempre que for selecionado como alvo (+10/g).",
@@ -467,7 +469,7 @@ export const DESC_MOD = {
   penetrante: "O dano ignora 1 ponto de Proteção/redução de dano do alvo por vez. +1/g, pode ser comprado várias vezes.",
   permear: "O efeito atravessa barreiras e cobertura. +1/g; conta como Emissor.",
   preciso: "Ignora penalidades de cobertura e camuflagem parciais. +1 fixo.",
-  reacao: "Reduz a ação do efeito em degraus: padrão → movimento (+1/g), → livre (+2/g), → reação (+3/g). Você não é obrigado a chegar à reação.",
+  reacao: "Reduz a ação do efeito em degraus: padrão → movimento (+1/g), → livre (+2/g), → reação (+3/g). Você não é obrigado a chegar à reação. Opcionalmente, +1/g para sustentar o efeito com uma reação em vez de ação livre (soma com os degraus: padrão → reação sustentando com reação = +4/g; movimento → reação = +3/g; livre → reação = +2/g; só sustentar com reação = +1/g).",
   resistencia_alternativa: "O alvo pode resistir com outro salvamento (Aparar, Esquiva, Luta). +1/g.",
   ricochete: "O ataque pode quicar em superfícies para atingir alvos atrás de cobertura. +1 fixo.",
   seletivo: "Você escolhe quem é afetado por um efeito de área. +1/g; conta como Emissor.",
@@ -479,7 +481,7 @@ export const DESC_MOD = {
   variavel_nen_vida: "Variável gasta Nen ou Vida: fixo −1 por unidade retirada.",
   acao_aumentada: "A ação para usar sobe um degrau (livre → movimento → padrão); cada passo −1/g.",
   alcance_diminuido: "O alcance do efeito é reduzido em um passo. −1 fixo, pode repetir.",
-  alcance_reduzido: "O alcance cai um passo (percepção → à distância → perto). −1/g por passo.",
+  alcance_reduzido: "Falha da habilidade: você escolhe um efeito e a graduação de distância dele cai uma graduação na Tabela de Medidas. Pode ser pega várias vezes. −1 ponto fixo cada.",
   aquecimento: "O efeito começa fraco e só atinge a graduação cheia depois de 3, 5 ou 10 turnos (−3, −5 ou −10/g).",
   ativacao: "Antes de usar, é preciso ativar (ação de movimento); o 1º clique ativa e o 2º usa. −1/g.",
   baseado_agarrar: "O efeito só funciona contra um alvo que você esteja agarrando. −2/g.",
@@ -537,9 +539,9 @@ export const DESC_MOD = {
   multitarefas: "Pode desviar mais de um ataque por turno (+1 por vez). +1/g.",
   forca_normal: "Você mantém sua Força normal enquanto encolhido. +2/g.",
   encolhedor: "Pode encolher outras criaturas ou objetos. +1/g; conta como Transmutador.",
-  amplo: "O enfraquecimento atinge um grupo de características. +1/g.",
+  amplo: "Em vez de reduzir só um atributo, a lista de escolhas também inclui as habilidades do alvo; se uma habilidade for escolhida, o nível dela é reduzido. +1/g.",
   persistente: "O alvo não se recupera sozinho do enfraquecimento: só com descanso. +2/g.",
-  simultaneo: "Enfraquece uma característica adicional ao mesmo tempo. +2/g, pode repetir.",
+  simultaneo: "Permite escolher 2 opções da lista do Enfraquecer ao mesmo tempo; cada vez a mais que for pego, soma +1 escolha. +2/g, pode repetir.",
   quase_material: "A ilusão tem substância limitada: pode causar e sofrer efeitos físicos. +1/g para Conjuradores, +2/g para os demais.",
   metade_efeito: "A imunidade só reduz o efeito pela metade. −2/g.",
   alcance_invocar: "A criatura invocada pode aparecer a mais distância (+1,5 m por vez). +1 fixo.",
