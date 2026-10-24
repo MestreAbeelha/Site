@@ -946,6 +946,8 @@ const ACOES_PADRAO = [
     desc: "Fica indefeso e imóvel, mas seu próximo teste de ataque recebe +10. Sofrer dano pode cancelar a mira (teste de Prestidigitação CD 15 ou o dano sofrido, o que for maior)." },
   { id: "mover", nome: "Mover-se", tag: "Ação de Movimento", resolvedor: "simples", pericia: "Atletismo", cdPadrao: 15,
     desc: "Move-se por uma graduação de distância igual à sua Agilidade. Teste de Atletismo CD 15 opcional: cada grau de sucesso aumenta sua velocidade em +1 por uma rodada." },
+  { id: "tratarferido", nome: "Tratar Ferido", tag: "Ação Padrão", resolvedor: "tratarFerido", pericia: "Tratamento",
+    desc: "Tenta socorrer um oponente engajado que esteja Morrendo. Teste de Tratamento contra CD 15 ou a vida negativa dele, o que for maior." },
   { id: "quebrar", nome: "Quebrar", tag: "Ação Padrão", resolvedor: "ataqueObjeto",
     desc: "Tenta danificar um item vestido ou segurado por um oponente. Teste de ataque contra a defesa do personagem, com -2 se o item estiver sendo segurado." },
 ];
@@ -1665,9 +1667,7 @@ function aplicarUsoMods(ent, ataque, atualizarCampo, registrar) {
     log(`${ent.nome} se cansa ao usar "${nome}"`, "Cansativo", nivel >= 2 ? "Exausto" : "Fatigado (ou Exausto se já estava)");
   });
   ms.filter((m) => m.id === "incontrolavel").forEach((m) => {
-    const semTeste = (Number(m.valor) || -3) <= -6;
     const g = Math.max(0, Number(m.item?.graduacao ?? m.item?.graduacaoNulificar) || 0);
-    if (semTeste) { log(`"${nome}" foge do controle`, "Incontrolável (sem teste)", "O mestre decide como o efeito se comporta", "hd"); return; }
     const cd = 10 + g, dado = rolarD20(), bonus = salvBonus(ent, "Vontade"), r = montarTeste(dado, bonus, cd);
     log(`${ent.nome} tenta controlar "${nome}" (Vontade)`, `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? "Controlou" : "Perdeu o controle — o mestre decide o efeito", r.sucesso ? "hs" : "hd");
   });
@@ -1980,7 +1980,7 @@ const nenEngine = (n) => (n && n !== "Nenhum" ? String(n).toLowerCase() : null);
 const ACAO_ENGINE_PARA_NOME = { padrao: "Ação Padrão", livre: "Ação Livre", movimento: "Ação de Movimento", reacao: "Reação", nenhuma: "Nenhuma" };
 function gradParaCusto(ef, ent) {
   if (ef.categoria === "Nulificar") return ef.graduacaoNulificar || 0;
-  if (ef.categoria === "Dano" && ef.baseadoAtivo) return Math.max(0, (ent?.atributos?.[ef.atributoBase] || 0) + (ef.danoAdicional || 0));
+  if (ef.categoria === "Dano" && ef.baseadoAtivo) return (ef.graduacao || 0) > 0 ? Math.max(0, attr(ent, ef.atributoBase) + (ef.graduacao || 0)) : 0; // sem graduação extra: dano do atributo, de graça
   return ef.graduacao || 0;
 }
 /** extras/falhas de um efeito: os adicionados no construtor (ef.mods) + os que já vêm dos editores antigos (checkboxes) */
@@ -2000,7 +2000,7 @@ function modsDoEfeito(ef, a) {
     const g = ef.graus || 3;
     if (g < 3) der("grau_limitado_afl", g === 2 ? -1 : -2);
   }
-  (a?.alcances || []).filter((x) => x.efeitoId === ef.id).forEach((x) => der(x.tipo === "red" ? "alcance_reduzido" : "alcance_estendido", x.tipo === "red" ? -1 : 1));
+  (a?.alcances || []).filter((x) => x.efeitoId === ef.id).forEach((x) => der(x.tipo === "red" ? "alcance_reduzido" : "alcance_estendido", (x.tipo === "red" ? -1 : 1) * Math.max(1, x.vezes || 1)));
   if (a?.pontoFraco?.ativo) der("ponto_fraco", -4);
   return m;
 }
@@ -2057,7 +2057,7 @@ function calcularCustoAtaque(a, ent) {
         if (a.extras?.multiataque) mods.push({ id: "multiataque", derivado: true });
       }
       idxAtivo.push(efs.length);
-      efs.push({ id, grad: gradParaCusto(ef, ent), base: ef.categoria === "Dano" && ef.baseadoAtivo ? 0 : (CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef)), tipo: ef.nen || undefined, mods });
+      efs.push({ id, grad: gradParaCusto(ef, ent), base: CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef), gratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), tipo: ef.nen || undefined, mods });
     });
   }
   passivosDe(a).forEach((inst) => {
@@ -2275,7 +2275,7 @@ const AFLICOES_G2 = CONDICOES_POR_GRAU[2].filter((n) => CONDICOES_LISTA.some((c)
 const AFLICOES_G3 = CONDICOES_POR_GRAU[3].filter((n) => CONDICOES_LISTA.some((c) => c.nome === n));
 
 function efeitoPadrao(categoria) {
-  if (categoria === "Dano") return { categoria, graduacao: 0, baseadoAtivo: false, atributoBase: "", danoAdicional: 0 };
+  if (categoria === "Dano") return { categoria, graduacao: 0, baseadoAtivo: false, atributoBase: "" };
   if (categoria === "Cura") return { categoria, graduacao: 5 };
   if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, resistenciaAlternativa: false, cumulativo: false, recuperacaoInstantanea: false, graus: 3, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
   if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 5, caracteristica: "" };
@@ -2433,7 +2433,7 @@ function textoNulificar(graus) {
 /* Dano Baseado Em: graduação = atributo do atacante (ao vivo) + dano adicional. Sem a opção, é o campo normal. */
 function graduacaoEfetiva(efeito, ent) {
   if (efeito?.categoria === "Dano" && efeito.baseadoAtivo && efeito.atributoBase) {
-    return Math.max(0, attr(ent, efeito.atributoBase) + (efeito.danoAdicional || 0));
+    return Math.max(0, attr(ent, efeito.atributoBase) + (efeito.graduacao || 0));
   }
   return efeito?.graduacao || 0;
 }
@@ -2976,6 +2976,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [agarraoR, setAgarraoR] = useState(null);
   const [usarBonusDescanso, setUsarBonusDescanso] = useState(false);
   const [usarBonusTreino, setUsarBonusTreino] = useState(false);
+  const [usarMira, setUsarMira] = useState(false);
   const [exigirTesteR, setExigirTesteR] = useState({});
   const [esquivaArea, setEsquivaArea] = useState({});
   const [desgastanteR, setDesgastanteR] = useState(null);
@@ -3053,7 +3054,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const mods = calcModCondicoes(origemAtual);
     const penalCaido = condicaoAtiva(origemAtual, "Caído") ? -5 : 0;
     const nossoAlvoBuff = (oponente?.efeitosManobra || []).find((m) => m.tipo === "nossoAlvo");
-    const bonusVant = bonusVantagemToggle(origemAtual, "ataque") + bonusCondicionalTotal + (ajudaAtiva ? ajudaAtiva.bonus : 0) + (origemAtual.mirando ? 10 : 0) + mods.testesGerais + (nossoAlvoBuff ? nossoAlvoBuff.valor : 0);
+    const bonusVant = bonusVantagemToggle(origemAtual, "ataque") + bonusCondicionalTotal + (ajudaAtiva ? ajudaAtiva.bonus : 0) + (origemAtual.mirando ? 10 : 0) + mods.testesGerais + (nossoAlvoBuff ? nossoAlvoBuff.valor : 0) + (usarMira && temVantagem(origemAtual, "Mira Aprimorada") ? 5 : 0) + (contexto.bonusExtra?.valor || 0);
     if (a.tipoAcerto === "corpo") return { bonus: attr(origemAtual, "luta") + bonusVant + penalCaido, defKey: "aparar", defLabel: "Aparar" };
     if (a.tipoAcerto === "distancia") {
       const usaAparar = !!modificadoresPassivos(oponente).temDeflexao;
@@ -3099,6 +3100,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const nossoAlvo = (oponente?.efeitosManobra || []).find((m) => m.tipo === "nossoAlvo");
     if (nossoAlvo) n.push(`Nosso Alvo ${fmtBonus(nossoAlvo.valor)}`);
     if (bonusTreinoValor) n.push("Treinamento +2");
+    if (usarMira && temVantagem(origemAtual, "Mira Aprimorada")) n.push("Mira Aprimorada +5");
+    if (contexto.bonusExtra) n.push(`${contexto.bonusExtra.nome} ${fmtBonus(contexto.bonusExtra.valor)}`);
     n.push(...notasModsDefesa(oponente, info.defKey).map((t) => `alvo: ${t}`));
     return n;
   };
@@ -3121,6 +3124,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     consumirAjudaSeHouver();
     consumirNossoAlvo();
     consumirBonusTreino();
+    if (usarMira && temVantagem(origemAtual, "Mira Aprimorada")) gastarAcao(atualizarCampo, origemAtual.id, "Ação Livre");
     if (atualizarCampo && origemAtual.mirando) atualizarCampo(origemAtual.id, "mirando", false);
     registrar({
       tipo: "rolagem",
@@ -3162,7 +3166,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const rolarEfeitoGenerico = (efeito, alvo, aplicarProtecaoLimitada, critico, cdMetade = false) => {
     const efeitoOriginal = efeito;
     // Dano Baseado Em: a graduação vem do atributo (+ dano adicional) do atacante, ao vivo.
-    if (efeito.categoria === "Dano") efeito = { ...efeito, graduacao: graduacaoEfetiva(efeito, origemAtual), baseadoAtivo: false };
+    if (efeito.categoria === "Dano") efeito = { ...efeito, semLimiteNivel: !!efeito.baseadoAtivo && !((efeito.graduacao || 0) > 0), graduacao: graduacaoEfetiva(efeito, origemAtual), baseadoAtivo: false };
     efeito = comReducaoHab(comAquecimento(efeito, origemAtual, aquecSnap), origemAtual, contexto.ataque?.id); // Aquecimento: graduação reduzida nos primeiros usos/turnos
     const brutal = critico ? bonusBrutal(origemAtual, contexto.ataque, efeitoOriginal) : 0;
     const dados = dadosEfeito(efeito, alvo, critico, brutal);
@@ -3259,7 +3263,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     if (efeito.categoria === "Dano") {
       const nivelAtacante = Math.max(1, origemAtual.nivel || 1);
       const sobrecarga = (efeito.mods || []).filter((m) => m.id === "sobrecarregado").reduce((t, m) => t + (m.vezes || 1), 0);
-      const graduacaoDano = Math.min(efeito.graduacao || 0, nivelAtacante + sobrecarga); // Sobrecarregado: cada +1 passa o limite de nível
+      const graduacaoDano = efeito.semLimiteNivel ? (efeito.graduacao || 0) : Math.min(efeito.graduacao || 0, nivelAtacante + sobrecarga); // Sobrecarregado: cada +1 passa o limite de nível
       const danoPreReducao = r.sucesso ? 0 : graduacaoDano * Math.abs(r.graus);
       const passivosAlvo = modificadoresPassivos(alvo);
       let pen = somaVezes(efeito.mods, "penetrante") * PENETRANTE_POR_VEZ; // Penetrante: ignora parte da redução de dano
@@ -3372,8 +3376,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({
       tipo: "rolagem",
       desc: `${alvo.nome} resiste a ${efeito.categoria} (${dados.salvLabel})${cdMetade ? " — esquivou, CD pela metade" : ""}`,
-      detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${extra.reducaoDefesa > 0 && !r.sucesso ? ` · Defender-se reduz ${extra.reducaoDefesa} de dano` : ""}${fmtMods(notasRes)}${extra.aplicado ? ` · ${extra.aplicado}` : ""}${extra.notasMods?.length && !r.sucesso ? ` · ${extra.notasMods.join(" · ")}` : ""}`,
-      total: r.sucesso ? "Resistiu" : "Sofreu efeito", tipoClasse: r.tipoClasse,
+      detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${efeito.categoria === "Dano" && !r.sucesso ? ` · Falhou por ${Math.abs(r.graus)} grau(s) — tirou ${r.total} contra CD ${dados.cd} · dano: ${extra.dano}` : ""}${extra.reducaoDefesa > 0 && !r.sucesso ? ` · Defender-se reduz ${extra.reducaoDefesa} de dano` : ""}${fmtMods(notasRes)}${extra.aplicado ? ` · ${extra.aplicado}` : ""}${extra.notasMods?.length && !r.sucesso ? ` · ${extra.notasMods.join(" · ")}` : ""}`,
+      total: r.sucesso ? "Resistiu" : (efeito.categoria === "Dano" ? `Sofreu ${extra.dano} de dano` : "Sofreu efeito"), tipoClasse: r.tipoClasse,
     });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu efeito" });
     if (efeito.categoria === "Dano" && extra.dano > 0) aplicarDano(alvo.id, extra.dano);
@@ -3604,7 +3608,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   /* Usar uma habilidade gasta a ação dela. */
   const acaoHabRef = useRef(false);
   useEffect(() => {
-    if (!ehAtaque || acaoHabRef.current || !atualizarCampo || bloqueioVar || !contexto.ataque) return;
+    if (!ehAtaque || acaoHabRef.current || !atualizarCampo || bloqueioVar || !contexto.ataque || contexto.semGastoAcao) return;
     acaoHabRef.current = true;
     gastarAcao(atualizarCampo, origemAtual.id, acaoDaHabilidade(contexto.ataque));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -3814,6 +3818,13 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
               <label className="checkbox-row" style={{ marginBottom: 12 }}>
                 <input type="checkbox" checked={agarrarMarcado} onChange={(e) => setAgarrarMarcado(e.target.checked)} />
                 Agarrar (Agarrar Rápido — não precisa de novo teste de ataque)
+              </label>
+            )}
+
+            {oponente && !ataqueAcertoR && infoAtaque() && temVantagem(origemAtual, "Mira Aprimorada") && (
+              <label className="checkbox-row" style={{ marginBottom: 12 }}>
+                <input type="checkbox" checked={usarMira} onChange={(e) => setUsarMira(e.target.checked)} />
+                Mira Aprimorada — +5 no ataque (gasta uma ação livre)
               </label>
             )}
 
@@ -4039,7 +4050,7 @@ const AJUDA_CHAVES = [
 ];
 
 /* ---------- modal de ações padrão ---------- */
-function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp, animar, atualizarCampo, iniciativa }) {
+function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar: registrarProp, animar, atualizarCampo, iniciativa }) {
   const { origem, acao } = ctx;
   // Usar a ação/manobra gasta a ação correspondente (uma vez só por abertura da janela).
   const acaoGastaRef = useRef(false);
@@ -4091,6 +4102,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
     acao.resolvedor === "planoCombate" ? ["Investigação"] :
     acao.resolvedor === "furtividadeMulti" ? ["Furtividade"] :
     acao.resolvedor === "levantamento" ? ["Atletismo"] :
+    acao.resolvedor === "tratarFerido" ? ["Tratamento"] :
     (acao.resolvedor === "ajudar" && chaveAjuda && AJUDA_CHAVES.find((c) => c.v === chaveAjuda)?.tipo === "pericia") ? [chaveAjuda] :
     [];
   const chaveDescansoAcao = descansoAtivoPara(origemAtual, ...periciasRelevantesDescanso);
@@ -4106,6 +4118,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
     acao.resolvedor === "planoCombate" ? !!r1 :
     acao.resolvedor === "furtividadeMulti" ? !!multiResultados :
     acao.resolvedor === "levantamento" ? !!r1 :
+    acao.resolvedor === "tratarFerido" ? !!r1 :
     acao.resolvedor === "ajudar" ? !!r1 :
     true;
 
@@ -4252,6 +4265,21 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
     }
   };
 
+  /* ----- tratar ferido: Tratamento num oponente Morrendo (CD 15 ou a vida negativa dele, o que for maior) ----- */
+  const feridosMorrendo = oponentesDisponiveis.filter((e) => condicaoAtiva(e, "Morrendo"));
+  const cdTratarFerido = oponente ? Math.max(15, Math.abs(Math.min(0, oponente.pvAtual || 0))) : 15;
+  const rolarTratarFerido = () => {
+    if (!oponente) return;
+    const dado = rolarD20();
+    critNota = bonusCriticoPericia(origemAtual, "Tratamento", dado);
+    const bonus = bonusPericia(origemAtual, "Tratamento") + bonusDescansoAcaoValor + critNota;
+    const res = montarTeste(dado, bonus, cdTratarFerido);
+    setR1(res);
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} trata o ferimento de ${oponente.nome} (Tratamento)`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cdTratarFerido}${fmtMods([...notasPericiaEnt(origemAtual, "Tratamento"), ...nDescanso()])}`, total: res.sucesso ? "Tratamento bem-sucedido" : "Tratamento falhou", tipoClasse: res.tipoClasse });
+    if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} trata ${oponente.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: cdTratarFerido, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Tratamento bem-sucedido" : "Tratamento falhou" });
+    consumirBonusDescansoAcao();
+  };
+
   /* ----- testes simples: escapar / levantar-se / levantamento / mover-se ----- */
   const periciaUsada = acao.pericia || periciaEscolhida;
   const rolarSimplesAcao = () => {
@@ -4356,6 +4384,17 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
   };
 
   /* ----- manobra: encontrão ----- */
+  const [encHabId, setEncHabId] = useState("");
+  const habsEncontrao = (origemAtual.ataques || []).filter((h) => h.tipo !== "passiva" && ["corpo", "distancia"].includes(h.tipoAcerto) && (h.efeitos || []).length > 0);
+  const encHab = habsEncontrao.find((h) => h.id === encHabId);
+  // com uma habilidade: abre o ataque dela já com o bônus do Encontrão (a ação do Encontrão cobre a da habilidade)
+  const usarEncontraoComHabilidade = () => {
+    if (!encHab || !onAbrirRolagem) return;
+    const valor = Number(graduacoesMovidas) || 0;
+    gastarAcaoDaManobra();
+    onFechar();
+    onAbrirRolagem({ origem: origemAtual, tipo: "ataque", ataque: encHab, label: `${origemAtual.nome} · ${encHab.nome || "Ataque"} (Encontrão)`, bonusExtra: { nome: "Encontrão", valor }, semGastoAcao: true });
+  };
   const rolarEncontrao = () => {
     if (!oponente) return;
     const ajudaBonus = consumirAjuda(origemAtual, "ataque");
@@ -4590,6 +4629,20 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
           </>
         )}
 
+        {acao.resolvedor === "tratarFerido" && (
+          <>
+            <label className="label">Oponente engajado que esteja Morrendo</label>
+            <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); }} style={{ marginBottom: 12 }}>
+              <option value="">Selecione…</option>
+              {feridosMorrendo.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+            </SearchableSelect>
+            {feridosMorrendo.length === 0 && <div className="field-note">Nenhum oponente engajado está Morrendo.</div>}
+            {oponente && <div className="field-note">CD do tratamento: <b>{cdTratarFerido}</b> (15 ou a vida negativa de {oponente.nome}, o que for maior).</div>}
+            {oponente && !r1 && <button className="btn btn-accent btn-block" onClick={rolarTratarFerido}>⚄ Rolar Tratamento</button>}
+            {r1 && <div className="subcard"><ResultadoCard r={r1} efeito={{ classe: r1.sucesso ? "ok" : "dano", titulo: r1.sucesso ? "Tratamento bem-sucedido" : "Tratamento falhou" }} /></div>}
+          </>
+        )}
+
         {acao.resolvedor === "ajudar" && (
           <>
             <label className="label">Aliado a ajudar</label>
@@ -4644,7 +4697,17 @@ function AcaoModal({ ctx, entidades, roster, onFechar, registrar: registrarProp,
             </SearchableSelect>
             <label className="label">Graduações de deslocamento antes do ataque</label>
             <input type="number" value={graduacoesMovidas} onChange={(e) => setGraduacoesMovidas(e.target.value)} style={{ marginBottom: 12 }} />
-            {oponente && !r1 && <button className="btn btn-accent btn-block" onClick={rolarEncontrao}>⚄ Rolar Ataque (+{Number(graduacoesMovidas) || 0})</button>}
+            {habsEncontrao.length > 0 && !r1 && (
+              <>
+                <label className="label">Atacar com</label>
+                <SearchableSelect value={encHabId} onChange={(e) => setEncHabId(e.target.value)} style={{ marginBottom: 12 }}>
+                  <option value="">Ataque básico (Luta)</option>
+                  {habsEncontrao.map((h) => <option key={h.id} value={h.id}>{h.nome || "Habilidade"}</option>)}
+                </SearchableSelect>
+              </>
+            )}
+            {encHab && !r1 && <button className="btn btn-accent btn-block" onClick={usarEncontraoComHabilidade}>⚔ Usar "{encHab.nome || "habilidade"}" com Encontrão (+{Number(graduacoesMovidas) || 0} no ataque)</button>}
+            {!encHab && oponente && !r1 && <button className="btn btn-accent btn-block" onClick={rolarEncontrao}>⚄ Rolar Ataque (+{Number(graduacoesMovidas) || 0})</button>}
             {r1 && <div className="subcard"><ResultadoCard r={r1} efeito={{ classe: r1.sucesso ? "ok" : "dano", titulo: r1.sucesso ? "Acertou!" : "Errou — alvo pode reagir" }} /></div>}
           </>
         )}
@@ -5226,7 +5289,7 @@ export default function MesaMM3() {
         </div>
       </div>
       {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} enviarPontoFraco={enviarPontoFraco} iniciativa={iniciativa} />}
-      {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} iniciativa={iniciativa} />}
+      {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} onAbrirRolagem={setModalCtx} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} iniciativa={iniciativa} />}
       {avisosPF.length > 0 && (
         <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) setAvisosPF((a) => a.slice(1)); }}>
           <div className="modal-box" style={{ maxWidth: 420 }}>
@@ -5371,9 +5434,7 @@ function EfeitoForm({ efeito, onMudar, onCriarArremesso }) {
                 <option value="">Selecione o atributo…</option>
                 {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
               </SearchableSelect>
-              <label className="label">Dano adicional</label>
-              <input type="number" value={efeito.danoAdicional || 0} onChange={(e) => upd("danoAdicional", Number(e.target.value))} />
-              <div className="field-note">A graduação do dano é o valor atual do atributo escolhido + o dano adicional (que não varia com o atributo). Ela conta na CD; o dano em si continua limitado pelo nível do atacante.</div>
+              <div className="field-note">A graduação do dano é o valor atual do atributo escolhido, e esse dano não custa nada. Para somar mais dano, use as setas ▲ do efeito: as graduações extras se somam ao atributo e aí tudo passa a custar como Dano (e acima do seu nível só com Sobrecarregado).</div>
             </>
           ) : null}
         </>
@@ -6231,13 +6292,16 @@ function InspetorAlcance({ x, efs, onMudar, onRemover }) {
   return (
     <div className="px">
       <DescBonita cor={red ? "#d93636" : "#2fb84f"} titulo={c.nome} selo={(red ? "Falha" : "Extra") + " · da habilidade inteira"} seloClasse={red ? "falha" : "extra"}
-        chips={[["Custo", custoModTxt(c)], ...(red ? [] : [["Tipo de Nen", "Emissor"]])]} texto={DESC_MOD[id]} />
+        chips={[["Custo", custoModTxt(c)], ...((x.vezes || 1) > 1 ? [["Vezes", "×" + x.vezes]] : []), ...(red ? [] : [["Tipo de Nen", "Emissor"]])]} texto={DESC_MOD[id]} />
       <div className="px-ctrl">
         <div className="px-linha"><span>Efeito afetado</span>
           <select className="cb-sel" value={x.efeitoId || ""} onChange={(e) => onMudar({ ...x, efeitoId: e.target.value })}>
             {!efs.length && <option value="">(adicione um efeito)</option>}
             {efs.map((e, i) => <option key={e.id} value={e.id}>{e.categoria}{efs.filter((y) => y.categoria === e.categoria).length > 1 ? ` (${i + 1})` : ""}</option>)}
           </select>
+        </div>
+        <div className="px-linha"><span>Quantas vezes</span>
+          <span className="vb-stepper"><button type="button" className="small-btn" disabled={(x.vezes || 1) <= 1} onClick={() => onMudar({ ...x, vezes: (x.vezes || 1) - 1 })}>−</button><b>×{x.vezes || 1}</b><button type="button" className="small-btn" onClick={() => onMudar({ ...x, vezes: (x.vezes || 1) + 1 })}>+</button></span>
         </div>
         <button type="button" className="btn btn-ghost btn-sm" onClick={onRemover}>Remover</button>
       </div>
@@ -6419,7 +6483,7 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
 }
 
 function NoGraduacao({ b, onGrad }) {
-  const trav = b.gradTravada;
+  const trav = false;
   return (
     <div className="mp-grad" onClick={(e) => e.stopPropagation()} onMouseDown={(e) => e.stopPropagation()}>
       <button type="button" disabled={trav} onClick={() => onGrad(b, 1)} title="Aumentar graduação">▲</button>
@@ -6430,7 +6494,7 @@ function NoGraduacao({ b, onGrad }) {
 function BtnX({ onClick }) {
   return <button type="button" className="mp-x" title="Remover" onPointerDown={(e) => e.stopPropagation()} onClick={(e) => { e.stopPropagation(); onClick(); }}>×</button>;
 }
-function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs, onCopiar, onDeletar, nasce }) {
+function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total, zoom, setZoom, onGrad, info, calc, ent, cheio, setCheio, ladoAberto, setLadoAberto, conteudo, onRemBloco, onRemMod, onRemHab, offs, onOffs, legacy, rectsRef, onCopiar, onDeletar }) {
   const L = layoutMapa(blocos, habMods.length);
   const ref = useRef(null);
   const gest = useRef(null);
@@ -6487,31 +6551,60 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
     const e = R(b.key);
     return { x: e.x + e.w + 40, y: e.y + e.h / 2 - 17, w: 34, h: 34 };
   };
-  const R = (k) => {
+  // posição de cada quadrado: guardada (absoluta) ou, se nunca foi fixada, a do layout padrão (+ deslocamento antigo)
+  const R = (k, semDrag) => {
     if (ehMais(k)) return posMais(k);
-    const n = N[k], o = (offs && offs[k]) || {};
-    const d = drag && drag.keys.has(k) ? drag : null;
-    return { x: n.x + (o.x || 0) + (d ? d.dx : 0), y: n.y + (o.y || 0) + (d ? d.dy : 0), w: n.w, h: n.h };
+    const n = N[k], ab = offs && offs[k], lg = (legacy && legacy[k]) || {};
+    const d = !semDrag && drag && drag.keys.has(k) ? drag : null;
+    const bx = ab ? ab.x : n.x + (lg.x || 0), by = ab ? ab.y : n.y + (lg.y || 0);
+    return { x: bx + (d ? d.dx : 0), y: by + (d ? d.dy : 0), w: n.w, h: n.h };
   };
-  // quadrado recém-criado: nasce 30px à direita do último extra (ou da última falha) do mesmo efeito
+  if (rectsRef) { const rr = {}; Object.keys(N).forEach((k) => { rr[k] = R(k, true); }); rectsRef.current = rr; }
+  // posições estáveis: quem já existe não se move quando algo é criado/removido; quem acaba de nascer aparece junto dos vizinhos
+  const prevR = useRef(null);
   useEffect(() => {
-    const sp = nasce && nasce.current;
-    if (!sp || !N[sp.key]) return;
-    nasce.current = null;
-    if (offs && offs[sp.key]) return;
-    const b = blocos.find((x) => x.key === sp.bloco);
-    if (!b) return;
-    const lista = b.mods.map((m) => ({ m, k: modKey(b, m) })).filter((x) => N[x.k]);
-    const eu = lista.find((x) => x.k === sp.key);
-    if (!eu) return;
-    const outros = lista.filter((x) => x.k !== sp.key);
-    const iguais = outros.filter((x) => x.m.neg === eu.m.neg);
-    const me = N[sp.key];
-    let tx, ty;
-    if (iguais.length) { const u = R(iguais[iguais.length - 1].k); tx = u.x + u.w + 30; ty = u.y + (u.h - me.h) / 2; }
-    else if (outros.length) { const u = R(outros[outros.length - 1].k); tx = u.x; ty = u.y + u.h + 14; }
-    else { const e = R(b.key); tx = e.x + e.w + 60; ty = e.y + (e.h - me.h) / 2; }
-    onOffs({ ...(offs || {}), [sp.key]: { x: tx - me.x, y: ty - me.y } });
+    const prev = prevR.current;
+    prevR.current = rectsRef ? { ...rectsRef.current } : null;
+    if (!prev || drag || !rectsRef) return;
+    const novo = { ...(offs || {}) };
+    let ch = false;
+    const tem = (k) => !!novo[k];
+    const rect = (k) => (novo[k] ? { x: novo[k].x, y: novo[k].y, w: N[k].w, h: N[k].h } : R(k, true));
+    Object.keys(N).forEach((k) => {
+      if (!prev[k] || tem(k)) return;
+      const c = R(k, true), p = prev[k];
+      if (Math.abs(c.x - p.x) > 0.5 || Math.abs(c.y - p.y) > 0.5) { novo[k] = { x: p.x, y: p.y }; ch = true; }
+    });
+    const novas = Object.keys(N).filter((k) => !prev[k] && !tem(k) && k !== "raiz");
+    const ehBloco = (k) => !k.includes(":");
+    const ordem = [...novas.filter(ehBloco), ...novas.filter((k) => k.startsWith("h:")), ...novas.filter((k) => !ehBloco(k) && !k.startsWith("h:"))];
+    ordem.forEach((k) => {
+      const me = N[k];
+      let t = null;
+      if (ehBloco(k)) {
+        const ant = blocos.map((b) => b.key).filter((x) => x !== k && N[x] && (prev[x] || tem(x)));
+        if (ant.length) { const u = rect(ant[ant.length - 1]); t = { x: u.x, y: u.y + u.h + 90 }; }
+      } else if (k.startsWith("h:")) {
+        const ids = habMods.map((h) => "h:" + h.id), pos = ids.indexOf(k);
+        const ant = ids.slice(0, Math.max(0, pos)).filter((x) => N[x] && (prev[x] || tem(x)));
+        if (ant.length) { const u = rect(ant[ant.length - 1]); t = { x: u.x, y: u.y + u.h + 16 }; }
+        else { const r = rect("raiz"); t = { x: r.x + (r.w - me.w) / 2, y: r.y + r.h + 50 }; }
+      } else {
+        const b = blocos.find((x) => k.startsWith(x.key + ":"));
+        if (b) {
+          const lista = b.mods.map((m) => ({ m, k: modKey(b, m) })).filter((x) => N[x.k]);
+          const pos = lista.findIndex((x) => x.k === k);
+          const eu = lista[pos];
+          const antes = lista.slice(0, pos).filter((x) => prev[x.k] || tem(x.k));
+          const iguais = antes.filter((x) => x.m.neg === eu.m.neg);
+          if (iguais.length) { const u = rect(iguais[iguais.length - 1].k); t = { x: u.x + u.w + 30, y: u.y + (u.h - me.h) / 2 }; }
+          else if (antes.length) { const u = rect(antes[antes.length - 1].k); t = { x: u.x, y: u.y + u.h + 14 }; }
+          else if (N[b.key]) { const e = rect(b.key); t = { x: e.x + e.w + 60, y: e.y + (e.h - me.h) / 2 }; }
+        }
+      }
+      if (t) { novo[k] = { x: Math.max(0, t.x), y: Math.max(0, t.y) }; ch = true; }
+    });
+    if (ch) onOffs(novo);
   });
   let W = L.W, H = L.H;
   const maisKeys = ["novo", "h+", ...blocos.map((b) => b.key + ":+")];
@@ -6563,7 +6656,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
       if (!g.moveu && Math.hypot(dx, dy) * zoom < 4) return;
       if (!g.moveu) { g.moveu = true; ref.current.setPointerCapture?.(g.id); }
       let minX = -Infinity, minY = -Infinity;
-      g.keys.forEach((k) => { if (!N[k]) return; const o = (offs && offs[k]) || {}; minX = Math.max(minX, -(N[k].x + (o.x || 0))); minY = Math.max(minY, -(N[k].y + (o.y || 0))); });
+      g.keys.forEach((k) => { if (!N[k]) return; const r0 = R(k, true); minX = Math.max(minX, -r0.x); minY = Math.max(minY, -r0.y); });
       setDrag({ keys: g.keys, dx: Math.max(dx, minX), dy: Math.max(dy, minY) });
     } else {
       const p = cena(e);
@@ -6580,7 +6673,8 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
     if (!g) return;
     if (g.t === "no" && g.moveu && drag) {
       const novo = { ...(offs || {}) };
-      drag.keys.forEach((k) => { if (!N[k]) return; const o = novo[k] || {}; novo[k] = { x: (o.x || 0) + drag.dx, y: (o.y || 0) + drag.dy }; });
+      Object.keys(N).forEach((k) => { if (!novo[k]) { const r0 = R(k, true); novo[k] = { x: r0.x, y: r0.y }; } });
+      drag.keys.forEach((k) => { if (!N[k]) return; novo[k] = { x: novo[k].x + drag.dx, y: novo[k].y + drag.dy }; });
       onOffs(novo);
       ignora.current = true; setTimeout(() => { ignora.current = false; }, 0);
     } else if (g.t === "caixa" && !g.moveu) setMarc(new Set());
@@ -6613,7 +6707,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
   return (
     <div className="mp-wrap">
       <div className={"mp-area" + (drag ? " movendo" : "")} ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={up} onPointerCancel={up} onContextMenu={contexto} tabIndex={0} onKeyDown={teclar}>
-        <div style={{ width: W * zoom, height: H * zoom }}>
+        <div style={{ width: (W + 520) * zoom, height: (H + 320) * zoom }}>
           <div className="mp-cena" style={{ width: W, height: H, transform: `scale(${zoom})` }}>
             {!semLinhas && (
               <svg className="mp-linhas" width={W} height={H}>
@@ -6649,7 +6743,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
                 <React.Fragment key={b.key}>
                   <No k={b.key} cls={"mp-ef" + (ativoSel && selecionado.mod == null && !selecionado.fixo && !selecionado.pal ? " sel" : "") + (b.ativo ? "" : " passivo")} style={{ background: cor, color: COR_TXT_NEN[b.tipo] || "#fff", animationDelay: i * 40 + "ms" }} onClick={() => onSel({ key: b.key })} title={b.nome}>
                     <span className="mp-ef-nome" style={{ fontSize: b.nome.length > 17 ? ".68rem" : b.nome.length > 11 ? ".74rem" : undefined }}>{b.nome}</span>
-                    <em>{b.grad}</em>
+                    <em>{b.gradTotal ?? b.grad}</em>
                     <BtnX onClick={() => onRemBloco(b)} />
                     <NoGraduacao b={b} onGrad={onGrad} />
                   </No>
@@ -6684,10 +6778,31 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
 }
 const modKey = (b, m) => (m.fixa ? `${b.key}:f${m.id}` : `${b.key}:m${m.idx}`);
 
-function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
+function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArremesso, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel }) {
   const efs = ataque.efeitos || [];
   const pas = passivosDe(ataque);
   const ehPassiva = efs.length === 0 && pas.length > 0;
+  // todo quadrado que existe agora tem a posição guardada antes de qualquer mudança, para nada "pular" de lugar
+  const rectsRef = useRef({});
+  const congelar = (n) => {
+    const base = { ...(n.mapaAbs || {}) };
+    let ch = false;
+    Object.entries(rectsRef.current || {}).forEach(([k, r]) => { if (!base[k]) { base[k] = { x: r.x, y: r.y }; ch = true; } });
+    return ch ? { ...n, mapaAbs: base } : n;
+  };
+  const onMudar = (n) => onMudarRaw(congelar(n));
+  // ao remover extras/falhas "numerados", os quadrados seguintes mudam de número: leva as posições junto
+  const remapMods = (n, bk, idxs) => {
+    if (!n.mapaAbs || !idxs.size) return n;
+    const out = {};
+    Object.entries(n.mapaAbs).forEach(([k, v]) => {
+      const m = k.startsWith(bk + ":m") && /^\d+$/.test(k.slice(bk.length + 2)) ? Number(k.slice(bk.length + 2)) : null;
+      if (m === null) { out[k] = v; return; }
+      if (idxs.has(m)) return;
+      out[`${bk}:m${m - [...idxs].filter((i) => i < m).length}`] = v;
+    });
+    return { ...n, mapaAbs: out };
+  };
   const [paleta, setPaleta] = useState(false);
   const [busca, setBusca] = useState("");
   const [opAberta, setOpAberta] = useState(null);
@@ -6726,11 +6841,11 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     if (!b.ativo && def) [...(def.extras || []).map((e) => ({ e, neg: false })), ...(def.falhas || []).map((e) => ({ e, neg: true }))].forEach(({ e, neg }) => { if (b.item.extrasAtivos?.[e.chave]) mods.push({ idx: -1, fixa: true, id: "x:" + e.chave, nome: nomeX(e), neg }); });
     (b.item.colateraisExtra || []).forEach((_, n) => mods.push({ idx: -1, fixa: true, id: `efeito_colateral#${n + 1}`, nome: "Efeito Colateral", neg: true }));
     Object.keys(LEG_TODOS).filter((id) => LEG_TODOS[id].ativo(ataque) && elegivelTodos(id, b)).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
-    return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : (def?.nome || cat?.nome || "Efeito"), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTravada: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo, mods, def };
+    return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : (def?.nome || cat?.nome || "Efeito"), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTotal: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo ? Math.max(0, attr(ent, b.item.atributoBase)) + (b.item.graduacao || 0) : null, mods, def };
   });
   const habMods = [
     ...Object.keys(LEG_HAB).filter((id) => LEG_HAB[id].ativo(ataque)).map((id) => ({ id, nome: MOD_POR_ID[id]?.nome || id, neg: (MOD_POR_ID[id]?.v ?? 0) < 0 })),
-    ...(ataque.alcances || []).map((x) => ({ id: "a:" + x.id, nome: (x.tipo === "red" ? "Alcance Reduzido" : "Alcance Estendido") + (efs.find((e) => e.id === x.efeitoId) ? " · " + efs.find((e) => e.id === x.efeitoId).categoria : ""), neg: x.tipo === "red" })),
+    ...(ataque.alcances || []).map((x) => ({ id: "a:" + x.id, nome: (x.tipo === "red" ? "Alcance Reduzido" : "Alcance Estendido") + ((x.vezes || 1) > 1 ? ` ×${x.vezes}` : "") + (efs.find((e) => e.id === x.efeitoId) ? " · " + efs.find((e) => e.id === x.efeitoId).categoria : ""), neg: x.tipo === "red" })),
     ...(ataque.usoVariaveis || []).map((u) => ({ id: "u:" + u.id, nome: nomeUso(u, variaveis), neg: (u.delta || 0) < 0 })),
   ];
 
@@ -6740,15 +6855,12 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   const lista = (b) => (b.ativo ? efs : pas);
   const setLista = (b, arr) => (b.ativo ? setEfs(arr) : setPas(arr));
   const onGrad = (b, d) => { const k = chaveGrad(b.ativo, b.item); atualizarBloco(b, { ...b.item, [k]: Math.max(0, (b.item[k] || 0) + d) }); };
-  const nasce = useRef(null);
   const addMod = (b, m) => {
-    const nk = (k) => { nasce.current = { bloco: b.key, key: k }; };
-    if (m.id.startsWith("x:")) { atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: true } }); nk(`${b.key}:f${m.id}`); setSel({ key: b.key, fixo: m.id }); return; }
-    if (LEG_TODOS[m.id]) { onMudar(LEG_TODOS[m.id].on(ataque)); nk(`${b.key}:f${m.id}`); setSel({ key: b.key, fixo: m.id }); return; }
-    if (LEG_EFEITO[m.id]) { const jaTem = m.id === "efeito_colateral" && b.item.colateral?.ativo; atualizarBloco(b, LEG_EFEITO[m.id].on(b.item)); nk(`${b.key}:f${jaTem ? `efeito_colateral#${(b.item.colateraisExtra || []).length + 1}` : m.id}`); setSel({ key: b.key, fixo: jaTem ? `efeito_colateral#${(b.item.colateraisExtra || []).length + 1}` : m.id }); return; }
+    if (m.id.startsWith("x:")) { atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: true } }); setSel({ key: b.key, fixo: m.id }); return; }
+    if (LEG_TODOS[m.id]) { onMudar(LEG_TODOS[m.id].on(ataque)); setSel({ key: b.key, fixo: m.id }); return; }
+    if (LEG_EFEITO[m.id]) { const jaTem = m.id === "efeito_colateral" && b.item.colateral?.ativo; atualizarBloco(b, LEG_EFEITO[m.id].on(b.item)); setSel({ key: b.key, fixo: jaTem ? `efeito_colateral#${(b.item.colateraisExtra || []).length + 1}` : m.id }); return; }
     const novos = [...(b.item.mods || []), { id: m.id, vezes: 1, valor: m.v, nota: m.id === "area" ? "Explosão" : "" }];
     atualizarBloco(b, { ...b.item, mods: novos });
-    nk(`${b.key}:m${novos.length - 1}`);
     setSel({ key: b.key, mod: novos.length - 1 });
   };
   const gradDe = (b) => b.item[chaveGrad(b.ativo, b.item)] || 0;
@@ -6818,7 +6930,9 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     novoA = { ...novoA, efeitos: efsF };
     if (novoA.alcances) novoA.alcances = novoA.alcances.filter((x) => efsF.some((e) => e.id === x.efeitoId));
     if (ataque.passivos !== undefined || pasF.length !== pas.length) novoA.passivos = pasF;
-    onMudar(novoA);
+    let fin = congelar(novoA);
+    Object.entries(porBloco).forEach(([bk, rs]) => { fin = remapMods(fin, bk, new Set(rs.filter((r) => r[0] === "m" && /^\d+$/.test(r.slice(1))).map((r) => Number(r.slice(1))))); });
+    onMudarRaw(fin);
     setSel(null);
   };
   const copiarPecas = (keys, alvoKey) => {
@@ -6851,7 +6965,12 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     });
     atualizarBloco(alvo, novo);
   };
-  const remMod = (b, m) => { setSel(null); if (m.fixa) { if (m.id.startsWith("x:")) atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: false } }); else if (LEG_TODOS[m.id]) onMudar(LEG_TODOS[m.id].off(ataque)); else atualizarBloco(b, removerFixoEfeito(b.item, m.id)); } else atualizarBloco(b, { ...b.item, mods: (b.item.mods || []).filter((_, j) => j !== m.idx) }); };
+  const removerModIdx = (b, idxs) => {
+    const item = { ...b.item, mods: (b.item.mods || []).filter((_, j) => !idxs.has(j)) };
+    const n = b.ativo ? { ...ataque, efeitos: efs.map((x, j) => (j === b.i ? item : x)) } : { ...ataque, passivos: pas.map((x, j) => (j === b.i ? item : x)) };
+    onMudarRaw(remapMods(congelar(n), b.key, idxs));
+  };
+  const remMod = (b, m) => { setSel(null); if (m.fixa) { if (m.id.startsWith("x:")) atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: false } }); else if (LEG_TODOS[m.id]) onMudar(LEG_TODOS[m.id].off(ataque)); else atualizarBloco(b, removerFixoEfeito(b.item, m.id)); } else removerModIdx(b, new Set([m.idx])); };
   let inspetor = null;
   if (sel && sel.raiz) {
     if (sel.pal) inspetor = <PaletaHab ataque={ataque} onAdd={(id) => { onMudar(LEG_HAB[id].on(ataque)); setSel({ raiz: true, fixoHab: id }); }} onAddVar={addUso} onAddAlc={addAlc} />;
@@ -6889,7 +7008,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
     } else if (sel.fixo) {
       inspetor = <InspetorLegado id={sel.fixo} item={bSel.item} grad={gradDe(bSel)} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, removerFixoEfeito(bSel.item, sel.fixo)); setSel({ key: bSel.key }); }} />;
     } else if (sel.mod != null) {
-      inspetor = <InspetorMod efsLista={bSel.ativo ? efs.filter((e) => e.id !== bSel.item.id && !CATS_SEM_ROLAGEM.includes(e.categoria) && e.categoria !== "Outros") : undefined} passosExtra={(ataque.alcances || []).filter((x) => x.efeitoId === bSel.item.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1), 0)} item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, { ...bSel.item, mods: (bSel.item.mods || []).filter((_, j) => j !== sel.mod) }); setSel({ key: bSel.key }); }} />;
+      inspetor = <InspetorMod efsLista={bSel.ativo ? efs.filter((e) => e.id !== bSel.item.id && !CATS_SEM_ROLAGEM.includes(e.categoria) && e.categoria !== "Outros") : undefined} passosExtra={(ataque.alcances || []).filter((x) => x.efeitoId === bSel.item.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1) * Math.max(1, x.vezes || 1), 0)} item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { removerModIdx(bSel, new Set([sel.mod])); setSel({ key: bSel.key }); }} />;
     } else {
       inspetor = (
         <InspetorEfeito key={bSel.key} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat}
@@ -6931,7 +7050,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar, onCriarArremesso, variav
   ) : null;
   return (
     <div className={"vb-shell" + (cheio ? " cheio" : "")}>
-      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onCopiar={copiarPecas} onDeletar={deletarChaves} nasce={nasce} offs={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaPos: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
+      <MapaPoder ataque={ataque} blocos={blocos} habMods={habMods} selecionado={sel} onSel={clicar} conteudo={conteudo} onRemBloco={removerBloco} onRemMod={remMod} onRemHab={remHab} onCopiar={copiarPecas} onDeletar={deletarChaves} rectsRef={rectsRef} offs={ataque.mapaAbs || {}} legacy={ataque.mapaPos || {}} onOffs={(o) => onMudar({ ...ataque, mapaAbs: o })} onNovo={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} total={total}
         zoom={zoom} setZoom={setZoom} onGrad={onGrad} info={info} calc={calc} ent={ent} cheio={cheio} setCheio={setCheio} ladoAberto={ladoAberto} setLadoAberto={setLadoAberto} />
     </div>
   );
@@ -7311,7 +7430,7 @@ function PainelFicha({ f }) {
     (a.efeitos || []).forEach((ef) => {
       const g = ef.graduacao ?? ef.graduacaoNulificar ?? 0;
       let cd = null;
-      if (ef.categoria === "Dano") cd = 15 + g + (ef.danoAdicional || 0);
+      if (ef.categoria === "Dano") cd = 15 + graduacaoEfetiva(ef, f);
       else if (["Aflição", "Enfraquecer", "Leitura Mental"].includes(ef.categoria)) cd = 10 + g;
       else if (ef.categoria === "Camuflagem") cd = 15 + g;
       if (cd != null) efeitosDano.push({ hab: a.nome || "(sem nome)", cor: PAL_DASH[i % PAL_DASH.length], cat: ef.categoria, g, cd, dist: distribuicao(cd, resAlvo) });
