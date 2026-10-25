@@ -1667,6 +1667,7 @@ function aplicarUsoMods(ent, ataque, atualizarCampo, registrar) {
     log(`${ent.nome} se cansa ao usar "${nome}"`, "Cansativo", nivel >= 2 ? "Exausto" : "Fatigado (ou Exausto se já estava)");
   });
   ms.filter((m) => m.id === "incontrolavel").forEach((m) => {
+    if ((Number(m.valor) || -3) <= -6) return; // sem teste: nenhuma mensagem no histórico
     const g = Math.max(0, Number(m.item?.graduacao ?? m.item?.graduacaoNulificar) || 0);
     const cd = 10 + g, dado = rolarD20(), bonus = salvBonus(ent, "Vontade"), r = montarTeste(dado, bonus, cd);
     log(`${ent.nome} tenta controlar "${nome}" (Vontade)`, `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? "Controlou" : "Perdeu o controle — o mestre decide o efeito", r.sucesso ? "hs" : "hd");
