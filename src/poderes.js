@@ -123,7 +123,7 @@ export const FALHAS = [
   M("efeito_colateral", "Efeito Colateral", "g", -2, { opcoes: [-2, -3, -4, -4, -6, -8] }), // grau 1/2/3 e dobrado se automático
   M("exigir_teste", "Exigir Teste", "g", -1, { mult: true }),         // -1 base; cada +1 de CD soma -1
   M("limitado", "Limitado", "g", -1, { opcoes: [-1, -2, -3, -4, -5], mult: true }),
-  M("incontrolavel", "Incontrolável", "g", -3),
+  M("incontrolavel", "Incontrolável", "g", -3, { opcoes: [-3, -6] }),
   M("perceptivel", "Perceptível", "f", -1),
   M("ponto_fraco", "Ponto Fraco", "g", -4),
   M("retroalimentacao", "Retroalimentação", "g", -3),
@@ -239,7 +239,6 @@ function resolverMod(it) {
   if (cat) { k = cat.k; v = (it.valor ?? cat.v) + (it.id === "reacao" && it.sust ? 1 : 0); }
   else if (it.g !== undefined) { k = "g"; v = it.g; }
   else { k = "f"; v = it.f ?? it.valor ?? 0; }
-  if (it.id === "incontrolavel") v = -3; // a opção "sem teste" (−6) foi removida
   return { id: it.id, nome, k, valor: v * vezes, sust: !!it.sust, vezes, tipo: it.tipo || cat?.tipo || null, muda: cat?.muda, derivado: !!it.derivado };
 }
 
@@ -366,7 +365,7 @@ export const REGRAS = {
   efeito_colateral: () => "Efeito Colateral: ao usar, você recebe a condição indicada.",
   exigir_teste: () => "Exigir Teste: precisa passar num teste para usar; falhar anula o uso.",
   limitado: () => "Limitado: condição restritiva (ver nota).",
-  incontrolavel: () => "Incontrolável: ao usar, teste de Vontade CD 10 + graduação; falhar = o mestre decide o efeito (automático).",
+  incontrolavel: (n, v) => (v ?? -3) <= -6 ? "Incontrolável (sem teste): sempre foge do controle; o mestre decide." : "Incontrolável: ao usar, teste de Vontade CD 10 + graduação; falhar = o mestre decide o efeito (automático).",
   perceptivel: () => "Perceptível: o efeito é muito visível/audível.",
   ponto_fraco: () => "Ponto Fraco: o efeito tem uma fraqueza que anula o poder quando atingida.",
   retroalimentacao: () => "Retroalimentação: você também sofre o efeito (lembrete automático no registro).",
@@ -496,7 +495,7 @@ export const DESC_MOD = {
   efeito_colateral: "Ao usar, você sofre uma condição. Grau 1: −2/g; grau 2: −3/g; grau 3 (paralisado, nulificado): −4/g. Automático (sem teste) dobra o valor.",
   exigir_teste: "Para usar, você passa num teste de perícia: CD 10 + bônus base da perícia, −1/g; cada +1 de CD soma −1/g. Falhar perde o efeito.",
   limitado: "Uma restrição combinada com o mestre (ex.: só de dia). −1 a −5/g, conforme o tamanho da restrição.",
-  incontrolavel: "O efeito pode fugir ao seu controle: teste de Vontade (CD 10 + graduação) para controlá-lo.",
+  incontrolavel: "O efeito pode fugir ao seu controle: teste de Vontade (CD 10 + graduação) para controlá-lo; na opção −6/g não há teste e o mestre decide.",
   perceptivel: "O efeito é muito visível/audível. −1 fixo.",
   ponto_fraco: "O poder tem uma fraqueza: quem notá-la (Investigação contra sua Enganação) vê o texto do ponto fraco. −4/g.",
   retroalimentacao: "Você também sofre o efeito (ou parte dele) ao usá-lo. −3/g.",
