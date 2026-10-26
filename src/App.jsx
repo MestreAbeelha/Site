@@ -77,6 +77,30 @@ const GlobalStyle = () => (
       background:var(--surface3); border:1px solid var(--accent); border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,0.45);
       padding:4px;
     }
+    .mm3 .deck { display:grid; grid-template-columns:repeat(auto-fill,minmax(118px,1fr)); gap:14px; padding:6px 2px 2px; }
+    .mm3 .carta { position:relative; display:flex; flex-direction:column; text-align:left; padding:8px; border-radius:16px; color:var(--text); font:inherit;
+      background:linear-gradient(160deg,var(--surface3),var(--surface)); border:2px solid var(--border); box-shadow:0 6px 16px rgba(0,0,0,0.4); aspect-ratio:5/8.4; overflow:hidden;
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease; }
+    .mm3 .carta::before { content:""; position:absolute; inset:4px; border-radius:12px; border:1px solid rgba(232,200,74,0.18); pointer-events:none; }
+    .mm3 .carta.clicavel { cursor:pointer; }
+    .mm3 .carta.clicavel:hover { transform:translateY(-6px) rotate(-1deg); border-color:var(--accent); box-shadow:0 14px 26px rgba(0,0,0,0.55), 0 0 0 1px var(--accent); }
+    .mm3 .carta.destaque { border-color:var(--accent); box-shadow:0 0 0 2px var(--accent), 0 12px 26px rgba(0,0,0,0.55); transform:translateY(-4px); }
+    .mm3 .carta-foto { position:relative; flex:0 0 38%; border-radius:10px; overflow:hidden; background:linear-gradient(135deg,rgba(232,200,74,0.16),rgba(0,0,0,0.35)); display:flex; align-items:center; justify-content:center; }
+    .mm3 .carta-foto img { width:100%; height:100%; object-fit:cover; display:block; }
+    .mm3 .carta-foto > span { font-size:2.6rem; font-weight:700; color:var(--accent); opacity:.85; }
+    .mm3 .carta-num { position:absolute; top:6px; left:6px; font-style:normal; font-size:0.72rem; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,0.6); color:var(--accent); display:flex; align-items:center; justify-content:center; }
+    .mm3 .carta-nome { margin:8px 2px 6px; font-weight:700; font-size:1rem; text-align:center; letter-spacing:.02em; line-height:1.15; }
+    .mm3 .carta-atrs { display:grid; grid-template-columns:repeat(4,1fr); gap:3px; margin-bottom:6px; }
+    .mm3 .carta-atrs div { display:flex; flex-direction:column; align-items:center; background:rgba(0,0,0,0.28); border-radius:6px; padding:2px 0; }
+    .mm3 .carta-atrs b { font-size:0.85rem; } .mm3 .carta-atrs span { font-size:0.55rem; color:var(--muted); letter-spacing:.06em; }
+    .mm3 .carta-atrs .pos b { color:#6fdc8c; } .mm3 .carta-atrs .neg b { color:#e86a6a; }
+    .mm3 .carta-habs { display:flex; flex-wrap:wrap; gap:4px; align-content:flex-start; overflow:hidden; }
+    .mm3 .carta-habs span { font-size:0.68rem; padding:2px 7px; border-radius:999px; background:var(--accent-soft); color:var(--accent); max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mm3 .carta-habs .mais { background:transparent; border:1px dashed var(--border); color:var(--muted); } .mm3 .carta-habs em { font-size:0.7rem; color:var(--muted); }
+    .mm3 .carta.virada { cursor:default; }
+    .mm3 .carta-verso { flex:1; border-radius:10px; display:flex; align-items:center; justify-content:center; background:repeating-linear-gradient(45deg,rgba(232,200,74,0.12) 0 8px,rgba(0,0,0,0.25) 8px 16px); border:1px solid rgba(232,200,74,0.3); }
+    .mm3 .carta-verso span { font-size:3rem; font-weight:700; color:var(--accent); opacity:.8; }
+    .mm3 .deck-dica { margin-top:10px; font-size:0.78rem; color:var(--muted); text-align:center; }
     .mm3 .meta-box { max-width:620px; width:94vw; max-height:92vh; display:flex; flex-direction:column; }
     .mm3 .meta-topo { display:flex; gap:10px; margin:6px 0 10px; flex-wrap:wrap; }
     .mm3 .meta-topo > div { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:6px 12px; display:flex; flex-direction:column; align-items:center; min-width:84px; }
@@ -2405,22 +2429,48 @@ function MetamorfoseCampos({ ef, onMudar }) {
     </>
   );
 }
-function MetamorfoseUso({ ef, ent, onMudar, onTransformar }) {
+const ABREV_ATR = { forca: "FOR", agilidade: "AGI", vigor: "VIG", inteligencia: "INT", presenca: "PRE", prontidao: "PRO", luta: "LUT", destreza: "DES" };
+function CartaForma({ forma, numero, onClick, virada, destaque }) {
+  const fi = forma.ficha || {};
+  const habs = (fi.ataques || []).map((a) => a.nome).filter(Boolean);
+  const inicial = (forma.nome || fi.nome || "?").trim().charAt(0).toUpperCase();
+  return (
+    <button type="button" className={"carta" + (virada ? " virada" : "") + (destaque ? " destaque" : "") + (onClick ? " clicavel" : "")} onClick={onClick} disabled={!onClick}>
+      {virada ? (
+        <div className="carta-verso"><span>?</span></div>
+      ) : (
+        <>
+          <div className="carta-foto">
+            {fi.foto ? <ImgAj src={fi.foto} aj={fi.fotoAj} alt="" /> : <span>{inicial}</span>}
+            <i className="carta-num">{numero}</i>
+          </div>
+          <div className="carta-nome">{forma.nome || fi.nome || `Forma ${numero}`}</div>
+          <div className="carta-atrs">
+            {ATRIBUTOS.map((a) => <div key={a.k} className={(fi.atributos?.[a.k] ?? 0) < 0 ? "neg" : (fi.atributos?.[a.k] ?? 0) > 0 ? "pos" : ""}><b>{fi.atributos?.[a.k] ?? 0}</b><span>{ABREV_ATR[a.k]}</span></div>)}
+          </div>
+          <div className="carta-habs">
+            {habs.length === 0 && <em>Sem habilidades</em>}
+            {habs.slice(0, 4).map((h, k) => <span key={k}>{h}</span>)}
+            {habs.length > 4 && <span className="mais">+{habs.length - 4}</span>}
+          </div>
+        </>
+      )}
+    </button>
+  );
+}
+function MetamorfoseUso({ ef, ent, onTransformar }) {
   const formas = formasDe(ef);
   const [sorteio, setSorteio] = useState(null);
   const aleat = contaMod(ef, "aleatoria") > 0;
   const assumir = (id) => onTransformar && onTransformar(id);
   return (
     <>
-      <div className="field-note" style={{ marginTop: 6 }}>Forma atual: <b>{ent?.metaAtual ? ent.metaAtual.nome : "forma base"}</b> <span className="pi-sub">(a ficha inteira passa a ser a forma escolhida; para voltar, use a etiqueta de forma na ficha)</span></div>
-      {aleat ? (
-        <button type="button" className="btn btn-sm" style={{ marginTop: 6 }} onClick={() => { const r = 1 + Math.floor(Math.random() * formas.length); setSorteio(r); assumir(formas[r - 1].id); }}>Transformar (1d{formas.length})</button>
-      ) : (
-        <div className="meta-chips" style={{ marginTop: 6 }}>
-          {formas.map((x, k) => <button type="button" key={x.id} className="meta-aba" onClick={() => assumir(x.id)}><i>{k + 1}</i>{x.nome || `Forma ${k + 1}`}</button>)}
-        </div>
-      )}
-      {sorteio && aleat && <div className="field-note">Resultado: {sorteio} de {formas.length}.</div>}
+      <div className="deck">
+        {formas.map((x, k) => <CartaForma key={x.id} forma={x} numero={k + 1} virada={aleat && sorteio == null} destaque={sorteio === k + 1} onClick={aleat ? null : () => assumir(x.id)} />)}
+      </div>
+      {aleat
+        ? <button type="button" className="btn btn-accent btn-block" style={{ marginTop: 10 }} onClick={() => { const r = 1 + Math.floor(Math.random() * formas.length); setSorteio(r); assumir(formas[r - 1].id); }}>⚄ Transformar (1d{formas.length})</button>
+        : <div className="deck-dica">Toque numa carta para se transformar · ação livre{ent?.metaAtual ? " · para voltar, use a etiqueta de forma na ficha" : ""}</div>}
     </>
   );
 }
@@ -2441,12 +2491,12 @@ function criarInvocacao(ent, ef) {
 function UtilCartao({ ef, ent, onMudar, registrar, onTransformar }) {
   return (
     <div className="subcard2" style={{ marginBottom: 12 }}>
-      <div className="section-title">{ef.categoria} {ef.graduacao || 0}</div>
+      <div className="section-title">{ef.categoria}{ef.categoria === "Metamorfose" ? "" : " " + (ef.graduacao || 0)}</div>
       {registrar && ef.categoria === "Invocar" && (
         <button type="button" className="btn btn-ghost btn-sm" style={{ marginBottom: 6 }} onClick={() => { const n = criarInvocacao(ent, ef); registrar({ tipo: "rolagem", desc: `${ent.nome} invoca ${ef.campos?.nome || "uma criatura"}`, detalhe: `${n} ficha(s) criada(s) (nível ${ef.graduacao})`, total: "Invocação criada", tipoClasse: "hs" }); }}>+ Criar ficha(s) da invocação</button>
       )}
-      {onMudar && ef.categoria === "Metamorfose" && <MetamorfoseUso ef={ef} ent={ent} onMudar={onMudar} onTransformar={onTransformar} />}
-      {onMudar && ef.categoria === "Variável" ? <UtilCampos ef={ef} onMudar={onMudar} /> : (
+      {onMudar && ef.categoria === "Metamorfose" && <MetamorfoseUso ef={ef} ent={ent} onTransformar={onTransformar} />}
+      {ef.categoria === "Metamorfose" ? null : onMudar && ef.categoria === "Variável" ? <UtilCampos ef={ef} onMudar={onMudar} /> : (
         <div className="field-note">{infoEfeitoUtil(ef, ent).map((l, i) => <div key={i}>• {l}</div>)}</div>
       )}
     </div>
