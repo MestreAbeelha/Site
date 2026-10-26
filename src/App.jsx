@@ -76,6 +76,25 @@ const GlobalStyle = () => (
       background:var(--surface3); border:1px solid var(--accent); border-radius:10px; box-shadow:0 10px 28px rgba(0,0,0,0.45);
       padding:4px;
     }
+    .mm3 .meta-box { max-width:620px; width:94vw; max-height:92vh; display:flex; flex-direction:column; }
+    .mm3 .meta-topo { display:flex; gap:10px; margin:6px 0 10px; flex-wrap:wrap; }
+    .mm3 .meta-topo > div { background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:6px 12px; display:flex; flex-direction:column; align-items:center; min-width:84px; }
+    .mm3 .meta-topo b { font-size:1.15rem; color:var(--accent); } .mm3 .meta-topo span { font-size:0.7rem; color:var(--muted); }
+    .mm3 .meta-abas, .mm3 .meta-chips { display:flex; gap:6px; flex-wrap:wrap; }
+    .mm3 .meta-aba, .mm3 .meta-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; border:1px solid var(--border); background:var(--surface3); color:var(--text); font-size:0.85rem; cursor:pointer; }
+    .mm3 .meta-aba.on { border-color:var(--accent); background:var(--accent-soft); color:var(--accent); }
+    .mm3 .meta-aba i, .mm3 .meta-chip i { font-style:normal; font-size:0.72rem; background:var(--accent-soft); color:var(--accent); border-radius:50%; width:18px; height:18px; display:inline-flex; align-items:center; justify-content:center; }
+    .mm3 .meta-corpo { overflow-y:auto; margin-top:10px; padding-right:4px; }
+    .mm3 .meta-atrs { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
+    .mm3 .meta-atrs.peq { margin:6px 0; }
+    .mm3 .meta-atr { display:flex; flex-direction:column; align-items:center; background:var(--surface3); border-radius:8px; padding:4px; font-size:0.72rem; color:var(--muted); }
+    .mm3 .meta-atr input { width:100%; text-align:center; } .mm3 .meta-atr b { color:var(--text); font-size:0.95rem; }
+    @media (max-width:480px) { .mm3 .meta-atrs { grid-template-columns:repeat(2,1fr); } }
+    .mm3 .meta-ativa { margin-top:8px; padding:8px 10px; border-left:3px solid var(--accent); background:var(--surface3); border-radius:6px; font-size:0.85rem; display:flex; flex-direction:column; gap:4px; }
+    .mm3 .meta-editor-bd { align-items:flex-start; overflow-y:auto; z-index:600; }
+    .mm3 .meta-editor { width:min(960px,96vw); margin:16px auto; }
+    .mm3 .meta-resumo { margin-top:10px; }
+    .mm3 .inv-lin { display:grid; grid-template-columns:1fr 60px 1fr auto; gap:6px; margin-bottom:6px; }
     .mm3 .ssel-opt { padding:9px 10px; border-radius:7px; cursor:pointer; font-size:0.9rem; color:var(--text); }
     .mm3 .ssel-opt.destacado { background:var(--accent-soft); color:var(--accent); }
     .mm3 .ssel-vazio { padding:9px 10px; font-size:0.85rem; color:var(--muted); }
@@ -606,7 +625,7 @@ const GlobalStyle = () => (
     .mm3 .anim-retrato.vencedor { border-color:var(--accent); box-shadow:0 0 18px rgba(232,200,74,0.55); }
     .mm3 .anim-retrato-vazio { width:100%; height:100%; display:flex; align-items:center; justify-content:center;
       font-family:'Bebas Neue',sans-serif; font-size:2.1rem; color:var(--muted); }
-    .mm3 .anim-retrato .metade { position:absolute; top:0; width:100%; height:100%; object-fit:cover;
+    .mm3 .anim-retrato .metade { position:absolute; top:0; left:0; width:100%; height:100%; overflow:hidden;
       transition:transform 0.5s cubic-bezier(.36,.07,.19,.97), filter 0.5s; }
     .mm3 .anim-retrato .metade.esq { clip-path:polygon(0 0, 53% 0, 43% 100%, 0% 100%); }
     .mm3 .anim-retrato .metade.dir { clip-path:polygon(53% 0, 100% 0, 100% 100%, 43% 100%); }
@@ -1129,7 +1148,7 @@ const CONDICOES_LISTA = [
   { nome: "Prendendo a Respiração", desc: "Imune a poderes de olfato; pode prender a respiração por 1 + Vigor rodadas." },
   { nome: "Surdo", desc: "Perde o sentido Audição." },
   { nome: "Sangrando", desc: "Perde 10% da vida máxima por turno até tratamento CD 10 ou cura." },
-  { nome: "Sufocando", desc: "Teste de Fortitude CD 10 no início do turno ou fica Exausto." },
+  { nome: "Sufocando", desc: "No início do turno, teste de Fortitude CD 10; cada teste passado aumenta a CD em +5. Falhar deixa Fatigado; falhar de novo, Exausto; falhar mais uma vez, Morrendo." },
   { nome: "Tonto", desc: "Perde a ação livre." },
   { nome: "Vulnerável", desc: "Aparar e Esquiva pela metade (a CD para acertá-lo é cortada pela metade).", efeito: { aparar: "metade", esquiva: "metade" } },
   { nome: "Zetsu", desc: "Não pode usar habilidades de nenhum tipo de Nen." },
@@ -2124,8 +2143,8 @@ function valorAlvoComoCD(ent, key) {
 
 /* ---------- efeitos "de utilidade" (Salto, Teleporte, Transformação, Criar, Invocar, Ilusão, Variável) ----------
    Não rolam contra um alvo: o cartão de uso mostra os números que a regra define (distância, massa, CD, pontos…). */
-const UTIL_CATS = ["Salto", "Teleporte", "Transformação", "Criar", "Invocar", "Ilusão", "Variável"];
-Object.assign(CAT_UTIL_PARA_EFEITO, { "Salto": "salto", "Teleporte": "teleporte", "Transformação": "transformacao", "Criar": "criar", "Invocar": "invocar", "Ilusão": "ilusao", "Variável": "variavel" });
+const UTIL_CATS = ["Salto", "Teleporte", "Transformação", "Criar", "Invocar", "Ilusão", "Variável", "Metamorfose"];
+Object.assign(CAT_UTIL_PARA_EFEITO, { "Salto": "salto", "Teleporte": "teleporte", "Transformação": "transformacao", "Criar": "criar", "Invocar": "invocar", "Ilusão": "ilusao", "Variável": "variavel", "Metamorfose": "metamorfose" });
 Object.assign(CUSTO_BASE_EFEITO_UTIL, {
   "Transformação": (ef) => ({ estado: 3, mesmo: 4, qualquer: 7 }[ef.campos?.nivel || "estado"]),
   "Ilusão": (ef) => Math.max(1, Math.min(5, Number(ef.campos?.sentidos) || 1)),
@@ -2176,12 +2195,18 @@ function infoEfeitoUtil(ef, ent) {
     const s = Math.max(1, Math.min(5, Number(ef.campos?.sentidos) || 1));
     L.push(`Afeta ${s >= 5 ? "todos os tipos de sentido" : s + " tipo(s) de sentido"} · área até ${graduacaoParaVolume(g)} L · CD de Intuição ${10 + g} (+5 se alguém avisou o grupo).`);
     L.push("Ilusões não têm substância: não iluminam, aquecem nem alimentam; pontes e paredes ilusórias são reveladas ao serem testadas.");
+  } else if (ef.categoria === "Metamorfose") {
+    const n = nFichasMeta(ef);
+    L.push(`Ficha de ${pontosFichaMeta(g)} pontos (25 com graduação 1, +15 por graduação adicional). ${n} ficha${n > 1 ? "s" : ""} de transformação${contaMod(ef, "imitacao") ? " (variáveis: copiam fichas de outras pessoas)" : ""}.`);
+    L.push(`Ação livre para se transformar; contínuo (sem ação para manter). Graduação limitada pelo nível.${contaMod(ef, "aleatoria") ? ` Aleatória: role 1d${n} para decidir a forma.` : ""}`);
+    if (contaMod(ef, "itens_perdidos")) L.push("Itens Perdidos: o equipamento que você carrega cai ou se destrói ao se transformar.");
+    else if (!contaMod(ef, "equipamento_incorporado")) L.push("Seus itens ficam com você, como se tivessem se transformado junto.");
   } else if (ef.categoria === "Variável") {
     const total = g * 5;
     const usados = (ef.campos?.alocacoes || []).reduce((s, a) => s + (Number(a.pontos) || 0), 0);
     L.push(`${total} pontos de poder para alocar (${usados} usados, ${total - usados} livres). Realocar exige uma ação padrão. Parar de sustentar zera tudo.`);
   }
-  const JA = ["quicar", "portal", "mudar_velocidade", "continuo_criar", "dimensional", "estacionario", "impenetravel", "proporcional", "horda", "alcance_invocar"];
+  const JA = ["ficha_adicional", "equipamento_incorporado", "imitacao", "vida_independente", "aleatoria", "reversao_forcada", "forma_instavel", "instinto_forma", "itens_perdidos", "quicar", "portal", "mudar_velocidade", "continuo_criar", "dimensional", "estacionario", "impenetravel", "proporcional", "horda", "alcance_invocar"];
   const idC = CAT_UTIL_PARA_EFEITO[ef.categoria] || CAT_PARA_EFEITO[ef.categoria];
   notasExclusivos({ ...ef, mods: (ef.mods || []).filter((m) => !JA.includes(m.id)) }, idC, g).forEach((t) => L.push(t));
   return L;
@@ -2210,6 +2235,7 @@ function UtilCampos({ ef, onMudar }) {
           </SearchableSelect>
         </>
       )}
+      {ef.categoria === "Metamorfose" && <MetamorfoseCampos ef={ef} onMudar={onMudar} />}
       {ef.categoria === "Ilusão" && (
         <>
           <label className="label">Tipos de sentido afetados (1 a 5 — cada um custa 1 PP/g)</label>
@@ -2241,6 +2267,177 @@ function UtilCampos({ ef, onMudar }) {
     </>
   );
 }
+
+/* ---------- Metamorfose: fichas de transformação ---------- */
+const pontosFichaMeta = (g) => 10 + 15 * Math.max(1, Math.round(g || 1));
+const nFichasMeta = (ef) => 1 + contaMod(ef, "ficha_adicional");
+let ENTIDADES_GLOBAIS = [];
+// campos da ficha que a forma troca por inteiro (nome, nível, PV/Nen atuais e condições continuam os da base)
+const CAMPOS_FORMA = ["atributos", "periciaPontos", "ataques", "vantagens", "variaveis", "foto", "fotoAj"];
+const formaVazia = (n, g) => ({ id: uid(), nome: `Forma ${n}`, notas: "", ficha: { ...fichaPadrao(["Personagem"]), nome: `Forma ${n}`, nivel: Math.max(1, Math.round(g || 1)), inventario: [] } });
+const formasDe = (ef) => {
+  const n = nFichasMeta(ef), g = ef.graduacao, arr = [...(ef.campos?.formas || [])].map((f) => (f.ficha ? f : { ...f, ficha: { ...fichaPadrao(["Personagem"]), nome: f.nome || "", nivel: Math.max(1, Math.round(g || 1)), atributos: { ...ATRIBUTOS_VAZIOS, ...(f.atributos || {}) }, inventario: f.inventario || [] } }));
+  while (arr.length < n) arr.push(formaVazia(arr.length + 1, g));
+  return arr.slice(0, n);
+};
+/* Assume uma forma (formaId) ou volta à base (formaId = null): a ficha inteira passa a ser a da forma */
+function trocarForma(e, efId, formaId) {
+  let n = { ...e };
+  const saindo = e.metaAtual;
+  if (saindo) {
+    const b = e.metaBase || {};
+    // com Vida Independente, o PV da forma que está saindo é guardado na ficha dela (dentro da habilidade da base)
+    const baseAtaques = !saindo.vida ? b.ataques : (b.ataques || []).map((a) => ({ ...a, efeitos: (a.efeitos || []).map((ef) => (ef.id !== saindo.efId ? ef : { ...ef, campos: { ...(ef.campos || {}), formas: formasDe(ef).map((f) => (f.id === saindo.formaId ? { ...f, pv: e.pvAtual || 0 } : f)) } })) }));
+    CAMPOS_FORMA.forEach((k) => { n[k] = k === "ataques" ? baseAtaques : b[k]; });
+    if (saindo.equip) n.inventario = b.inventario;
+    if (saindo.vida && b.pvAtual != null) n.pvAtual = b.pvAtual;
+    delete n.metaAtual; delete n.metaBase;
+  }
+  if (!formaId) return n;
+  const ef = (n.ataques || []).flatMap((a) => a.efeitos || []).find((x) => x.id === efId);
+  const forma = ef ? formasDe(ef).find((f) => f.id === formaId) : null;
+  if (!forma) return n;
+  const vida = contaMod(ef, "vida_independente") > 0, equip = contaMod(ef, "equipamento_incorporado") > 0;
+  const fi = forma.ficha || {};
+  n.metaBase = { pvAtual: n.pvAtual, inventario: n.inventario };
+  CAMPOS_FORMA.forEach((k) => { n.metaBase[k] = n[k]; });
+  n.metaAtual = { efId, formaId, nome: forma.nome || fi.nome || "forma", vida, equip };
+  n.atributos = { ...ATRIBUTOS_VAZIOS, ...(fi.atributos || {}) };
+  n.periciaPontos = { ...PERICIA_PONTOS_VAZIO, ...(fi.periciaPontos || {}) };
+  n.ataques = (fi.ataques || []).map((a) => ({ ...a, sustentando: false, preparada: false }));
+  n.vantagens = fi.vantagens || [];
+  n.variaveis = fi.variaveis || [];
+  if (fi.foto) { n.foto = fi.foto; n.fotoAj = fi.fotoAj || null; }
+  if (equip) n.inventario = fi.inventario || [];
+  if (vida) n.pvAtual = forma.pv ?? pvMaxCalc(n);
+  return n;
+}
+function InventarioEditor({ itens, onMudar, vazio }) {
+  const lista = itens || [];
+  const set = (i, patch) => onMudar(lista.map((x, j) => (j === i ? { ...x, ...patch } : x)));
+  return (
+    <div className="inv-ed">
+      {lista.length === 0 && <div className="field-note">{vazio || "Nenhum item."}</div>}
+      {lista.map((it, i) => (
+        <div className="inv-lin" key={i}>
+          <input type="text" placeholder="Item" value={it.nome || ""} onChange={(e) => set(i, { nome: e.target.value })} />
+          <input type="number" min={1} className="inv-qtd" title="Quantidade" value={it.qtd ?? 1} onChange={(e) => set(i, { qtd: Math.max(1, Number(e.target.value) || 1) })} />
+          <input type="text" placeholder="Nota" value={it.nota || ""} onChange={(e) => set(i, { nota: e.target.value })} />
+          <button type="button" className="small-btn" onClick={() => onMudar(lista.filter((_, j) => j !== i))}>×</button>
+        </div>
+      ))}
+      <button type="button" className="btn btn-ghost btn-sm" onClick={() => onMudar([...lista, { nome: "", qtd: 1, nota: "" }])}>+ Item</button>
+    </div>
+  );
+}
+function FichasMetamorfose({ ef, onMudar, onFechar }) {
+  const formas = formasDe(ef);
+  const [i, setI] = useState(0);
+  const [editando, setEditando] = useState(false);
+  const idx = Math.min(i, formas.length - 1);
+  const f = formas[idx];
+  const fi = f.ficha;
+  const g = Math.max(1, Math.round(ef.graduacao || 1));
+  const imit = contaMod(ef, "imitacao") > 0, vida = contaMod(ef, "vida_independente") > 0, equip = contaMod(ef, "equipamento_incorporado") > 0;
+  const salvar = (novas) => onMudar({ ...ef, campos: { ...(ef.campos || {}), formas: novas } });
+  const upd = (patch) => salvar(formas.map((x, j) => (j === idx ? { ...x, ...patch } : x)));
+  const copiar = (id) => {
+    const e = ENTIDADES_GLOBAIS.find((x) => x.id === id);
+    if (!e) return;
+    const clone = JSON.parse(JSON.stringify({ atributos: e.atributos, periciaPontos: e.periciaPontos, ataques: e.ataques, vantagens: e.vantagens, variaveis: e.variaveis, inventario: e.inventario || [], foto: e.foto || null, fotoAj: e.fotoAj || null, complicacoes: e.complicacoes }));
+    upd({ nome: e.nome || f.nome, copiaDe: e.nome, ficha: { ...fi, ...clone, nome: e.nome || fi.nome, nivel: g } });
+  };
+  const gastos = pontosPoderGastos(fi), ppMax = pontosPoderMax(fi);
+  if (editando) {
+    return (
+      <div className="modal-backdrop meta-editor-bd">
+        <div className="meta-editor">
+          <FichaForm inicial={{ ...fi, nivel: g }} rotulos={["Personagem"]} nivelFixo={g} entidades={ENTIDADES_GLOBAIS}
+            onSalvar={(novo) => { upd({ ficha: { ...novo, nivel: g }, nome: novo.nome && novo.nome !== "Sem nome" ? novo.nome : f.nome }); setEditando(false); }}
+            onCancelar={() => setEditando(false)} />
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) onFechar(); }}>
+      <div className="modal-box meta-box">
+        <div className="modal-head"><span className="mt">Metamorfose · fichas de transformação</span><button className="modal-close" onClick={onFechar}>×</button></div>
+        <div className="meta-topo">
+          <div><b>{pontosFichaMeta(g)}</b><span>pontos por ficha</span></div>
+          <div><b>{formas.length}</b><span>ficha{formas.length > 1 ? "s" : ""}</span></div>
+          {contaMod(ef, "aleatoria") > 0 && <div><b>d{formas.length}</b><span>forma aleatória</span></div>}
+          {imit && <div><b>variável</b><span>copia outras pessoas</span></div>}
+        </div>
+        <div className="meta-abas">
+          {formas.map((x, k) => (
+            <button type="button" key={x.id} className={"meta-aba" + (k === idx ? " on" : "")} onClick={() => setI(k)}>
+              <i>{k + 1}</i>{x.nome || `Forma ${k + 1}`}
+            </button>
+          ))}
+        </div>
+        <div className="meta-corpo">
+          <div className="grid2">
+            <div><label className="label">Nome da forma</label><input type="text" value={f.nome || ""} onChange={(e) => upd({ nome: e.target.value })} /></div>
+            {vida && <div><label className="label">PV atuais desta forma</label><input type="number" placeholder="cheio ao assumir" value={f.pv ?? ""} onChange={(e) => upd({ pv: e.target.value === "" ? undefined : Number(e.target.value) })} /></div>}
+          </div>
+          {imit && (
+            <div style={{ marginTop: 8 }}>
+              <label className="label">Copiar a ficha de…</label>
+              <SearchableSelect value="" placeholder={f.copiaDe ? `Copiada de ${f.copiaDe}` : "Escolha uma ficha"} onChange={(e) => copiar(e.target.value)} listaCheia>
+                {ENTIDADES_GLOBAIS.map((x) => <option key={x.id} value={x.id}>{x.nome || "(sem nome)"}</option>)}
+              </SearchableSelect>
+            </div>
+          )}
+          <div className="meta-resumo">
+            <div className="meta-atrs peq">{ATRIBUTOS.map((a) => <div key={a.k} className="meta-atr"><span>{a.l}</span><b>{fi.atributos?.[a.k] ?? 0}</b></div>)}</div>
+            <div className="field-note">Pontos de poder: <b style={{ color: gastos > ppMax ? "var(--danger)" : undefined }}>{gastos} / {ppMax}</b> · {(fi.ataques || []).length} habilidade(s) · {(fi.vantagens || []).length} vantagem(ns) · {Object.values(fi.periciaPontos || {}).filter((v) => v > 0).length} perícia(s) treinada(s)</div>
+          </div>
+          <button type="button" className="btn" style={{ marginTop: 8 }} onClick={() => setEditando(true)}>Editar ficha completa</button>
+          <div className="field-note" style={{ marginTop: 6 }}>Ao se transformar, a ficha inteira (atributos, perícias, habilidades, vantagens e foto) passa a ser esta. Nome, nível, Nen e condições continuam os da base{vida ? "; o PV é independente por forma." : "; o PV é compartilhado."}</div>
+          {equip
+            ? <><label className="label" style={{ marginTop: 8 }}>Inventário desta forma</label><InventarioEditor itens={fi.inventario} onMudar={(v) => upd({ ficha: { ...fi, inventario: v } })} vazio="Sem itens nesta forma." /></>
+            : <div className="field-note">{contaMod(ef, "itens_perdidos") ? "Itens Perdidos: o equipamento que você carrega cai ou se destrói ao se transformar." : "Sem Equipamento Incorporado, esta forma não tem inventário próprio: os itens da ficha base ficam com você, como se tivessem se transformado junto."}</div>}
+          <label className="label" style={{ marginTop: 8 }}>Notas</label>
+          <textarea className="outros-textarea" rows={3} value={f.notas || ""} onChange={(e) => upd({ notas: e.target.value })} />
+        </div>
+      </div>
+    </div>
+  );
+}
+function MetamorfoseCampos({ ef, onMudar }) {
+  const [aberto, setAberto] = useState(false);
+  const formas = formasDe(ef);
+  return (
+    <>
+      <div className="field-note" style={{ marginBottom: 8 }}>Ficha de {pontosFichaMeta(ef.graduacao)} pontos · {formas.length} ficha{formas.length > 1 ? "s" : ""}.</div>
+      <div className="meta-chips">
+        {formas.map((x, k) => <span key={x.id} className="meta-chip"><i>{k + 1}</i>{x.nome || `Forma ${k + 1}`}</span>)}
+      </div>
+      <button type="button" className="btn btn-sm" style={{ marginTop: 8 }} onClick={() => setAberto(true)}>Abrir fichas</button>
+      {aberto && <FichasMetamorfose ef={ef} onMudar={onMudar} onFechar={() => setAberto(false)} />}
+    </>
+  );
+}
+function MetamorfoseUso({ ef, ent, onMudar, onTransformar }) {
+  const formas = formasDe(ef);
+  const [sorteio, setSorteio] = useState(null);
+  const aleat = contaMod(ef, "aleatoria") > 0;
+  const assumir = (id) => onTransformar && onTransformar(id);
+  return (
+    <>
+      <div className="field-note" style={{ marginTop: 6 }}>Forma atual: <b>{ent?.metaAtual ? ent.metaAtual.nome : "forma base"}</b> <span className="pi-sub">(a ficha inteira passa a ser a forma escolhida; para voltar, use a etiqueta de forma na ficha)</span></div>
+      {aleat ? (
+        <button type="button" className="btn btn-sm" style={{ marginTop: 6 }} onClick={() => { const r = 1 + Math.floor(Math.random() * formas.length); setSorteio(r); assumir(formas[r - 1].id); }}>Transformar (1d{formas.length})</button>
+      ) : (
+        <div className="meta-chips" style={{ marginTop: 6 }}>
+          {formas.map((x, k) => <button type="button" key={x.id} className="meta-aba" onClick={() => assumir(x.id)}><i>{k + 1}</i>{x.nome || `Forma ${k + 1}`}</button>)}
+        </div>
+      )}
+      {sorteio && aleat && <div className="field-note">Resultado: {sorteio} de {formas.length}.</div>}
+    </>
+  );
+}
 function criarInvocacao(ent, ef) {
   const g = Math.max(1, Math.round(ef.graduacao || 1));
   const horda = somaVezes(ef.mods, "horda");
@@ -2255,13 +2452,14 @@ function criarInvocacao(ent, ef) {
   novas.forEach((n) => salvarEntidade(n));
   return novas.length;
 }
-function UtilCartao({ ef, ent, onMudar, registrar }) {
+function UtilCartao({ ef, ent, onMudar, registrar, onTransformar }) {
   return (
     <div className="subcard2" style={{ marginBottom: 12 }}>
       <div className="section-title">{ef.categoria} {ef.graduacao || 0}</div>
       {registrar && ef.categoria === "Invocar" && (
         <button type="button" className="btn btn-ghost btn-sm" style={{ marginBottom: 6 }} onClick={() => { const n = criarInvocacao(ent, ef); registrar({ tipo: "rolagem", desc: `${ent.nome} invoca ${ef.campos?.nome || "uma criatura"}`, detalhe: `${n} ficha(s) criada(s) (nível ${ef.graduacao})`, total: "Invocação criada", tipoClasse: "hs" }); }}>+ Criar ficha(s) da invocação</button>
       )}
+      {onMudar && ef.categoria === "Metamorfose" && <MetamorfoseUso ef={ef} ent={ent} onMudar={onMudar} onTransformar={onTransformar} />}
       {onMudar && ef.categoria === "Variável" ? <UtilCampos ef={ef} onMudar={onMudar} /> : (
         <div className="field-note">{infoEfeitoUtil(ef, ent).map((l, i) => <div key={i}>• {l}</div>)}</div>
       )}
@@ -2285,6 +2483,7 @@ function efeitoPadrao(categoria) {
   if (categoria === "Leitura Mental") return { categoria, graduacao: 5 };
   if (categoria === "Outros") return { categoria, texto: "" };
   if (categoria === "Mover Objetos") return { categoria, graduacao: 0, concentracao: false, objetos: [] };
+  if (categoria === "Metamorfose") return { categoria, graduacao: 1, campos: { formas: [] } };
   if (UTIL_CATS.includes(categoria)) return { categoria, graduacao: 5, campos: {} };
   return { categoria };
 }
@@ -2581,13 +2780,13 @@ function DiceFace({ valor, rolando, tamanho = 64 }) {
   );
 }
 
-function AnimRetrato({ foto, nome, quebrado, vencedor }) {
+function AnimRetrato({ foto, aj, nome, quebrado, vencedor }) {
   return (
     <div className={"anim-retrato" + (vencedor ? " vencedor" : "") + (quebrado ? " quebrado" : "")}>
       {foto ? (
         <>
-          <img className="metade esq" src={foto} alt="" />
-          <img className="metade dir" src={foto} alt="" />
+          <div className="metade esq"><ImgAj src={foto} aj={aj} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /></div>
+          <div className="metade dir"><ImgAj src={foto} aj={aj} style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }} /></div>
         </>
       ) : (
         <div className="anim-retrato-vazio">{(nome || "?").trim().slice(0, 1).toUpperCase()}</div>
@@ -2643,7 +2842,7 @@ function AnimacaoEvento({ evento, onTerminar }) {
     return (
       <div className={"anim-card anim-oposta fase-" + fase}>
         <div className={"anim-lado esquerda" + (evento.vencedor === "A" ? " lado-vencedor" : evento.vencedor === "B" ? " lado-perdedor" : "")}>
-          <AnimRetratoComAtraso foto={evento.fotoA} nome={evento.nomeA} quebrar={quebradoA} vencedor={evento.vencedor === "A"} />
+          <AnimRetratoComAtraso foto={evento.fotoA} aj={evento.ajA} nome={evento.nomeA} quebrar={quebradoA} vencedor={evento.vencedor === "A"} />
           <div className="anim-nome">{evento.nomeA}</div>
           <DiceFace tamanho={46} valor={evento.dadoA} rolando={rolando} />
           {mostrarSoma && (
@@ -2658,7 +2857,7 @@ function AnimacaoEvento({ evento, onTerminar }) {
           VS
         </div>
         <div className={"anim-lado direita" + (evento.vencedor === "B" ? " lado-vencedor" : evento.vencedor === "A" ? " lado-perdedor" : "")}>
-          <AnimRetratoComAtraso foto={evento.fotoB} nome={evento.nomeB} quebrar={quebradoB} vencedor={evento.vencedor === "B"} />
+          <AnimRetratoComAtraso foto={evento.fotoB} aj={evento.ajB} nome={evento.nomeB} quebrar={quebradoB} vencedor={evento.vencedor === "B"} />
           <div className="anim-nome">{evento.nomeB}</div>
           <DiceFace tamanho={46} valor={evento.dadoB} rolando={rolando} />
           {mostrarSoma && (
@@ -2683,7 +2882,7 @@ function AnimacaoEvento({ evento, onTerminar }) {
     return (
       <div className={"anim-card anim-oposta fase-" + fase}>
         <div className={"anim-lado esquerda" + (mostrarResultado ? (evento.sucesso ? " lado-vencedor" : " lado-perdedor") : "")}>
-          <AnimRetratoComAtraso foto={evento.foto} nome={evento.nome} quebrar={quebradoAtacante} vencedor={mostrarResultado && evento.sucesso} />
+          <AnimRetratoComAtraso foto={evento.foto} aj={evento.ajF} nome={evento.nome} quebrar={quebradoAtacante} vencedor={mostrarResultado && evento.sucesso} />
           <div className="anim-nome">{evento.nome}</div>
           <DiceFace tamanho={46} valor={evento.dado} rolando={rolando} />
           {mostrarSoma && (
@@ -2698,7 +2897,7 @@ function AnimacaoEvento({ evento, onTerminar }) {
           VS
         </div>
         <div className={"anim-lado direita" + (mostrarResultado ? (!evento.sucesso ? " lado-vencedor" : " lado-perdedor") : "")}>
-          <AnimRetratoComAtraso foto={evento.fotoAlvo} nome={evento.nomeAlvo} quebrar={quebradoAlvo} vencedor={mostrarResultado && !evento.sucesso} />
+          <AnimRetratoComAtraso foto={evento.fotoAlvo} aj={evento.ajAlvo} nome={evento.nomeAlvo} quebrar={quebradoAlvo} vencedor={mostrarResultado && !evento.sucesso} />
           <div className="anim-nome">{evento.nomeAlvo}</div>
           <div className="anim-dado" style={{ width: 46, height: 46 }}><span style={{ fontSize: "0.85rem" }}>CD</span></div>
           {mostrarSoma && (
@@ -2746,9 +2945,9 @@ function AnimacaoEvento({ evento, onTerminar }) {
 }
 
 /* pequeno wrapper para dar 1 frame antes de "quebrar" o retrato, garantindo a transição CSS */
-function AnimRetratoComAtraso({ foto, nome, quebrar, vencedor }) {
+function AnimRetratoComAtraso({ foto, aj, nome, quebrar, vencedor }) {
   const quebrado = useAtraso(quebrar, 40);
-  return <AnimRetrato foto={foto} nome={nome} quebrado={quebrado} vencedor={vencedor} />;
+  return <AnimRetrato foto={foto} aj={aj} nome={nome} quebrado={quebrado} vencedor={vencedor} />;
 }
 
 function AnimacaoOverlay({ eventos, onTerminar }) {
@@ -3737,7 +3936,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         ))}
 
         {ehAtaque && (ataqueAtual?.efeitos || []).filter((ef) => UTIL_CATS.includes(ef.categoria)).map((ef) => (
-          <UtilCartao key={ef.id} ef={ef} ent={origemAtual} registrar={registrar} onMudar={(novo) => atualizarEfeitoMoverObjetos(ef.id, novo)} />
+          <UtilCartao key={ef.id} ef={ef} ent={origemAtual} registrar={registrar} onTransformar={(formaId) => { if (!atualizarCampo) return; atualizarCampo(origemAtual.id, "*", (en) => trocarForma(en, ef.id, formaId)); gastarAcao(atualizarCampo, origemAtual.id, "Ação Livre"); registrar && registrar({ tipo: "rolagem", desc: `${origemAtual.nome} ${formaId ? "se transforma" : "volta à forma base"}`, detalhe: formaId ? `Forma: ${formasDe(ef).find((f) => f.id === formaId)?.nome || ""}` : "Metamorfose desfeita", total: "Ação livre", tipoClasse: "hs" }); }} onMudar={(novo) => atualizarEfeitoMoverObjetos(ef.id, novo)} />
         ))}
 
         {(atqCegoPac || alvoCegoPac) && (
@@ -4804,6 +5003,7 @@ export default function MesaMM3() {
   const pfSeenRef = useRef(new Set());
   const duracoesLogadasRef = useRef(new Set());
   const entidadesRef = useRef([]);
+  useEffect(() => { ENTIDADES_GLOBAIS = entidades; }, [entidades]);
   useEffect(() => { entidadesRef.current = entidades; }, [entidades]);
   const animSeenRef = useRef(new Set());
   const erroSyncTimeoutRef = useRef(null);
@@ -4849,7 +5049,9 @@ export default function MesaMM3() {
 
   /* dispara uma animação de rolagem para todos os presentes na mesa (fila compartilhada + exibição local imediata) */
   const dispararAnimacao = useCallback((payload) => {
-    const evento = { id: uid(), ts: Date.now(), ...payload };
+    // leva junto o enquadramento (zoom/posição) escolhido na ficha, para a foto não aparecer cortada/deslocada
+    const ajDe = (foto) => (foto ? (entidadesRef.current.find((e) => e.foto === foto)?.fotoAj || null) : null);
+    const evento = { id: uid(), ts: Date.now(), ...payload, ajF: ajDe(payload.foto), ajA: ajDe(payload.fotoA), ajB: ajDe(payload.fotoB), ajAlvo: ajDe(payload.fotoAlvo) };
     animSeenRef.current.add(evento.id);
     setEventosAnim((atual) => [...atual, evento]);
     (async () => {
@@ -5157,8 +5359,17 @@ export default function MesaMM3() {
     // Explosão acaba no começo do turno e deixa Fatigado
     const teveExplosao = (ent.ataques || []).some((a) => a.tipo === "passiva" && passivosDe(a).some((p) => p.explosaoLigada));
     if (teveExplosao) log(`A Explosão de ${ent.nome} acabou`, "Fica Fatigado", "Fatigado", "hw");
+    // Sufocando: Fortitude no começo do turno (CD 10, +5 a cada teste passado). Falhas: Fatigado → Exausto → Morrendo.
+    let sufoco = null;
+    if (condicaoAtiva(ent, "Sufocando")) {
+      const passou = ent.sufocoPassou || 0, falhou = ent.sufocoFalhou || 0;
+      const cd = 10 + 5 * passou, dado = rolarD20(), bonus = salvBonus(ent, "Fortitude"), r = montarTeste(dado, bonus, cd);
+      const efeito = r.sucesso ? null : (falhou === 0 ? "Fatigado" : falhou === 1 ? "Exausto" : "Morrendo");
+      sufoco = { passou: passou + (r.sucesso ? 1 : 0), falhou: falhou + (r.sucesso ? 0 : 1), efeito };
+      log(`${ent.nome} testa Sufocando (Fortitude)`, `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? `Passou — próxima CD ${cd + 5}` : `Falhou — fica ${efeito}`, r.sucesso ? "hs" : "hd");
+    }
     // Morrendo: contador desce e abre o teste de morte
-    const morrendo = condicaoAtiva(ent, "Morrendo") && (pvSim - danoTotal) <= 0;
+    const morrendo = condicaoAtiva(ent, "Morrendo") && ((pvSim - danoTotal) <= 0 || !!ent.sufocoMorrendo);
     if (morrendo) log(`${ent.nome} está Morrendo`, `Contador desce para ${(ent.morrendoContador ?? 3) - 1}`, "Teste de morte pendente", "hd");
 
     // Ação para sustentar: quem continua sustentando uma habilidade já começa o turno com essa ação gasta.
@@ -5192,7 +5403,17 @@ export default function MesaMM3() {
         n.ataques = (n.ataques || []).map((a) => (a.tipo === "passiva" ? { ...a, passivos: passivosDe(a).map((p) => ({ ...p, explosaoLigada: false })) } : a));
         n.condicoes = { ...(n.condicoes || {}), Fatigado: (n.condicoes || {}).Fatigado || 1 };
       }
-      if (morrendo && n.condicoes?.Morrendo && (n.pvAtual || 0) <= 0) { n.morrendoContador = (n.morrendoContador ?? 3) - 1; n.testeMorteAguardando = true; }
+      if (sufoco) {
+        n.sufocoPassou = sufoco.passou; n.sufocoFalhou = sufoco.falhou;
+        const c = { ...(n.condicoes || {}) };
+        if (sufoco.efeito === "Fatigado") c.Fatigado = c.Fatigado || 1;
+        else if (sufoco.efeito === "Exausto") { delete c.Fatigado; c.Exausto = c.Exausto || 1; }
+        else if (sufoco.efeito === "Morrendo" && !c.Morrendo && !c.Morto) { c.Morrendo = 1; n.morrendoContador = 3; n.sufocoMorrendo = true; }
+        n.condicoes = c;
+      } else if (e.sufocoPassou !== undefined || e.sufocoFalhou !== undefined || e.sufocoMorrendo) {
+        const { sufocoPassou, sufocoFalhou, sufocoMorrendo, ...resto } = n; n = resto; // parou de sufocar: zera
+      }
+      if (morrendo && n.condicoes?.Morrendo && ((n.pvAtual || 0) <= 0 || n.sufocoMorrendo)) { n.morrendoContador = (n.morrendoContador ?? 3) - 1; n.testeMorteAguardando = true; }
       return n;
     });
     logs.forEach((l) => registrar(l));
@@ -5899,13 +6120,13 @@ function DesgastanteEditor({ desgastante, onMudar }) {
 const MODS_LEGADO = new Set(["alcance_estendido", "alcance_reduzido", "alcance_diminuido", "efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "ponto_fraco", "dividido", "multiataque", "desgastante", "efeito_alternativo",
   "resistencia_alt_afl", "recuperacao_instantanea", "cumulativo_afl", "condicao_extra", "grau_limitado_afl", "variavel_nen_vida", "variavel_carga", "variavel_municao"]);
 const capNen = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
-const DUR_TXT = { instantaneo: "instantâneo", sustentado: "sustentado", permanente: "permanente" };
+const DUR_TXT = { instantaneo: "instantâneo", sustentado: "sustentado", permanente: "permanente", continuo: "contínuo" };
 function valorModTxt(m) {
   const cat = MOD_POR_ID[m.id];
   const v = ((m.valor ?? cat?.v ?? 0) + (m.id === "reacao" && m.sust ? 1 : 0)) * (m.vezes || 1);
   return `${v > 0 ? "+" : ""}${v}${(cat?.k || "g") === "g" ? "/g" : " fixo"}`;
 }
-const NOTA_MODS = ["limitado", "area", "depender_sentido", "ativacao", "ponto_fraco", "retroalimentacao", "incontrolavel", "perceptivel", "efeito_secundario", "contagioso"];
+const NOTA_MODS = ["limitado", "area", "depender_sentido", "ativacao", "ponto_fraco", "retroalimentacao", "incontrolavel", "perceptivel", "efeito_secundario", "contagioso", "caracteristica_g", "caracteristica_f"];
 const SEM_NOTA_NO_MAPA = new Set(["incontrolavel", "area"]);
 const FORMAS_AREA = ["Cone", "Cilindro", "Explosão", "Linha", "Nuvem"];
 
@@ -5942,6 +6163,11 @@ const LEG_TODOS = {
 const elegivelTodos = (id, b) => id === "ponto_fraco" || (b.ativo && CATEGORIAS_COM_RESISTENCIA.includes(b.item.categoria));
 const LEG_HAB = {
   desgastante: objAtivo("desgastante", { modo: "automatico", salvamento: "Fortitude", reducoes: [] }),
+  caracteristica_hab: {
+    ativo: (a) => (a.fixosHab || []).some((x) => x.id === "caracteristica_hab"),
+    on: (a) => ({ ...a, fixosHab: [...(a.fixosHab || []), { id: "caracteristica_hab", nome: "Característica", valor: 1, texto: "" }] }),
+    off: (a) => { const i = (a.fixosHab || []).findIndex((x) => x.id === "caracteristica_hab"); return { ...a, fixosHab: (a.fixosHab || []).filter((_, k) => k !== i) }; },
+  },
   efeito_alternativo: {
     ativo: (a) => (a.fixosHab || []).some((x) => x.id === "efeito_alternativo"),
     on: (a) => ({ ...a, fixosHab: [...(a.fixosHab || []), { id: "efeito_alternativo", nome: "Efeito Alternativo", valor: 1 }] }),
@@ -5980,7 +6206,8 @@ function derivarHabilidade(a, calc, ent) {
   const ms = modsDaHabilidade(a);
   const acaoSustentar = sustentado ? (ms.some((m) => m.id === "concentracao") ? "Ação Padrão" : ms.some((m) => m.id === "reacao" && m.sust) ? "Reação" : "Nenhuma") : "Nenhuma";
   const temArea = ms.some((m) => m.id === "area");
-  const alvoLinha = ativosLinhas.find((l) => l.alcance && l.alcance !== "pessoal" && l.alcance !== "graduacao");
+  // Invocar e Criar não têm jogada de acerto contra um alvo
+  const alvoLinha = ativosLinhas.find((l) => !["invocar", "criar"].includes(l.id) && l.alcance && l.alcance !== "pessoal" && l.alcance !== "graduacao");
   let tipoAcerto = "percepcao";
   if (temArea) tipoAcerto = "area";
   else if (alvoLinha?.alcance === "perto") tipoAcerto = "corpo";
@@ -6084,7 +6311,7 @@ function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, 
   const nome = ativo ? item.categoria : (PODERES_PASSIVOS.find((p) => p.id === item.tipoId)?.nome || cat?.nome || "Efeito");
   const d = descEfeitoCompleta(idCat);
   const chips = [...(d?.meta || [])];
-  if (res) chips.push(["Agora", `${res.custo} PP · ${res.razao}`], ["Limite", `graduação ${res.limite}`]);
+  if (res) chips.push(["Agora", `${res.custo} PP · ${res.razao}`], ["Limite", res.limite === Infinity ? "sem limite (Ritual)" : `graduação ${res.limite}`]);
   return (
     <div className="px">
       <div className="px-barra">
@@ -6192,6 +6419,9 @@ function InspetorLegado({ id: idCru, item, onMudar, onRemover, grad, ehHab, todo
     if (id === "peculiaridade") return <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />;
     if (id === "aquecimento") return <AquecimentoEditor valor={item.aquecimento} onMudar={(x) => onMudar({ ...item, aquecimento: x })} />;
     if (id === "desgastante") return <DesgastanteEditor desgastante={item.desgastante} onMudar={(x) => onMudar({ ...item, desgastante: x })} />;
+    if (id === "caracteristica_hab") return (
+      <input type="text" className="cb-nota" placeholder="Escreva a característica…" value={(item.fixosHab || []).find((f) => f.id === "caracteristica_hab")?.texto || ""} onChange={(e) => onMudar({ ...item, fixosHab: (item.fixosHab || []).map((f) => (f.id === "caracteristica_hab" ? { ...f, texto: e.target.value } : f)) })} />
+    );
     if (id === "ponto_fraco") return (
       <>
         <textarea className="outros-textarea" rows={9} style={{ minHeight: 190, width: "100%" }} value={item.pontoFraco?.texto || ""} onChange={(e) => onMudar({ ...item, pontoFraco: { ...(item.pontoFraco || {}), ativo: true, texto: e.target.value } })} placeholder="Texto do ponto fraco (aparece para quem passar no teste)" />
@@ -6212,8 +6442,9 @@ function InspetorLegado({ id: idCru, item, onMudar, onRemover, grad, ehHab, todo
   );
 }
 function InspetorHabilidade({ ataque, onMudar, onNovoEfeito }) {
-  const fixos = (ataque.fixosHab || []).filter((x) => x.id !== "efeito_alternativo");
-  const setFixos = (novos) => onMudar({ ...ataque, fixosHab: [...(ataque.fixosHab || []).filter((x) => x.id === "efeito_alternativo"), ...novos] });
+  const ehEspecial = (x) => x.id === "efeito_alternativo" || x.id === "caracteristica_hab";
+  const fixos = (ataque.fixosHab || []).filter((x) => !ehEspecial(x));
+  const setFixos = (novos) => onMudar({ ...ataque, fixosHab: [...(ataque.fixosHab || []).filter(ehEspecial), ...novos] });
   return (
     <div className="px">
       <DescBonita cor="#e8c84a" titulo={ataque.nome || "Habilidade"} selo="Habilidade" texto="Esta é a habilidade inteira. Toque num efeito para ver a descrição e ajustar a graduação com os triângulos. Toque numa peça verde ou vermelha para ver o que ela faz. Multiataque, Dividido e Ponto Fraco aparecem em todos os efeitos aplicáveis. Só Desgastante e Efeito Alternativo ficam presos aqui, embaixo do nome." />
@@ -6419,7 +6650,7 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
               <div className="pi-calc">
                 {calc.efeitos.map((e, i) => (
                   <div key={i} className="pi-linha">
-                    <b>{e.nome} · graduação {e.grad}</b> <span className="pi-sub">(limite {e.limite})</span>
+                    <b>{e.nome} · graduação {e.grad}</b> <span className="pi-sub">(limite {e.limite === Infinity ? "∞" : e.limite})</span>
                     <div className="pi-sub">Custo base: {e.base} por graduação</div>
                     {e.mods.map((m, k) => (
                       <div key={k} className="pi-sub">{m.nome}{m.vezes > 1 ? ` ×${m.vezes}` : ""}: {m.valor > 0 ? "+" : ""}{m.valor}{m.k === "g" ? " por graduação" : " fixo"}{m.tipo ? ` (${capNen(m.tipo)})` : ""}</div>
@@ -7701,10 +7932,11 @@ function fichaPadrao(rotulos) {
     variaveis: [],
     vantagens: [],
     complicacoes: { texto: "", pontos: 0 },
+    inventario: [],
   };
 }
 
-function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualizarCampo, registrar, erroSalvar }) {
+function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualizarCampo, registrar, erroSalvar, nivelFixo }) {
   const [f, setF] = useState(() => {
     const base = fichaPadrao(rotulos);
     if (!inicial) return base;
@@ -7818,9 +8050,9 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
           </div>
           {f.foto && ajFotoAberto && <div style={{ marginTop: 12 }}><AjusteImagem src={f.foto} ajuste={f.fotoAj} onMudar={(v) => upd("fotoAj", v)} proporcao="1 / 1" maxLargura={220} /></div>}
           <div className="grid3" style={{ marginTop: 12 }}>
-            <div><label className="label">Tipo</label><SearchableSelect value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>
-            <div><label className="label">Tipo de Nen</label><SearchableSelect value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>
-            <div><label className="label">Nível</label><input type="number" min="1" value={f.nivel} onChange={(e) => upd("nivel", Math.max(1, Number(e.target.value)))} /></div>
+            <div><label className="label">Tipo</label><SearchableSelect listaCheia value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>
+            <div><label className="label">Tipo de Nen</label><SearchableSelect listaCheia value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>
+            <div><label className="label">Nível</label><input type="number" min="1" value={f.nivel} disabled={!!nivelFixo} title={nivelFixo ? "Fixo: é a graduação da Metamorfose" : undefined} onChange={(e) => upd("nivel", Math.max(1, Number(e.target.value)))} /></div>
           </div>
         </div>
       </div>
@@ -7954,6 +8186,10 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         </div>
       )}
 
+      </section>
+      <section className="ed-sec">
+      <div className="section-title">Inventário</div>
+      <InventarioEditor itens={f.inventario} onMudar={(v) => upd("inventario", v)} vazio="Nenhum item." />
       </section>
       <section className="ed-sec">
       <div className="section-title">Habilidades</div>
@@ -8098,7 +8334,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
     onDragLeave: (ev) => { if (!ev.currentTarget.contains(ev.relatedTarget) && alvoDrop === chave) setAlvoDrop(null); },
     onDrop: (ev) => soltarEm(ev, pastaId),
   });
-  const renderItem = (e) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
+  const renderItem = (e) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
     pastas={pastas} onMoverPasta={(id) => atualizarCampo(e.id, "pasta", id || null)} />;
 
   return (
@@ -8147,7 +8383,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
         <>
           <div className="section-title">Outras fichas na mesa</div>
           {outros.length === 0 && <div className="card empty">Ninguém mais cadastrou fichas ainda.</div>}
-          {outros.map((e) => <EntidadeItem key={e.id} e={e} onEditar={() => setEditando(e)} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} />)}
+          {outros.map((e) => <EntidadeItem key={e.id} e={e} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} />)}
         </>
       )}
 
@@ -8346,7 +8582,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
           </div>
           {editavel && (
             <div className="actions" onClick={(ev) => ev.stopPropagation()}>
-              <button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button>
+              <button className="btn btn-ghost btn-sm" disabled={!!e.metaAtual} title={e.metaAtual ? "Volte à forma base para editar a ficha" : undefined} onClick={() => { if (!e.metaAtual) onEditar(); }}>Editar</button>
               <button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button>
             </div>
           )}
@@ -8374,6 +8610,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
               <div className="rotulo">{e.rotulo} · Nv.{e.nivel} · {e.tipoNen} · {e.dono}</div>
               <div className="hero-tags">
                 {e.oponente && <span className="tag-cond status">Engajado</span>}
+                {e.metaAtual && <span className={"tag-cond status" + (editavel ? " pode" : "")} title="Ação livre" onClick={() => { if (!editavel) return; onAtualizarCampo(e.id, "*", (en) => trocarForma(en, null, null)); gastarAcao(onAtualizarCampo, e.id, "Ação Livre"); if (registrar) registrar({ tipo: "rolagem", desc: `${e.nome} volta à forma base`, detalhe: "Metamorfose desfeita", total: "Ação livre", tipoClasse: "hs" }); }}>Forma: {e.metaAtual.nome}{editavel ? " · Voltar à base ×" : ""}</span>}
                 {e.defendendo && <span className={"tag-cond status" + (editavel ? " pode" : "")} onClick={() => editavel && onAtualizarCampo(e.id, "defendendo", false)}>Defendendo{editavel ? " ×" : ""}</span>}
                 {e.mirando && <span className={"tag-cond status" + (editavel ? " pode" : "")} onClick={() => editavel && onAtualizarCampo(e.id, "mirando", false)}>Mirando{editavel ? " ×" : ""}</span>}
                 {(e.ataques || []).filter((a) => a.tipo !== "passiva" && a.sustentando).map((a) => <span key={a.id} className={"tag-cond status" + (editavel ? " pode" : "")} onClick={() => editavel && pararSustentacao(a)}>Sustentando: {a.nome || "habilidade"}{editavel ? " ×" : ""}</span>)}
@@ -8385,7 +8622,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
                 ))}
               </div>
             </div>
-            {editavel && <div className="hero-acoes"><button className="btn btn-ghost btn-sm" onClick={onEditar}>Editar</button><button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button></div>}
+            {editavel && <div className="hero-acoes"><button className="btn btn-ghost btn-sm" disabled={!!e.metaAtual} title={e.metaAtual ? "Volte à forma base para editar a ficha" : undefined} onClick={() => { if (!e.metaAtual) onEditar(); }}>Editar</button><button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button></div>}
           </div>
 
           <BarraVital tipo="vida" nome="Vida" atual={e.pvAtual || 0} max={pvMax} temp={e.pvTemp || 0}
