@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import React, { useState, useEffect, useCallback, useRef, useMemo, createContext, useContext } from "react";
 import {
   auth, ouvirAuth, cadastrar, entrar, sair, getPersonal, setPersonal,
@@ -91,8 +92,15 @@ const GlobalStyle = () => (
     .mm3 .meta-atr input { width:100%; text-align:center; } .mm3 .meta-atr b { color:var(--text); font-size:0.95rem; }
     @media (max-width:480px) { .mm3 .meta-atrs { grid-template-columns:repeat(2,1fr); } }
     .mm3 .meta-ativa { margin-top:8px; padding:8px 10px; border-left:3px solid var(--accent); background:var(--surface3); border-radius:6px; font-size:0.85rem; display:flex; flex-direction:column; gap:4px; }
-    .mm3 .meta-editor-bd { align-items:flex-start; overflow-y:auto; z-index:600; }
-    .mm3 .meta-editor { width:min(960px,96vw); margin:16px auto; }
+    .mm3 .meta-editor-bd { position:fixed; inset:0; z-index:700; overflow-y:auto; -webkit-overflow-scrolling:touch; background:rgba(0,0,0,0.72); padding:12px 0 90px; }
+    .mm3 .meta-editor { width:min(960px,96vw); margin:0 auto; }
+    .mm3 .meta-lista { display:flex; flex-direction:column; gap:10px; }
+    .mm3 .meta-item { display:flex; flex-direction:column; gap:6px; }
+    .mm3 .meta-item-btn { display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:12px 14px; border-radius:12px; border:1px solid var(--border); background:var(--surface3); color:var(--text); cursor:pointer; flex-wrap:wrap; }
+    .mm3 .meta-item-btn:hover { border-color:var(--accent); }
+    .mm3 .meta-item-btn i { font-style:normal; width:24px; height:24px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:inline-flex; align-items:center; justify-content:center; font-size:0.8rem; }
+    .mm3 .meta-item-nome { font-weight:600; flex:1; min-width:120px; } .mm3 .meta-item-nome em { font-weight:400; color:var(--muted); font-size:0.8rem; }
+    .mm3 .meta-item-sub { font-size:0.78rem; color:var(--muted); }
     .mm3 .meta-resumo { margin-top:10px; }
     .mm3 .inv-lin { display:grid; grid-template-columns:1fr 60px 1fr auto; gap:6px; margin-bottom:6px; }
     .mm3 .ssel-opt { padding:9px 10px; border-radius:7px; cursor:pointer; font-size:0.9rem; color:var(--text); }
@@ -2274,7 +2282,7 @@ const nFichasMeta = (ef) => 1 + contaMod(ef, "ficha_adicional");
 let ENTIDADES_GLOBAIS = [];
 // campos da ficha que a forma troca por inteiro (nome, nível, PV/Nen atuais e condições continuam os da base)
 const CAMPOS_FORMA = ["atributos", "periciaPontos", "ataques", "vantagens", "variaveis", "foto", "fotoAj"];
-const formaVazia = (n, g) => ({ id: uid(), nome: `Forma ${n}`, notas: "", ficha: { ...fichaPadrao(["Personagem"]), nome: `Forma ${n}`, nivel: Math.max(1, Math.round(g || 1)), inventario: [] } });
+const formaVazia = (n, g) => ({ id: `forma${n}`, nome: `Forma ${n}`, notas: "", ficha: { ...fichaPadrao(["Personagem"]), nome: `Forma ${n}`, nivel: Math.max(1, Math.round(g || 1)), inventario: [] } });
 const formasDe = (ef) => {
   const n = nFichasMeta(ef), g = ef.graduacao, arr = [...(ef.campos?.formas || [])].map((f) => (f.ficha ? f : { ...f, ficha: { ...fichaPadrao(["Personagem"]), nome: f.nome || "", nivel: Math.max(1, Math.round(g || 1)), atributos: { ...ATRIBUTOS_VAZIOS, ...(f.atributos || {}) }, inventario: f.inventario || [] } }));
   while (arr.length < n) arr.push(formaVazia(arr.length + 1, g));
@@ -2332,78 +2340,56 @@ function InventarioEditor({ itens, onMudar, vazio }) {
 }
 function FichasMetamorfose({ ef, onMudar, onFechar }) {
   const formas = formasDe(ef);
-  const [i, setI] = useState(0);
-  const [editando, setEditando] = useState(false);
-  const idx = Math.min(i, formas.length - 1);
-  const f = formas[idx];
-  const fi = f.ficha;
+  const [aberta, setAberta] = useState(null);
   const g = Math.max(1, Math.round(ef.graduacao || 1));
   const imit = contaMod(ef, "imitacao") > 0, vida = contaMod(ef, "vida_independente") > 0, equip = contaMod(ef, "equipamento_incorporado") > 0;
   const salvar = (novas) => onMudar({ ...ef, campos: { ...(ef.campos || {}), formas: novas } });
-  const upd = (patch) => salvar(formas.map((x, j) => (j === idx ? { ...x, ...patch } : x)));
-  const copiar = (id) => {
-    const e = ENTIDADES_GLOBAIS.find((x) => x.id === id);
+  const updForma = (id, patch) => salvar(formas.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const copiar = (forma, entId) => {
+    const e = ENTIDADES_GLOBAIS.find((x) => x.id === entId);
     if (!e) return;
     const clone = JSON.parse(JSON.stringify({ atributos: e.atributos, periciaPontos: e.periciaPontos, ataques: e.ataques, vantagens: e.vantagens, variaveis: e.variaveis, inventario: e.inventario || [], foto: e.foto || null, fotoAj: e.fotoAj || null, complicacoes: e.complicacoes }));
-    upd({ nome: e.nome || f.nome, copiaDe: e.nome, ficha: { ...fi, ...clone, nome: e.nome || fi.nome, nivel: g } });
+    updForma(forma.id, { nome: e.nome || forma.nome, copiaDe: e.nome, ficha: { ...forma.ficha, ...clone, nome: e.nome || forma.ficha.nome, nivel: g } });
   };
-  const gastos = pontosPoderGastos(fi), ppMax = pontosPoderMax(fi);
-  if (editando) {
-    return (
-      <div className="modal-backdrop meta-editor-bd">
-        <div className="meta-editor">
-          <FichaForm inicial={{ ...fi, nivel: g }} rotulos={["Personagem"]} nivelFixo={g} entidades={ENTIDADES_GLOBAIS}
-            onSalvar={(novo) => { upd({ ficha: { ...novo, nivel: g }, nome: novo.nome && novo.nome !== "Sem nome" ? novo.nome : f.nome }); setEditando(false); }}
-            onCancelar={() => setEditando(false)} />
-        </div>
+  const doc = typeof document !== "undefined" ? (document.querySelector(".mm3") || document.body) : null;
+  const forma = aberta != null ? formas.find((x) => x.id === aberta) : null;
+  const conteudo = forma ? (
+    <div className="meta-editor-bd">
+      <div className="meta-editor">
+        <FichaForm key={forma.id} inicial={{ ...forma.ficha, nivel: g }} rotulos={["Personagem"]} nivelFixo={g} entidades={ENTIDADES_GLOBAIS}
+          onSalvar={(novo) => { updForma(forma.id, { ficha: { ...novo, nivel: g }, nome: novo.nome && novo.nome !== "Sem nome" ? novo.nome : forma.nome }); setAberta(null); }}
+          onCancelar={() => setAberta(null)} />
       </div>
-    );
-  }
-  return (
+    </div>
+  ) : (
     <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) onFechar(); }}>
       <div className="modal-box meta-box">
-        <div className="modal-head"><span className="mt">Metamorfose · fichas de transformação</span><button className="modal-close" onClick={onFechar}>×</button></div>
-        <div className="meta-topo">
-          <div><b>{pontosFichaMeta(g)}</b><span>pontos por ficha</span></div>
-          <div><b>{formas.length}</b><span>ficha{formas.length > 1 ? "s" : ""}</span></div>
-          {contaMod(ef, "aleatoria") > 0 && <div><b>d{formas.length}</b><span>forma aleatória</span></div>}
-          {imit && <div><b>variável</b><span>copia outras pessoas</span></div>}
+        <div className="modal-head"><span className="mt">Metamorfose · fichas</span><button className="modal-close" onClick={onFechar}>×</button></div>
+        <div className="field-note" style={{ marginBottom: 8 }}>Cada ficha tem {pontosFichaMeta(g)} pontos de poder (nível {g}). {vida ? "PV independente por forma. " : "PV compartilhado com a base. "}{equip ? "Cada forma tem seu inventário. " : ""}Toque numa ficha para abri-la.</div>
+        <div className="meta-lista">
+          {formas.map((x, k) => {
+            const gastos = pontosPoderGastos(x.ficha), ppMax = pontosPoderMax({ ...x.ficha, nivel: g });
+            return (
+              <div key={x.id} className="meta-item">
+                <button type="button" className="meta-item-btn" onClick={() => setAberta(x.id)}>
+                  <i>{k + 1}</i>
+                  <span className="meta-item-nome">{x.nome || `Forma ${k + 1}`}{x.copiaDe ? <em> · copiada de {x.copiaDe}</em> : null}</span>
+                  <span className="meta-item-sub" style={{ color: gastos > ppMax ? "var(--danger)" : undefined }}>{gastos}/{ppMax} PP · {(x.ficha.ataques || []).length} habilidade(s)</span>
+                </button>
+                {imit && (
+                  <SearchableSelect listaCheia value="" placeholder="Copiar ficha de…" onChange={(e) => copiar(x, e.target.value)}>
+                    {ENTIDADES_GLOBAIS.map((y) => <option key={y.id} value={y.id}>{y.nome || "(sem nome)"}</option>)}
+                  </SearchableSelect>
+                )}
+              </div>
+            );
+          })}
         </div>
-        <div className="meta-abas">
-          {formas.map((x, k) => (
-            <button type="button" key={x.id} className={"meta-aba" + (k === idx ? " on" : "")} onClick={() => setI(k)}>
-              <i>{k + 1}</i>{x.nome || `Forma ${k + 1}`}
-            </button>
-          ))}
-        </div>
-        <div className="meta-corpo">
-          <div className="grid2">
-            <div><label className="label">Nome da forma</label><input type="text" value={f.nome || ""} onChange={(e) => upd({ nome: e.target.value })} /></div>
-            {vida && <div><label className="label">PV atuais desta forma</label><input type="number" placeholder="cheio ao assumir" value={f.pv ?? ""} onChange={(e) => upd({ pv: e.target.value === "" ? undefined : Number(e.target.value) })} /></div>}
-          </div>
-          {imit && (
-            <div style={{ marginTop: 8 }}>
-              <label className="label">Copiar a ficha de…</label>
-              <SearchableSelect value="" placeholder={f.copiaDe ? `Copiada de ${f.copiaDe}` : "Escolha uma ficha"} onChange={(e) => copiar(e.target.value)} listaCheia>
-                {ENTIDADES_GLOBAIS.map((x) => <option key={x.id} value={x.id}>{x.nome || "(sem nome)"}</option>)}
-              </SearchableSelect>
-            </div>
-          )}
-          <div className="meta-resumo">
-            <div className="meta-atrs peq">{ATRIBUTOS.map((a) => <div key={a.k} className="meta-atr"><span>{a.l}</span><b>{fi.atributos?.[a.k] ?? 0}</b></div>)}</div>
-            <div className="field-note">Pontos de poder: <b style={{ color: gastos > ppMax ? "var(--danger)" : undefined }}>{gastos} / {ppMax}</b> · {(fi.ataques || []).length} habilidade(s) · {(fi.vantagens || []).length} vantagem(ns) · {Object.values(fi.periciaPontos || {}).filter((v) => v > 0).length} perícia(s) treinada(s)</div>
-          </div>
-          <button type="button" className="btn" style={{ marginTop: 8 }} onClick={() => setEditando(true)}>Editar ficha completa</button>
-          <div className="field-note" style={{ marginTop: 6 }}>Ao se transformar, a ficha inteira (atributos, perícias, habilidades, vantagens e foto) passa a ser esta. Nome, nível, Nen e condições continuam os da base{vida ? "; o PV é independente por forma." : "; o PV é compartilhado."}</div>
-          {equip
-            ? <><label className="label" style={{ marginTop: 8 }}>Inventário desta forma</label><InventarioEditor itens={fi.inventario} onMudar={(v) => upd({ ficha: { ...fi, inventario: v } })} vazio="Sem itens nesta forma." /></>
-            : <div className="field-note">{contaMod(ef, "itens_perdidos") ? "Itens Perdidos: o equipamento que você carrega cai ou se destrói ao se transformar." : "Sem Equipamento Incorporado, esta forma não tem inventário próprio: os itens da ficha base ficam com você, como se tivessem se transformado junto."}</div>}
-          <label className="label" style={{ marginTop: 8 }}>Notas</label>
-          <textarea className="outros-textarea" rows={3} value={f.notas || ""} onChange={(e) => upd({ notas: e.target.value })} />
-        </div>
+        {contaMod(ef, "aleatoria") > 0 && <div className="field-note" style={{ marginTop: 8 }}>Aleatória: ao se transformar, rola-se 1d{formas.length}.</div>}
       </div>
     </div>
   );
+  return doc ? createPortal(conteudo, doc) : conteudo;
 }
 function MetamorfoseCampos({ ef, onMudar }) {
   const [aberto, setAberto] = useState(false);
@@ -3654,6 +3640,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [multiAlvoEscolha, setMultiAlvoEscolha] = useState("");
   const alvosEngajados = entidades.filter((e2) => e2.id !== origemAtual.id && e2.oponente);
   const efeitosDoAtaque = (contexto.ataque?.efeitos || []).filter((ef) => !CATS_SEM_ROLAGEM.includes(ef.categoria) && !falhouTeste(ef));
+  // habilidade só com efeitos de utilidade (Metamorfose, Invocar, Variável…): não tem alvo nem rolagem de acerto
+  const soUtil = ehAtaque && (contexto.ataque?.efeitos || []).length > 0 && (contexto.ataque.efeitos || []).every((ef) => UTIL_CATS.includes(ef.categoria));
 
   const rolarMultiataque = (alvoId) => {
     const alvoMA = entidades.find((e2) => e2.id === alvoId);
@@ -4006,7 +3994,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           </>
         )}
 
-        {ehAtaque && !isArea && (
+        {ehAtaque && !isArea && !soUtil && (
           <>
             <label className="label">Oponente</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); }} style={{ marginBottom: 12 }}>
