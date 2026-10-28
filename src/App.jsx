@@ -1303,6 +1303,12 @@ const PODERES_PASSIVOS = [
     ], falhas: [],
     temBotaoExplosao: true,
     aplicar1(ent, inst, acc) {
+      if (temApenasPericia(inst)) { // Apenas Perícia: o bônus vale só na perícia escolhida
+        const nome = inst.campos?.pericia; if (!nome) return;
+        const g = inst.graduacao || 0;
+        if (nome === "Furtividade") acc.furtividade += g; else acc.periciasBonus[nome] = (acc.periciasBonus[nome] || 0) + g;
+        return;
+      }
       const chave = inst.campos?.atributo; if (!chave) return;
       const base = attrBase(ent, chave);
       const teto = (ent?.nivel || 1) + 4;
@@ -1595,6 +1601,7 @@ function acumuladorPassivoVazio() {
    formatos sem exigir nenhuma migração manual — ao editar e salvar a
    habilidade pelo formulário (ou só ligar/desligar ela na ficha), ela já é
    regravada automaticamente no formato novo. */
+let ENTIDADES_GLOBAIS = []; // lista atual de fichas (atualizada a cada render do app)
 function passivosDe(ataque) {
   if (Array.isArray(ataque?.passivos)) return ataque.passivos;
   if (ataque?.passivo && (ataque.passivo.tipoId || ataque.passivo.graduacao)) {
@@ -1603,6 +1610,13 @@ function passivosDe(ataque) {
   }
   return [];
 }
+/* Afeta Outros: devolve null (não tem) ou { apenas } (apenas = só outros recebem, o usuário não) */
+function afetaOutrosHab(a) {
+  const ms = [...passivosDe(a).flatMap((p) => p.mods || []), ...(a?.efeitos || []).flatMap((e) => e.mods || [])].filter((m) => m.id === "afeta_outros");
+  if (!ms.length) return null;
+  return { apenas: ms.every((m) => (m.valor ?? 1) === 0) };
+}
+const instApenasOutros = (inst) => (inst?.mods || []).some((m) => m.id === "afeta_outros" && (m.valor ?? 1) === 0);
 function passivaEstaAtiva(ataque) {
   return !!(ataque?.ativo ?? ataque?.passivo?.ativo);
 }
@@ -1611,9 +1625,35 @@ function instanciasPassivasAtivas(ent) {
   (ent?.ataques || []).forEach((a) => {
     // passiva: vale quando está ligada; ativa: os efeitos de aprimoramento valem enquanto ela é sustentada
     if (a.tipo === "passiva" ? !passivaEstaAtiva(a) : !(a.sustentado && a.sustentando)) return;
-    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id]) out.push({ ataque: a, inst: comReducaoHab(comAquecimento(inst, ent), ent, a.id), idx }); });
+    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id] && !instApenasOutros(inst)) out.push({ ataque: a, inst: comReducaoHab(comAquecimento(inst, ent), ent, a.id), idx }); });
+  });
+  // Afeta Outros: efeitos de habilidades de outras fichas que escolheram esta como alvo (sem o Efeito Colateral do usuário)
+  (ENTIDADES_GLOBAIS || []).forEach((o) => {
+    if (!o || o.id === ent?.id) return;
+    (o.ataques || []).forEach((a) => {
+      if (!(a.alvosOutros || []).includes(ent?.id)) return;
+      if (a.tipo === "passiva" ? !passivaEstaAtiva(a) : !(a.sustentado && a.sustentando)) return;
+      const pseudo = { id: `rec:${o.id}:${a.id}`, nome: `${a.nome || "habilidade"} (de ${o.nome})`, tipo: "passiva", ativo: true, recebido: true };
+      passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && (inst.mods || []).some((m) => m.id === "afeta_outros") && !(o.efeitosPerdidos || {})[inst.id]) out.push({ ataque: pseudo, inst, idx }); });
+    });
   });
   return out;
+}
+/* Efeito Colateral que também passa para quem recebe (opção "Também em quem recebe", só com Afeta Outros) */
+function ativarColateraisOutros(ataque, alvoId, atualizarCampo, registrar) {
+  const alvo = (ENTIDADES_GLOBAIS || []).find((x) => x.id === alvoId);
+  if (!atualizarCampo || !alvo) return;
+  itensColaterais(ataque).filter((it) => it.colateral.noAfetado).forEach((item) => {
+    const col = item.colateral;
+    let ligar = true;
+    if (col.comTeste && col.salvamento) ligar = !rolarTesteColateral(alvo, item, registrar);
+    else if (registrar) registrar({ tipo: "rolagem", desc: `${alvo.nome} fica ${col.condicao} (Efeito Colateral de "${ataque.nome || "habilidade"}")`, detalhe: "Aplicado automaticamente (Afeta Outros)", total: col.condicao, tipoClasse: "hw" });
+    atualizarCampo(alvo.id, "*", (e) => mutarColateral(e, item.id, col.condicao, ligar));
+  });
+}
+function desativarColateraisOutros(ataque, alvosIds, atualizarCampo) {
+  if (!atualizarCampo) return;
+  (alvosIds || []).forEach((id) => itensColaterais(ataque).filter((it) => it.colateral.noAfetado).forEach((item) => atualizarCampo(id, "*", (e) => mutarColateral(e, item.id, item.colateral.condicao, false))));
 }
 function rotuloPassivos(ataque) {
   const nomes = passivosDe(ataque).map((p) => PODERES_PASSIVOS.find((x) => x.id === p.tipoId)?.nome).filter(Boolean);
@@ -2303,7 +2343,6 @@ function UtilCampos({ ef, onMudar }) {
 /* ---------- Metamorfose: fichas de transformação ---------- */
 const pontosFichaMeta = (g) => 10 + 15 * Math.max(1, Math.round(g || 1));
 const nFichasMeta = (ef) => 1 + contaMod(ef, "ficha_adicional");
-let ENTIDADES_GLOBAIS = [];
 // campos da ficha que a forma troca por inteiro (nome, nível, PV/Nen atuais e condições continuam os da base)
 const CAMPOS_FORMA = ["atributos", "periciaPontos", "ataques", "vantagens", "variaveis", "foto", "fotoAj"];
 const formaVazia = (n, g) => ({ id: `forma${n}`, nome: `Forma ${n}`, notas: "", ficha: { ...fichaPadrao(["Personagem"]), nome: `Forma ${n}`, nivel: Math.max(1, Math.round(g || 1)), inventario: [] } });
@@ -3973,6 +4012,21 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           </div>
         ))}
 
+        {ehAtaque && ataqueAtual && afetaOutrosHab(ataqueAtual) && (
+          <div className="subcard2" style={{ marginBottom: 12 }}>
+            <label className="label">Afeta Outros — quem recebe o efeito?</label>
+            <SearchableSelect listaCheia value={(ataqueAtual.alvosOutros || [])[0] || ""} onChange={(e) => {
+              const novo = e.target.value;
+              desativarColateraisOutros(ataqueAtual, ataqueAtual.alvosOutros, atualizarCampo);
+              atualizarCampo(origemAtual.id, "ataques", (lista) => (lista || []).map((x) => (x.id === ataqueAtual.id ? { ...x, alvosOutros: novo ? [novo] : [] } : x)));
+              if (novo) ativarColateraisOutros(ataqueAtual, novo, atualizarCampo, registrar);
+            }}>
+              <option value="">{afetaOutrosHab(ataqueAtual).apenas ? "Selecione…" : "Só eu (sem outro alvo)"}</option>
+              {entidades.filter((x) => x.id !== origemAtual.id).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+            </SearchableSelect>
+            <div className="field-note">{afetaOutrosHab(ataqueAtual).apenas ? "Apenas outros: você não recebe o efeito." : "Você também recebe o efeito."}</div>
+          </div>
+        )}
         {ehAtaque && (ataqueAtual?.efeitos || []).filter((ef) => UTIL_CATS.includes(ef.categoria)).map((ef) => (
           <UtilCartao key={ef.id} ef={ef} ent={origemAtual} registrar={registrar} onTransformar={(formaId) => { if (!atualizarCampo) return; atualizarCampo(origemAtual.id, "*", (en) => trocarForma(en, ef.id, formaId)); gastarAcao(atualizarCampo, origemAtual.id, "Ação Livre"); registrar && registrar({ tipo: "rolagem", desc: `${origemAtual.nome} ${formaId ? "se transforma" : "volta à forma base"}`, detalhe: formaId ? `Forma: ${formasDe(ef).find((f) => f.id === formaId)?.nome || ""}` : "Metamorfose desfeita", total: "Ação livre", tipoClasse: "hs" }); }} onMudar={(novo) => atualizarEfeitoMoverObjetos(ef.id, novo)} />
         ))}
@@ -5041,7 +5095,7 @@ export default function MesaMM3() {
   const pfSeenRef = useRef(new Set());
   const duracoesLogadasRef = useRef(new Set());
   const entidadesRef = useRef([]);
-  useEffect(() => { ENTIDADES_GLOBAIS = entidades; }, [entidades]);
+  ENTIDADES_GLOBAIS = entidades;
   useEffect(() => { entidadesRef.current = entidades; }, [entidades]);
   const animSeenRef = useRef(new Set());
   const erroSyncTimeoutRef = useRef(null);
@@ -5849,7 +5903,7 @@ const CATEGORIAS_COM_RESISTENCIA = ["Dano", "Aflição", "Enfraquecer", "Camufla
 /* ---------- Efeito Colateral (usado tanto em efeitos ativos quanto em efeitos passivos) ----------
    Tudo automático: sem teste, a condição é aplicada ao usar/ativar e removida quando a habilidade para.
    Com teste, rola ao usar e de novo no começo de cada turno enquanto sustentada. */
-function ColateralEditor({ colateral, onMudar, graduacao }) {
+function ColateralEditor({ colateral, onMudar, graduacao, permiteAfetado }) {
   const col = colateral || {};
   const upd = (campo, valor) => onMudar({ ...col, [campo]: valor });
   return (
@@ -5862,6 +5916,7 @@ function ColateralEditor({ colateral, onMudar, graduacao }) {
             {[1, 2, 3].map((g) => <optgroup key={g} label={`Grau ${g}`}>{CONDICOES_LISTA.filter((c) => grauCondicao(c.nome) === g).map((c) => <option key={c.nome} value={c.nome}>{c.nome}</option>)}</optgroup>)}
           </SearchableSelect>
           <label className="checkbox-row"><input type="checkbox" checked={!!col.comTeste} onChange={(e) => upd("comTeste", e.target.checked)} />Colateral com Teste</label>
+          {permiteAfetado && <label className="checkbox-row"><input type="checkbox" checked={!!col.noAfetado} onChange={(e) => upd("noAfetado", e.target.checked)} />Efeito Colateral ativa no Afeta Outros (quem recebe o efeito também sofre o colateral)</label>}
           {col.comTeste && (
             <>
               <label className="label">Teste de resistência</label>
@@ -5989,32 +6044,42 @@ function modsOcultosDoPassivo(def) {
   if ((def.falhas || []).some((x) => x.chave === "limitado")) ids.push("limitado");
   return new Set(ids);
 }
+/* nome do quadrado de um efeito passivo (Característica Aumentada mostra o atributo/perícia escolhido) */
+function nomePassivoNo(def, inst, cat) {
+  const base = def?.nome || cat?.nome || "Efeito";
+  if (def?.id !== "caracteristica") return base;
+  if (temApenasPericia(inst)) return inst.campos?.pericia ? `${base} ${inst.campos.pericia}` : base;
+  const a = ATRIBUTOS.find((x) => x.k === inst.campos?.atributo);
+  return a ? `${base} ${a.l}` : base;
+}
+const temApenasPericia = (inst) => (inst?.mods || []).some((m) => m.id === "apenas_pericia");
 function PassivoInstanceEditor({ passivo, onMudar }) {
   const def = PODERES_PASSIVOS.find((p) => p.id === passivo?.tipoId);
   const upd = (campo, valor) => onMudar({ ...passivo, [campo]: valor });
   const updCampo = (chave, valor) => onMudar({ ...passivo, campos: { ...(passivo.campos || {}), [chave]: valor } });
+  const ce = def && def.id === "caracteristica" && temApenasPericia(passivo) ? { chave: "pericia", label: "Perícia aumentada", opcoes: PERICIAS.map((p) => p.nome) } : def?.campoEscolha;
   return (
     <div className="ed-efeito-bloco">
       {def && (
         <>
           <div className="field-note" style={{ marginBottom: 8 }}>{def.desc}</div>
           {def.id === "rapidez" && <RapidezLoja passivo={passivo} onMudar={onMudar} />}
-          {def.campoEscolha && !def.campoEscolha.multi && (
+          {ce && !ce.multi && (
             <div style={{ marginBottom: 8 }}>
-              <label className="label">{def.campoEscolha.label}</label>
-              <SearchableSelect value={passivo.campos?.[def.campoEscolha.chave] || ""} onChange={(e) => updCampo(def.campoEscolha.chave, e.target.value)}>
+              <label className="label">{ce.label}</label>
+              <SearchableSelect value={passivo.campos?.[ce.chave] || ""} onChange={(e) => updCampo(ce.chave, e.target.value)}>
                 <option value="">Escolha…</option>
-                {def.campoEscolha.opcoes.map((o) => <option key={o} value={o}>{def.campoEscolha.rotulos ? def.campoEscolha.rotulos.find((r) => r.k === o)?.l || o : o}</option>)}
+                {ce.opcoes.map((o) => <option key={o} value={o}>{ce.rotulos ? ce.rotulos.find((r) => r.k === o)?.l || o : o}</option>)}
               </SearchableSelect>
-              {def.campoEscolha.descricoes?.[passivo.campos?.[def.campoEscolha.chave]] && (
-                <div className="field-note" style={{ marginTop: 6 }}>{def.campoEscolha.descricoes[passivo.campos[def.campoEscolha.chave]]}</div>
+              {ce.descricoes?.[passivo.campos?.[ce.chave]] && (
+                <div className="field-note" style={{ marginTop: 6 }}>{ce.descricoes[passivo.campos[ce.chave]]}</div>
               )}
             </div>
           )}
-          {def.campoEscolha && def.campoEscolha.multi && (
+          {ce && ce.multi && (
             <div style={{ marginBottom: 8 }}>
-              <label className="label">{def.campoEscolha.label}</label>
-              {def.campoEscolha.opcoes.map((o) => (
+              <label className="label">{ce.label}</label>
+              {ce.opcoes.map((o) => (
                 <label className="checkbox-row" key={o}>
                   <input type="checkbox" checked={(passivo.campos?.opcoes || []).includes(o)}
                     onChange={(e) => {
@@ -6264,7 +6329,7 @@ function derivarHabilidade(a, calc, ent) {
   const cds = efs.map(cdDoEfeito).filter(Boolean);
   if (tipoAcerto === "area") cds.push(`Esquiva em área: CD ${10 + Math.max(0, ...efs.map((e) => e.graduacao ?? e.graduacaoNulificar ?? 0))}`);
   const variaveisTxt = (a.usoVariaveis || []).filter((u) => u.variavelId && u.delta).map((u) => nomeUso(u, ent?.variaveis));
-  return { patch, info: { variaveis: variaveisTxt, acao, acaoSustentar, sustentado, duracoes: [...new Set(duracoes.map((d) => DUR_TXT[d] || d))], alcances, tipoAcerto, bonusAcerto, defesa, custoNen: nen, custoVida: vida, cds } };
+  return { patch, info: { variaveis: variaveisTxt, acao, acaoSustentar, sustentado, duracoes: [...new Set(duracoes.map((d) => DUR_TXT[d] || d))], alcances, tipoAcerto, bonusAcerto, defesa, custoNen: nen, custoVida: vida, cds, imortal: pas.filter((p) => p.tipoId === "imortalidade").map((p) => linhaMedida(19 - (p.graduacao || 0)).tempo) } };
 }
 
 /* ---------- descrições bonitas ---------- */
@@ -6405,7 +6470,7 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra, efsList
         {c.opcoes && c.opcoes.length > 1 && (
           <div className="px-linha"><span>Opção</span>
             <select className="cb-sel" value={String(m.valor ?? c.v)} onChange={(e) => upd({ valor: Number(e.target.value) })}>
-              {[...new Set(c.opcoes)].map((v) => <option key={v} value={v}>{m.id === "reacao" ? (v === 0 ? "Não reduz a ação (+0/g)" : `Reduz ${v} degrau${v > 1 ? "s" : ""} (+${v}/g)`) : `${v > 0 ? "+" : ""}${v}${c.k === "g" ? "/g" : ""}`}</option>)}
+              {[...new Set(c.opcoes)].map((v) => <option key={v} value={v}>{m.id === "afeta_outros" ? (v === 0 ? "Afeta apenas outros (+0/g)" : "Afeta você e outros (+1/g)") : m.id === "reacao" ? (v === 0 ? "Não reduz a ação (+0/g)" : `Reduz ${v} degrau${v > 1 ? "s" : ""} (+${v}/g)`) : `${v > 0 ? "+" : ""}${v}${c.k === "g" ? "/g" : ""}`}</option>)}
             </select>
           </div>
         )}
@@ -6451,8 +6516,8 @@ function InspetorLegado({ id: idCru, item, onMudar, onRemover, grad, ehHab, todo
   const c = MOD_POR_ID[id];
   const neg = (c?.v ?? 0) < 0;
   const editor = (() => {
-    if (id === "efeito_colateral" && nCol >= 0) return <ColateralEditor colateral={{ ...(item.colateraisExtra || [])[nCol], ativo: true }} onMudar={(x) => onMudar({ ...item, colateraisExtra: (item.colateraisExtra || []).map((y, j) => (j === nCol ? x : y)) })} graduacao={grad} />;
-    if (id === "efeito_colateral") return <ColateralEditor colateral={item.colateral} onMudar={(x) => onMudar({ ...item, colateral: x })} graduacao={grad} />;
+    if (id === "efeito_colateral" && nCol >= 0) return <ColateralEditor permiteAfetado={(item.mods || []).some((m) => m.id === "afeta_outros")} colateral={{ ...(item.colateraisExtra || [])[nCol], ativo: true }} onMudar={(x) => onMudar({ ...item, colateraisExtra: (item.colateraisExtra || []).map((y, j) => (j === nCol ? x : y)) })} graduacao={grad} />;
+    if (id === "efeito_colateral") return <ColateralEditor permiteAfetado={(item.mods || []).some((m) => m.id === "afeta_outros")} colateral={item.colateral} onMudar={(x) => onMudar({ ...item, colateral: x })} graduacao={grad} />;
     if (id === "exigir_teste") return <ExigirTesteEditor valor={item.exigirTeste} onMudar={(x) => onMudar({ ...item, exigirTeste: x })} />;
     if (id === "peculiaridade") return <PeculiaridadeEditor valor={item.peculiaridade} onMudar={(x) => onMudar({ ...item, peculiaridade: x })} />;
     if (id === "aquecimento") return <AquecimentoEditor valor={item.aquecimento} onMudar={(x) => onMudar({ ...item, aquecimento: x })} />;
@@ -6722,6 +6787,7 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
                 {info.sustentado && <div><i>Para sustentar</i><b>{info.acaoSustentar}</b></div>}
                 {info.bonusAcerto !== null && <div><i>Bônus de ataque</i><b>{info.bonusAcerto >= 0 ? "+" : ""}{info.bonusAcerto}</b></div>}
                 {info.defesa && <div><i>Alvo defende com</i><b>{info.defesa}</b></div>}
+                {(info.imortal || []).map((t, i) => <div key={"im" + i}><i>Volta à vida após</i><b>{t}</b></div>)}
               </div>
             </div>
             <div className="pi-sec">
@@ -7096,7 +7162,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
   };
   const total = calc ? (calc.efeitos.length ? calc.total : Math.max(0, ataque.ppManual || 0)) : (ataque.pp || 0);
   const q = semAcento(busca);
-  const opcoesPaleta = EFEITOS_CAT.filter((e) => ATIVO_POR_ID[e.id] || PASSIVO_POR_ID[e.id]).filter((e) => !q || semAcento(e.nome).includes(q));
+  const opcoesPaleta = EFEITOS_CAT.filter((e) => ATIVO_POR_ID[e.id] || PASSIVO_POR_ID[e.id]).filter((e) => !e.escondido).filter((e) => !q || semAcento(e.nome).includes(q));
   const grupos = {};
   opcoesPaleta.forEach((e) => { (grupos[e.tipo || "coringa"] = grupos[e.tipo || "coringa"] || []).push(e); });
 
@@ -7111,7 +7177,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
     if (!b.ativo && def) [...(def.extras || []).map((e) => ({ e, neg: false })), ...(def.falhas || []).map((e) => ({ e, neg: true }))].forEach(({ e, neg }) => { if (b.item.extrasAtivos?.[e.chave]) mods.push({ idx: -1, fixa: true, id: "x:" + e.chave, nome: nomeX(e), neg }); });
     (b.item.colateraisExtra || []).forEach((_, n) => mods.push({ idx: -1, fixa: true, id: `efeito_colateral#${n + 1}`, nome: "Efeito Colateral", neg: true }));
     Object.keys(LEG_TODOS).filter((id) => LEG_TODOS[id].ativo(ataque) && elegivelTodos(id, b)).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
-    return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : (def?.nome || cat?.nome || "Efeito"), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTotal: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo ? Math.max(0, attr(ent, b.item.atributoBase)) + (b.item.graduacao || 0) : null, mods, def };
+    return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? b.item.categoria : nomePassivoNo(def, b.item, cat), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTotal: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo ? Math.max(0, attr(ent, b.item.atributoBase)) + (b.item.graduacao || 0) : null, mods, def };
   });
   const habMods = [
     ...Object.keys(LEG_HAB).filter((id) => LEG_HAB[id].ativo(ataque)).map((id) => ({ id, nome: MOD_POR_ID[id]?.nome || id, neg: (MOD_POR_ID[id]?.v ?? 0) < 0 })),
@@ -8486,19 +8552,22 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
     if (ataque.sustentado && onAtualizarCampo) onAtualizarCampo(e.id, "sustentado", true);
     onAbrirRolagem({ origem: e, tipo: "ataque", ataque, label: `${e.nome} · ${ataque.nome || "Ataque"}` });
   };
-  const aplicarTogglePassiva = (ataque, novoAtivo) => {
+  const aplicarTogglePassiva = (ataque, novoAtivo, alvoOutrosId) => {
     const novos = (e.ataques || []).map((x) => {
       if (x.id !== ataque.id) return x;
       const { passivo, ...resto } = x; // remove o formato antigo (já migrado pra "passivos" abaixo)
-      return { ...resto, ativo: novoAtivo, passivos: passivosDe(x) };
+      return { ...resto, ativo: novoAtivo, passivos: passivosDe(x), ...(afetaOutrosHab(x) ? { alvosOutros: novoAtivo && alvoOutrosId ? [alvoOutrosId] : [] } : {}) };
     });
+    if (afetaOutrosHab(ataque)) { if (novoAtivo) ativarColateraisOutros(ataque, alvoOutrosId, onAtualizarCampo, registrar); else desativarColateraisOutros(ataque, ataque.alvosOutros, onAtualizarCampo); }
     onAtualizarCampo(e.id, "ataques", novos);
     if (ataque.sustentado) onAtualizarCampo(e.id, "sustentado", true);
     if (novoAtivo) { gastarAcao(onAtualizarCampo, e.id, acaoDaHabilidade(ataque)); ativarColaterais(e, ataque, onAtualizarCampo, registrar); aplicarUsoMods(e, ataque, onAtualizarCampo, registrar); } else desativarColaterais(e, ataque, onAtualizarCampo);
   };
-  const alternarPassiva = (ataque) => {
+  const [pendenteOutros, setPendenteOutros] = useState(null);
+  const alternarPassiva = (ataque, alvoOutrosId) => {
     if (!onAtualizarCampo) return;
     const novoAtivo = !passivaEstaAtiva(ataque);
+    if (novoAtivo && afetaOutrosHab(ataque) && alvoOutrosId === undefined) { setPendenteOutros(ataque); return; }
     // Ativar uma passiva com "Exigir Teste": cada efeito testa; quem falha perde só aquele efeito (a ação é gasta).
     if (novoAtivo) {
       const falhos = [];
@@ -8536,7 +8605,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
       if (uso.variaveis) onAtualizarCampo(e.id, "variaveis", uso.variaveis);
       usarDesgastante(e, ataque, onAtualizarCampo, registrar, null);
     }
-    aplicarTogglePassiva(ataque, novoAtivo);
+    aplicarTogglePassiva(ataque, novoAtivo, alvoOutrosId);
   };
   const abrirAcao = (acao) => onAbrirAcao({ origem: e, acao });
   const pvMax = pvMaxCalc(e), nenMax = nenMaxCalc(e);
@@ -8560,7 +8629,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
   };
   // Machucado (que vem de ser curado de Morrendo) some numa ação de descanso — exceto se a pessoa estava Morrendo agora.
   const removerMachucadoDescanso = () => { if (condicaoAtiva(e, "Morrendo")) return; onAtualizarCampo(e.id, "condicoes", (c) => { const n = { ...(c || {}) }; delete n["Machucado"]; return n; }); };
-  const pararSustentacao = (a) => { onAtualizarCampo(e.id, "ataques", (l) => (l || []).map((x) => (x.id === a.id ? { ...x, sustentando: false } : x))); desativarColaterais(e, a, onAtualizarCampo); };
+  const pararSustentacao = (a) => { onAtualizarCampo(e.id, "ataques", (l) => (l || []).map((x) => (x.id === a.id ? { ...x, sustentando: false, ...(afetaOutrosHab(x) ? { alvosOutros: [] } : {}) } : x))); desativarColaterais(e, a, onAtualizarCampo); desativarColateraisOutros(a, a.alvosOutros, onAtualizarCampo); };
   const limparEnfraq = () => onAtualizarCampo(e.id, "duracoes", (l) => (l || []).filter((d) => d.quando !== "recupera"));
   const alimentarSe = () => { limparEnfraq(); onAtualizarCampo(e.id, "pvAtual", Math.min(pvMaxCalc(e), (e.pvAtual || 0) + attr(e, "vigor") + (e.nivel || 1))); resetarVariaveis(); removerMachucadoDescanso(); };
   const meditar = () => { limparEnfraq(); onAtualizarCampo(e.id, "nenAtual", Math.min(nenMaxCalc(e), (e.nenAtual || 0) + attr(e, "prontidao") + (e.nivel || 1))); resetarVariaveis(); removerMachucadoDescanso(); };
@@ -9040,6 +9109,32 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
           mensagem={`Tem certeza que quer excluir "${e.nome}"? Essa ação não pode ser desfeita.`}
           onConfirmar={confirmarExclusao} onCancelar={() => setConfirmandoExclusao(false)} />
       )}
+      {pendenteOutros && (
+        <EscolherAlvoOutros ataque={pendenteOutros} origem={e} entidades={entidades || []}
+          onConfirmar={(id) => { const a = pendenteOutros; setPendenteOutros(null); alternarPassiva(a, id); }}
+          onCancelar={() => setPendenteOutros(null)} />
+      )}
+    </div>
+  );
+}
+function EscolherAlvoOutros({ ataque, origem, entidades, onConfirmar, onCancelar }) {
+  const [id, setId] = useState("");
+  const info = afetaOutrosHab(ataque);
+  return (
+    <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) onCancelar(); }}>
+      <div className="modal-box" style={{ maxWidth: 420 }}>
+        <div className="modal-head"><span className="mt">{ataque.nome || "Habilidade"} · Afeta Outros</span><button className="modal-close" onClick={onCancelar}>×</button></div>
+        <div className="modal-desc">{info?.apenas ? "O efeito vale só para quem recebe (você não é afetado)." : "O efeito vale para você e para quem recebe."}</div>
+        <label className="label">Quem recebe o efeito?</label>
+        <SearchableSelect listaCheia value={id} onChange={(e) => setId(e.target.value)} style={{ marginBottom: 12 }}>
+          <option value="">Selecione…</option>
+          {entidades.filter((x) => x.id !== origem.id).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+        </SearchableSelect>
+        <div className="grid2">
+          <button className="btn btn-ghost" onClick={onCancelar}>Cancelar</button>
+          <button className="btn btn-accent" disabled={!id} onClick={() => onConfirmar(id)}>Ativar</button>
+        </div>
+      </div>
     </div>
   );
 }
