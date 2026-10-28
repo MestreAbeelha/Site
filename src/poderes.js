@@ -68,7 +68,7 @@ export const EFEITOS = [
   E("voo", "Voo", 5, "livre", "pessoal", "sustentado", "coringa"),
   // efeitos que já existiam no app como "passivos" mas não estão nos PDFs
   E("natacao", "Natação", 1, "livre", "pessoal", "sustentado", "coringa", { legado: true }),
-  E("bonus_pericia", "Característica Aumentada (Bônus de Perícia)", 1, "livre", "pessoal", "sustentado", "coringa", { legado: true }),
+  E("bonus_pericia", "Característica Aumentada (Bônus de Perícia)", 1, "livre", "pessoal", "sustentado", "coringa", { legado: true, escondido: true }),
   E("caracteristica", "Característica", 1, "nenhuma", "nenhum", "permanente", "coringa", { legado: true }),
 ];
 export const EFEITO_POR_ID = Object.fromEntries(EFEITOS.map((e) => [e.id, e]));
@@ -139,7 +139,7 @@ export const EXCLUSIVOS = {
     M("grau_limitado_afl", "Grau Limitado", "g", -1, { opcoes: [-1, -2] }), M("recuperacao_instantanea", "Recuperação Instantânea", "g", -1), M("sustentado_afl", "Sustentado", "g", -1, { muda: "duracao" })],
   camuflagem: [M("afeta_outros_cam", "Afeta Outros", "g", 1), M("ataque_cam", "Ataque", "g", 0), M("preciso_cam", "Preciso", "f", 1), M("sentido_extra", "Sentido Extra", "g", 1, { mult: true }),
     M("mesclar", "Mesclar", "g", -1), M("parcial", "Parcial", "g", -1), M("passiva", "Passiva", "g", -1)],
-  caracteristica_aumentada: [M("explosao", "Explosão", "g", 1), M("brutal", "Brutal", "g", 1, { mult: true })],
+  caracteristica_aumentada: [M("explosao", "Explosão", "g", 1), M("brutal", "Brutal", "g", 1, { mult: true }), M("apenas_pericia", "Apenas Perícia", "g", -1)],
   comunicacao: [M("rapida", "Rápida", "g", 1), M("seletiva_com", "Seletiva", "g", 1), M("sutil_com", "Sutil", "g", 1), M("unilateral", "Unilateral", "g", -1)],
   controle_sorte: [M("azar", "Azar", "g", 1), M("sortudo", "Sortudo", "g", 1), M("ataque_sorte", "Ataque", "g", -1), M("azarado", "Azarado", "g", -1), M("resistir_sorte", "Resistir", "g", -1)],
   crescimento: [M("musculos_densos", "Músculos Densos", "g", 1), M("so_tamanho", "Só Tamanho", "f", 1), M("pesado_demais", "Pesado Demais", "g", -2)],
@@ -471,6 +471,7 @@ export const DESC_EFEITO = {
 };
 export const DESC_MOD = {
   afeta_objetos: "O efeito também pode ser usado contra objetos. Custa +1/g; +0 se afetar apenas objetos.",
+  apenas_pericia: "A Característica Aumentada passa a aumentar uma perícia (em vez de um atributo): o bônus vale só nessa perícia. −1/g.",
   afeta_outros: "O efeito pessoal passa a poder ser aplicado em outra criatura (por toque). Custa +1/g; +0 se afetar apenas outros.",
   alcance_estendido: "Extra da habilidade: você escolhe um efeito e a graduação de distância dele (alcance, ou tamanho da área) sobe uma graduação na Tabela de Medidas. Pode ser pego várias vezes. +1 ponto fixo cada; conta como Emissor.",
   area: "O efeito atinge todos numa área (Cone, Cilindro, Explosão, Linha ou Nuvem). Cada alvo pode fazer Esquiva (CD 10 + graduação) para cortar a CD da resistência pela metade. Tamanhos base: Cone 6 m, Cilindro 3 m, Explosão 3 m, Linha 9 m. +1/g.",
