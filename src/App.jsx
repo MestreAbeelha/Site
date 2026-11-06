@@ -2182,7 +2182,28 @@ function ppAtaque(a, ent) {
 }
 function custoAtaque(a, ent) {
   if (a.equipamento) return 0;
+  if (ent && objetoDaHabilidade(a, ent)) return 0; // gasta da barra do objeto invocado, não dos PP da ficha
   return ppAtaque(a, ent);
+}
+/** Invocar Objeto: cada habilidade com um efeito Invocar + extra "Invocar Objeto" gera uma barra própria de 5 PP por graduação */
+function objetosInvocados(ent) {
+  const out = [];
+  (ent?.ataques || []).forEach((a) => {
+    if (a.tipo === "passiva") return;
+    const efs = (a.efeitos || []).filter((ef) => ef.categoria === "Invocar" && contaMod(ef, "invocar_objeto") > 0);
+    if (!efs.length) return;
+    const grad = efs.reduce((s, ef) => s + Math.max(0, Math.round(ef.graduacao || 0)), 0);
+    out.push({ id: a.id, nome: a.nome || "Invocar Objeto", max: grad * 5 });
+  });
+  return out;
+}
+/** objeto (barra) de onde a habilidade gasta os PP, ou null se ela gasta dos PP da ficha */
+function objetoDaHabilidade(a, ent) {
+  if (!a?.invocarObjetoId || a.equipamento || a.invocarObjetoId === a.id) return null;
+  return objetosInvocados(ent).find((o) => o.id === a.invocarObjetoId) || null;
+}
+function pontosObjetoGastos(ent, objetoId) {
+  return (ent?.ataques || []).reduce((s, a) => s + (objetoDaHabilidade(a, ent)?.id === objetoId ? ppAtaque(a, ent) : 0), 0);
 }
 function pontosPoderGastos(ent) {
   const custoAtr = Object.values(ent?.atributos || {}).reduce((s, v) => s + (v || 0), 0) * 2;
@@ -7425,14 +7446,22 @@ function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir
         <button className="small-btn" onClick={onRemover}>×</button>
       </div>
       {colapsado && (
-        <div className="ed-hab-tags"><span className={"hab-tag" + (ehPassiva ? "" : " ligada")}>{ehPassiva ? "Passiva" : "Ativa"}</span>{!ehPassiva && <span className="hab-tag">{ataque.acao || acaoDaHabilidade(ataque)}</span>}{ataque.equipamento && <span className="hab-tag">Equipamento</span>}{ataque.sustentado && <span className="hab-tag">Sustentado</span>}{ppAtaque(ataque, ent) > 0 && <span className="hab-tag">{ppAtaque(ataque, ent)} PP</span>}</div>
+        <div className="ed-hab-tags"><span className={"hab-tag" + (ehPassiva ? "" : " ligada")}>{ehPassiva ? "Passiva" : "Ativa"}</span>{!ehPassiva && <span className="hab-tag">{ataque.acao || acaoDaHabilidade(ataque)}</span>}{ataque.equipamento && <span className="hab-tag">Equipamento</span>}{objetoDaHabilidade(ataque, ent) && <span className="hab-tag">{objetoDaHabilidade(ataque, ent).nome} (objeto)</span>}{ataque.sustentado && <span className="hab-tag">Sustentado</span>}{ppAtaque(ataque, ent) > 0 && <span className="hab-tag">{ppAtaque(ataque, ent)} PP</span>}</div>
       )}
       {!colapsado && (
       <>
-      <label className="checkbox-row" style={{ marginBottom: 10 }}>
-        <input type="checkbox" checked={!!ataque.equipamento} onChange={(e) => upd("equipamento", e.target.checked)} />
-        Equipamento
-      </label>
+      <div style={{ display: "flex", flexWrap: "wrap", columnGap: 18, marginBottom: 10 }}>
+        <label className="checkbox-row">
+          <input type="checkbox" checked={!!ataque.equipamento} onChange={(e) => onMudar({ ...ataque, equipamento: e.target.checked, ...(e.target.checked ? { invocarObjetoId: null } : {}) })} />
+          Equipamento
+        </label>
+        {objetosInvocados(ent).filter((o) => o.id !== ataque.id).map((o) => (
+          <label className="checkbox-row" key={o.id}>
+            <input type="checkbox" checked={ataque.invocarObjetoId === o.id && !ataque.equipamento} onChange={(e) => onMudar({ ...ataque, invocarObjetoId: e.target.checked ? o.id : null, ...(e.target.checked ? { equipamento: false } : {}) })} />
+            {o.nome} com Invocar Objeto
+          </label>
+        ))}
+      </div>
       {ataque.equipamento && (
         <div className="grid2" style={{ marginBottom: 10 }}>
           <div>
@@ -7870,12 +7899,12 @@ function PainelFicha({ f }) {
                 const s = simular([h]);
                 return (
                   <tr key={h.a.id} className={"dash-linha-clicavel" + (off[h.a.id] ? " off" : "") + (ehSolo(h.a.id) ? " solo" : "")} onClick={() => soEste(h.a.id)} title={ehSolo(h.a.id) ? "Clique para tirar o filtro" : "Clique para ver só esta habilidade"}>
-                    <td><span className="dash-dot" style={{ background: h.cor }} />{h.a.nome || "(sem nome)"}<div className="dash-mini">{h.passiva ? "Passiva" : "Ativa"}{h.sust ? " · Sustentada" : ""}{h.a.equipamento ? " · Equipamento" : ""}</div></td>
+                    <td><span className="dash-dot" style={{ background: h.cor }} />{h.a.nome || "(sem nome)"}<div className="dash-mini">{h.passiva ? "Passiva" : "Ativa"}{h.sust ? " · Sustentada" : ""}{h.a.equipamento ? " · Equipamento" : ""}{objetoDaHabilidade(h.a, f) ? ` · ${objetoDaHabilidade(h.a, f).nome} (objeto)` : ""}</div></td>
                     <td>{acaoDaHabilidade(h.a)}</td>
                     <td>{fmtNum(h.nenTurno)}{h.nenUnico > 0 ? ` (+${h.nenUnico})` : ""}</td>
                     <td>{txtDur(s.durNen)}</td>
                     <td>{s.vidaLiq === 0 ? "—" : (s.vidaLiq > 0 ? "−" : "+") + fmtNum(Math.abs(s.vidaLiq))}</td>
-                    <td>{h.a.equipamento ? "eq. " : ""}{ppAtaque(h.a, f)}</td>
+                    <td>{h.a.equipamento ? "eq. " : objetoDaHabilidade(h.a, f) ? "obj. " : ""}{ppAtaque(h.a, f)}</td>
                     {habs.some((x) => !x.passiva && !x.sust) && (
                       <td className="dash-celula-acao" onClick={(ev) => ev.stopPropagation()}>
                         {!h.passiva && !h.sust ? <span className="dash-usos" title="Usos por turno">×<input type="number" min={0} max={9} value={usos[h.a.id] ?? 1} onChange={(e) => setUsos((u) => ({ ...u, [h.a.id]: Math.max(0, Math.min(9, Number(e.target.value) || 0)) }))} /></span> : <span className="dash-mini">—</span>}
@@ -7955,12 +7984,13 @@ function PainelFicha({ f }) {
               <div key={a.id} className="dash-hbar">
                 <span className="dash-hbar-nome">{a.nome || "(sem nome)"}</span>
                 <span className="dash-hbar-trilho"><span style={{ width: (custoAtaque(a, f) / maiorHabPP) * 100 + "%", background: PAL_DASH[i % PAL_DASH.length] }} /></span>
-                <b>{a.equipamento ? `eq. ${ppAtaque(a, f)}` : custoAtaque(a, f)}</b>
+                <b>{a.equipamento ? `eq. ${ppAtaque(a, f)}` : objetoDaHabilidade(a, f) ? `obj. ${ppAtaque(a, f)}` : custoAtaque(a, f)}</b>
               </div>
             ))}
           </div>
         )}
         {pontosEquipamentoMax(f) > 0 && <div className="field-note">Equipamento: {pontosEquipamentoGastos(f)} de {pontosEquipamentoMax(f)} pontos (não gasta PP).</div>}
+        {objetosInvocados(f).map((o) => <div key={o.id} className="field-note">{o.nome}: {pontosObjetoGastos(f, o.id)} de {o.max} pontos (não gasta PP da ficha).</div>)}
       </div>
 
       <div className="dash-bloco">
@@ -8282,6 +8312,15 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         <div className="ed-pp-trilho"><div className="ed-pp-fill" style={{ width: Math.min(100, ppMax > 0 ? (ppGastos / ppMax) * 100 : (ppGastos > 0 ? 100 : 0)) + "%" }} /></div>
       </div>
       {eqMax > 0 && <div className={"pp-box" + (eqExcedido ? " excedido" : "")}><span>Equipamento gasto / máximo</span><span className="pp-val">{eqGastos} / {eqMax}</span></div>}
+      {objetosInvocados(f).map((o) => {
+        const g = pontosObjetoGastos(f, o.id);
+        return (
+          <div key={o.id} className={"pp-box" + (g > o.max ? " excedido" : "")}>
+            <span>{o.nome} gasto / máximo</span><span className="pp-val">{g} / {o.max}</span>
+            <div className="ed-pp-trilho"><div className="ed-pp-fill" style={{ width: Math.min(100, o.max > 0 ? (g / o.max) * 100 : (g > 0 ? 100 : 0)) + "%" }} /></div>
+          </div>
+        );
+      })}
 
       </section>
       <section className="ed-sec">
@@ -8756,6 +8795,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
             <span className="info-chip">Deslocamento <b>{deslocamentoTexto(e)}</b></span>
             <span className="info-chip">PP <b>{pontosPoderGastos(e)}/{pontosPoderMax(e)}</b></span>
             {pontosEquipamentoMax(e) > 0 && <span className="info-chip">Equip <b>{pontosEquipamentoGastos(e)}/{pontosEquipamentoMax(e)}</b></span>}
+            {objetosInvocados(e).map((o) => <span key={o.id} className="info-chip">{o.nome} <b>{pontosObjetoGastos(e, o.id)}/{o.max}</b></span>)}
           </div>
 
           <div className="acoes-bolinhas" style={{ marginBottom: editavel ? 12 : 0 }}>
