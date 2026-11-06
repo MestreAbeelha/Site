@@ -153,7 +153,7 @@ export const EXCLUSIVOS = {
   imunidade: [M("metade_efeito", "Metade do Efeito", "g", -2)],
   metamorfose: [M("ficha_adicional", "Ficha Adicional", "g", 2, { mult: true }), M("equipamento_incorporado", "Equipamento Incorporado", "f", 1), M("imitacao", "Imitação", "g", 5, { tipo: "especialista" }), M("vida_independente", "Vida Independente", "g", 10),
     M("aleatoria", "Aleatória", "g", -1), M("reversao_forcada", "Reversão Forçada", "g", -3), M("forma_instavel", "Forma Instável", "g", -2), M("instinto_forma", "Instinto da Forma", "g", -1), M("itens_perdidos", "Itens Perdidos", "f", -1)],
-  invocar: [M("ritual", "Ritual", "g", 8), M("alcance_invocar", "Alcance", "f", 1, { mult: true }), M("ativo", "Ativo", "g", 1), M("horda", "Horda", "g", 2), M("invocar_objeto", "Invocar Objeto", "g", 1), M("invocar_veiculo", "Invocar Veículo", "g", 1),
+  invocar: [M("ritual", "Ritual", "g", 8), M("alcance_invocar", "Alcance", "f", 1, { mult: true }), M("ativo", "Ativo", "g", 1), M("horda", "Horda", "g", 2, { mult: true }), M("invocar_objeto", "Invocar Objeto", "g", 1), M("invocar_veiculo", "Invocar Veículo", "g", 1),
     M("persistente_inv", "Persistente", "g", 2, { opcoes: [2, 4] }), M("atitude", "Atitude", "g", -2, { opcoes: [-2, -5], exige: "ativo" })],
   leitura_mental: [M("cumulativo_lm", "Cumulativo", "g", 2), M("ligacao_sensorial", "Ligação Sensorial", "g", 1)],
   mover_objetos: [M("camuflagem_mo", "Camuflagem", "g", 1), M("dano_mo", "Dano", "g", 2), M("dividido_mo", "Dividido", "g", 1), M("impulso", "Impulso", "g", 2), M("preciso_mo", "Preciso", "f", 2),
