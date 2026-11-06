@@ -287,7 +287,7 @@ export function calcularHabilidade(ctx, hab) {
     // só extras/falhas (soma por graduação, sem ajuste de Nen) incidem sobre ela. O restante paga o custo normal.
     const gradGratis = Math.min(Math.max(0, ef.gradGratis || 0), ef.grad);
     const somaGSemNen = mods.filter((m) => m.k === "g").reduce((s, m) => s + m.valor, 0);
-    const custoParteGratis = gradGratis > 0 && somaGSemNen > 0 ? gradGratis * somaGSemNen : 0;
+    const custoParteGratis = gradGratis > 0 ? Math.max(0, gradGratis * somaGSemNen) : 0; // extras somam, falhas abatem (mínimo 0)
     const custo = custoParteGratis + custoEfeito(c, ef.grad - gradGratis);
     const sobre = mods.filter((m) => m.id === "sobrecarregado").reduce((s, m) => s + m.vezes, 0);
     const mult = LIMITE_FIXO[ef.id];
@@ -295,7 +295,7 @@ export function calcularHabilidade(ctx, hab) {
     const limite = ritual ? Infinity : mult ? mult * nivel : nivel + sobre;
     if (!ef.semLimite && ef.grad > limite) erros.push(mult ? `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (${mult === 1 ? "nível" : "dobro do nível"}; Sobrecarregado não passa deste limite).` : `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (nível ${nivel}${sobre ? ` + ${sobre} Sobrecarregado` : ""}).`);
     let dica = null;
-    if (c <= 0) {
+    if (c <= 0 && !gradGratis) {
       const maxMesmoCusto = custo * (1 - c);
       const alvo = Math.min(maxMesmoCusto, limite);
       if (alvo > ef.grad) dica = alvo;
