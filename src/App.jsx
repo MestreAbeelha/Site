@@ -2079,7 +2079,7 @@ const nenEngine = (n) => (n && n !== "Nenhum" ? String(n).toLowerCase() : null);
 const ACAO_ENGINE_PARA_NOME = { padrao: "Ação Padrão", livre: "Ação Livre", movimento: "Ação de Movimento", reacao: "Reação", nenhuma: "Nenhuma" };
 function gradParaCusto(ef, ent) {
   if (ef.categoria === "Nulificar") return ef.graduacaoNulificar || 0;
-  if (ef.categoria === "Dano" && ef.baseadoAtivo) return (ef.graduacao || 0) > 0 ? Math.max(0, attr(ent, ef.atributoBase) + (ef.graduacao || 0)) : 0; // sem graduação extra: dano do atributo, de graça
+  if (ef.categoria === "Dano" && ef.baseadoAtivo) return Math.max(0, attr(ent, ef.atributoBase) + (ef.graduacao || 0)); // sem graduação extra: dano do atributo (base +0, mas extras/falhas incidem)
   return ef.graduacao || 0;
 }
 /** extras/falhas de um efeito: os adicionados no construtor (ef.mods) + os que já vêm dos editores antigos (checkboxes) */
@@ -2156,7 +2156,7 @@ function calcularCustoAtaque(a, ent) {
         if (a.extras?.multiataque) mods.push({ id: "multiataque", derivado: true });
       }
       idxAtivo.push(efs.length);
-      efs.push({ id, grad: gradParaCusto(ef, ent), base: CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef), gratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), tipo: ef.nen || undefined, mods });
+      efs.push({ id, grad: gradParaCusto(ef, ent), base: CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef), gratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), gradGratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0) ? Math.max(0, attr(ent, ef.atributoBase)) : 0, semLimite: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), tipo: ef.nen || undefined, mods });
     });
   }
   passivosDe(a).forEach((inst) => {
