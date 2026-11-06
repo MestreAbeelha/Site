@@ -580,7 +580,7 @@ export const DESC_MOD = {
   alcance_invocar: "A criatura invocada pode aparecer a mais distância (+1,5 m por vez). +1 fixo.",
   ativo: "A criatura invocada age com ações completas (padrão e movimento). +1/g.",
   horda: "Em vez de uma criatura, invoca 2 por vez (dobra a cada vez), dividindo os pontos entre elas. +2/g.",
-  invocar_objeto: "Invoca um objeto em vez de uma criatura (5 pontos por graduação). +1/g.",
+  invocar_objeto: "Invoca um objeto em vez de uma criatura (5 pontos por graduação). +1/g. Cria uma barra de PP própria na ficha: nas outras habilidades, marque a opção \"(nome) com Invocar Objeto\" para gastar os PP delas dessa barra.",
   invocar_veiculo: "Invoca um veículo. +1/g.",
   persistente_inv: "A invocação permanece sem sustentar: com metade da vida (+2/g) ou com a vida completa (+4/g).",
   atitude: "A invocação pode desobedecer: amistosa (−2/g) ou inamistosa (−5/g). Exige o extra Ativo.",
