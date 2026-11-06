@@ -283,12 +283,17 @@ export function calcularHabilidade(ctx, hab) {
     const somaG = mods.filter((m) => m.k === "g").reduce((s, m) => s + m.valor, 0) + ajG.reduce((s, a) => s + a.g, 0);
     const fixosEf = mods.filter((m) => m.k === "f");
     const c = base + somaG;
-    const custo = custoEfeito(c, ef.grad);
+    // Dano Baseado Em: a parte da graduação que vem do atributo (gradGratis) tem custo base +0;
+    // só extras/falhas (soma por graduação, sem ajuste de Nen) incidem sobre ela. O restante paga o custo normal.
+    const gradGratis = Math.min(Math.max(0, ef.gradGratis || 0), ef.grad);
+    const somaGSemNen = mods.filter((m) => m.k === "g").reduce((s, m) => s + m.valor, 0);
+    const custoParteGratis = gradGratis > 0 && somaGSemNen > 0 ? gradGratis * somaGSemNen : 0;
+    const custo = custoParteGratis + custoEfeito(c, ef.grad - gradGratis);
     const sobre = mods.filter((m) => m.id === "sobrecarregado").reduce((s, m) => s + m.vezes, 0);
     const mult = LIMITE_FIXO[ef.id];
     const ritual = ef.id === "invocar" && mods.some((m) => m.id === "ritual");
     const limite = ritual ? Infinity : mult ? mult * nivel : nivel + sobre;
-    if (ef.grad > limite) erros.push(mult ? `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (${mult === 1 ? "nível" : "dobro do nível"}; Sobrecarregado não passa deste limite).` : `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (nível ${nivel}${sobre ? ` + ${sobre} Sobrecarregado` : ""}).`);
+    if (!ef.semLimite && ef.grad > limite) erros.push(mult ? `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (${mult === 1 ? "nível" : "dobro do nível"}; Sobrecarregado não passa deste limite).` : `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (nível ${nivel}${sobre ? ` + ${sobre} Sobrecarregado` : ""}).`);
     let dica = null;
     if (c <= 0) {
       const maxMesmoCusto = custo * (1 - c);
