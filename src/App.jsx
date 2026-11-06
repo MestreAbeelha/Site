@@ -1617,6 +1617,13 @@ function afetaOutrosHab(a) {
   return { apenas: ms.every((m) => (m.valor ?? 1) === 0) };
 }
 const instApenasOutros = (inst) => (inst?.mods || []).some((m) => m.id === "afeta_outros" && (m.valor ?? 1) === 0);
+/* Configuração da ficha (NPCs/Criaturas): dano por graduação de falha definido à mão; null = automático */
+function danoPorGrauConfigurado(ent) {
+  const v = ent?.config?.danoPorGrau;
+  if (v === undefined || v === null || v === "" || !Number.isFinite(Number(v))) return null;
+  return Math.max(0, Math.round(Number(v)));
+}
+const ehNpcOuCriatura = (ent) => ent?.rotulo === "Criatura" || ent?.rotulo === "NPC";
 function passivaEstaAtiva(ataque) {
   return !!(ataque?.ativo ?? ataque?.passivo?.ativo);
 }
@@ -3538,7 +3545,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     if (efeito.categoria === "Dano") {
       const nivelAtacante = Math.max(1, origemAtual.nivel || 1);
       const sobrecarga = (efeito.mods || []).filter((m) => m.id === "sobrecarregado").reduce((t, m) => t + (m.vezes || 1), 0);
-      const graduacaoDano = efeito.semLimiteNivel ? (efeito.graduacao || 0) : Math.min(efeito.graduacao || 0, nivelAtacante + sobrecarga); // Sobrecarregado: cada +1 passa o limite de nível
+      const danoConfig = danoPorGrauConfigurado(origemAtual);
+      const graduacaoDano = danoConfig != null ? danoConfig : efeito.semLimiteNivel ? (efeito.graduacao || 0) : Math.min(efeito.graduacao || 0, nivelAtacante + sobrecarga); // Sobrecarregado: cada +1 passa o limite de nível
       const danoPreReducao = r.sucesso ? 0 : graduacaoDano * Math.abs(r.graus);
       const passivosAlvo = modificadoresPassivos(alvo);
       let pen = somaVezes(efeito.mods, "penetrante") * PENETRANTE_POR_VEZ; // Penetrante: ignora parte da redução de dano
@@ -8564,6 +8572,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
     if (novoAtivo) { gastarAcao(onAtualizarCampo, e.id, acaoDaHabilidade(ataque)); ativarColaterais(e, ataque, onAtualizarCampo, registrar); aplicarUsoMods(e, ataque, onAtualizarCampo, registrar); } else desativarColaterais(e, ataque, onAtualizarCampo);
   };
   const [pendenteOutros, setPendenteOutros] = useState(null);
+  const [configAberta, setConfigAberta] = useState(false);
   const alternarPassiva = (ataque, alvoOutrosId) => {
     if (!onAtualizarCampo) return;
     const novoAtivo = !passivaEstaAtiva(ataque);
@@ -8729,7 +8738,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
                 ))}
               </div>
             </div>
-            {editavel && <div className="hero-acoes"><button className="btn btn-ghost btn-sm" disabled={!!e.metaAtual} title={e.metaAtual ? "Volte à forma base para editar a ficha" : undefined} onClick={() => { if (!e.metaAtual) onEditar(); }}>Editar</button><button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button></div>}
+            {editavel && <div className="hero-acoes">{ehNpcOuCriatura(e) && <button className="btn btn-ghost btn-sm" title="Configurações da ficha" aria-label="Configurações da ficha" onClick={() => setConfigAberta(true)}>⚙</button>}<button className="btn btn-ghost btn-sm" disabled={!!e.metaAtual} title={e.metaAtual ? "Volte à forma base para editar a ficha" : undefined} onClick={() => { if (!e.metaAtual) onEditar(); }}>Editar</button><button className="btn btn-danger btn-sm" onClick={() => setConfirmandoExclusao(true)}>Excluir</button></div>}
           </div>
 
           <BarraVital tipo="vida" nome="Vida" atual={e.pvAtual || 0} max={pvMax} temp={e.pvTemp || 0}
@@ -9109,11 +9118,32 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
           mensagem={`Tem certeza que quer excluir "${e.nome}"? Essa ação não pode ser desfeita.`}
           onConfirmar={confirmarExclusao} onCancelar={() => setConfirmandoExclusao(false)} />
       )}
+      {configAberta && <ConfigFicha ent={e} onSalvar={(cfg) => { onAtualizarCampo(e.id, "config", cfg); setConfigAberta(false); }} onFechar={() => setConfigAberta(false)} />}
       {pendenteOutros && (
         <EscolherAlvoOutros ataque={pendenteOutros} origem={e} entidades={entidades || []}
           onConfirmar={(id) => { const a = pendenteOutros; setPendenteOutros(null); alternarPassiva(a, id); }}
           onCancelar={() => setPendenteOutros(null)} />
       )}
+    </div>
+  );
+}
+function ConfigFicha({ ent, onSalvar, onFechar }) {
+  const atual = ent.config?.danoPorGrau;
+  const [dano, setDano] = useState(atual === undefined || atual === null ? "" : String(atual));
+  return (
+    <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) onFechar(); }}>
+      <div className="modal-box" style={{ maxWidth: 420 }}>
+        <div className="modal-head"><span className="mt">⚙ Configurações · {ent.nome}</span><button className="modal-close" onClick={onFechar}>×</button></div>
+        <label className="label">Dano por graduação de falha</label>
+        <input type="number" min={0} placeholder="Automático (graduação do efeito de Dano)" value={dano} onChange={(e) => setDano(e.target.value)} />
+        <div className="field-note" style={{ margin: "6px 0 12px" }}>
+          Quanto de dano esta ficha causa por grau de falha do alvo no teste de resistência. Se preencher, vale no lugar da graduação dos efeitos de Dano dela (a ficha continua com tudo que o nível dela permite). Deixe vazio para usar o automático.
+        </div>
+        <div className="grid2">
+          <button className="btn btn-ghost" onClick={onFechar}>Cancelar</button>
+          <button className="btn btn-accent" onClick={() => onSalvar({ ...(ent.config || {}), danoPorGrau: dano === "" ? null : Math.max(0, Number(dano) || 0) })}>Salvar</button>
+        </div>
+      </div>
     </div>
   );
 }
