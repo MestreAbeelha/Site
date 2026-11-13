@@ -8,7 +8,7 @@ import {
   migrarDadosAntigos, ouvirErrosSalvamento,
 } from "./firebase.js";
 import {
-  calcularHabilidade, custoColateral, grauCondicao, CONDICOES_POR_GRAU, razaoTxt, modsDisponiveis, MOD_POR_ID, EFEITOS as EFEITOS_CAT, EFEITO_POR_ID as EFEITO_CAT_POR_ID,
+  calcularHabilidade, custoColateral, grauCondicao, CONDICOES_POR_GRAU, razaoTxt, modsDisponiveis, alcanceDoEfeito, MOD_POR_ID, EFEITOS as EFEITOS_CAT, EFEITO_POR_ID as EFEITO_CAT_POR_ID,
   TIPOS_NEN as TIPOS_NEN_CAT, relacaoNen, EXCLUSIVOS as EXCLUSIVOS_CAT, regraDoMod, DESC_EFEITO, DESC_MOD, descEfeitoCompleta,
 } from "./poderes.js";
 
@@ -1785,7 +1785,7 @@ function prepararHabilidade(ent, ataque, atualizarCampo, registrar) {
   const marcar = (v) => atualizarCampo(ent.id, "ataques", (l) => (l || []).map((x) => (x.id === ataque.id ? { ...x, preparada: v } : x)));
   if (ataque.preparada) { marcar(false); return false; }
   const acoes = [];
-  if (car) acoes.push("Ação Padrão", ...((Number(car.valor) || -3) <= -6 ? ["Ação de Movimento"] : []));
+  if (car) acoes.push(acaoDaHabilidade(ataque), ...((Number(car.valor) || -3) <= -6 ? ["Ação de Movimento"] : [])); // carregar custa a ação da própria habilidade (o uso, no 2º clique, gasta a mesma de novo)
   if (ati) acoes.push("Ação de Movimento");
   acoes.forEach((ac) => gastarAcao(atualizarCampo, ent.id, ac));
   marcar(true);
@@ -2151,7 +2151,7 @@ function calcularCustoAtaque(a, ent) {
       const id = CAT_PARA_EFEITO[ef.categoria] || CAT_UTIL_PARA_EFEITO[ef.categoria];
       if (!id) { idxAtivo.push(-1); return; }
       const mods = modsDoEfeito(ef, a);
-      if (CATEGORIAS_COM_RESISTENCIA.includes(ef.categoria)) { // Dividido / Multiataque valem em todos os efeitos de ataque
+      if (ehEfeitoDeAtaque(ef)) { // Dividido / Multiataque valem em todos os efeitos de ataque
         if (a.extras?.dividido) mods.push({ id: "dividido", derivado: true });
         if (a.extras?.multiataque) mods.push({ id: "multiataque", derivado: true });
       }
@@ -6249,7 +6249,7 @@ function DesgastanteEditor({ desgastante, onMudar }) {
 
 
 /* ---------- Construtor de poder: extras/falhas por efeito + painel de custo da habilidade ---------- */
-const MODS_LEGADO = new Set(["alcance_estendido", "alcance_reduzido", "alcance_diminuido", "efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "ponto_fraco", "dividido", "multiataque", "desgastante", "efeito_alternativo",
+const MODS_LEGADO = new Set(["alcance_estendido", "alcance_reduzido", "efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "ponto_fraco", "dividido", "multiataque", "desgastante", "efeito_alternativo",
   "resistencia_alt_afl", "recuperacao_instantanea", "cumulativo_afl", "condicao_extra", "grau_limitado_afl", "variavel_nen_vida", "variavel_carga", "variavel_municao"]);
 const capNen = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
 const DUR_TXT = { instantaneo: "instantâneo", sustentado: "sustentado", permanente: "permanente", continuo: "contínuo" };
@@ -6292,7 +6292,9 @@ const LEG_TODOS = {
   multiataque: extraHab("multiataque", "dividido"),
   ponto_fraco: objAtivo("pontoFraco", { texto: "" }),
 };
-const elegivelTodos = (id, b) => id === "ponto_fraco" || (b.ativo && CATEGORIAS_COM_RESISTENCIA.includes(b.item.categoria));
+// efeito de utilidade (Teleporte, Transformação…) com o extra Ataque também é um efeito de ataque
+const ehEfeitoDeAtaque = (ef) => CATEGORIAS_COM_RESISTENCIA.includes(ef.categoria) || (UTIL_CATS.includes(ef.categoria) && (ef.mods || []).some((m) => m.id === "ataque"));
+const elegivelTodos = (id, b) => id === "ponto_fraco" || (b.ativo && ehEfeitoDeAtaque(b.item));
 const LEG_HAB = {
   desgastante: objAtivo("desgastante", { modo: "automatico", salvamento: "Fortitude", reducoes: [] }),
   caracteristica_hab: {
@@ -6351,14 +6353,24 @@ function derivarHabilidade(a, calc, ent) {
   if (efs.some((e) => e.categoria === "Criar")) nen = Math.max(nen, nivel);
   if (efs.some((e) => e.categoria === "Cura") || pas.some((p) => p.tipoId === "regeneracao")) nen = Math.max(nen, 1);
   const patch = { tipo, sustentado, acao, acaoSustentar, tipoAcerto, custoNen: nen, custoVida: vida, custoAuto: true };
-  const alcances = [...new Set(ativosLinhas.map((l) => ALCANCE_TXT[l.alcance]).filter(Boolean))];
+  // alcance com a graduação de distância (efeito à distância: graduação do efeito ± Alcance Estendido/Reduzido, na Tabela de Medidas)
+  const alcances = [...new Set(efs.map((ef, i) => {
+    const l = calc?.porEfeito?.[i];
+    if (!l || !ALCANCE_TXT[l.alcance]) return null;
+    if (l.alcance !== "distancia") return ALCANCE_TXT[l.alcance];
+    const passos = (a.alcances || []).filter((x) => x.efeitoId === ef.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1) * Math.max(1, x.vezes || 1), 0);
+    const g0 = ef.categoria === "Dano" ? graduacaoEfetiva(ef, ent) : (ef.graduacao ?? ef.graduacaoNulificar ?? l.grad ?? 0);
+    const g = Math.max(0, Math.round(g0) + passos);
+    return `${ALCANCE_TXT[l.alcance]} · ${fmtM(graduacaoParaDistancia(g))} (graduação ${g})`;
+  }).filter(Boolean))];
+  const bonusDefesaPassivo = pas.filter((p) => p.tipoId === "deflexao").map((p) => `Aparar +${p.graduacao || 0} (também contra ataques à distância)`);
   let bonusAcerto = null, defesa = null;
   if (ent && tipoAcerto === "corpo") { bonusAcerto = attr(ent, "luta"); defesa = "Aparar"; }
   if (ent && tipoAcerto === "distancia") { bonusAcerto = attr(ent, "destreza"); defesa = "Esquiva (ou Aparar contra Deflexão)"; }
   const cds = efs.map(cdDoEfeito).filter(Boolean);
   if (tipoAcerto === "area") cds.push(`Esquiva em área: CD ${10 + Math.max(0, ...efs.map((e) => e.graduacao ?? e.graduacaoNulificar ?? 0))}`);
   const variaveisTxt = (a.usoVariaveis || []).filter((u) => u.variavelId && u.delta).map((u) => nomeUso(u, ent?.variaveis));
-  return { patch, info: { variaveis: variaveisTxt, acao, acaoSustentar, sustentado, duracoes: [...new Set(duracoes.map((d) => DUR_TXT[d] || d))], alcances, tipoAcerto, bonusAcerto, defesa, custoNen: nen, custoVida: vida, cds, imortal: pas.filter((p) => p.tipoId === "imortalidade").map((p) => linhaMedida(19 - (p.graduacao || 0)).tempo) } };
+  return { patch, info: { variaveis: variaveisTxt, acao, acaoSustentar, sustentado, duracoes: [...new Set(duracoes.map((d) => DUR_TXT[d] || d))], alcances, tipoAcerto, bonusAcerto, defesa, custoNen: nen, custoVida: vida, cds, bonusDefesa: bonusDefesaPassivo, imortal: pas.filter((p) => p.tipoId === "imortalidade").map((p) => linhaMedida(19 - (p.graduacao || 0)).tempo) } };
 }
 
 /* ---------- descrições bonitas ---------- */
@@ -6409,6 +6421,10 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     if (ocultar && ocultar.has(m.id)) return false;
     if (LEG_EFEITO[m.id]) return (m.id === "efeito_colateral" || !LEG_EFEITO[m.id].ativo(item)) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria)));
     if (MODS_LEGADO.has(m.id)) return false;
+    if (m.id === "alcance_diminuido") { // só faz sentido em efeito que está à distância/percepção: desce um degrau (até corpo-a-corpo)
+      const base = EFEITO_CAT_POR_ID[idCat]?.alcance;
+      return !!ativo && ["distancia", "percepcao"].includes(alcanceDoEfeito(base, mods.map((x) => ({ ...x, valor: x.valor ?? MOD_POR_ID[x.id]?.v }))));
+    }
     return m.mult || m.id === "limitado" || !mods.some((x) => x.id === m.id);
   };
   const excl = new Set([...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
@@ -6816,6 +6832,7 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
                 {info.sustentado && <div><i>Para sustentar</i><b>{info.acaoSustentar}</b></div>}
                 {info.bonusAcerto !== null && <div><i>Bônus de ataque</i><b>{info.bonusAcerto >= 0 ? "+" : ""}{info.bonusAcerto}</b></div>}
                 {info.defesa && <div><i>Alvo defende com</i><b>{info.defesa}</b></div>}
+                {(info.bonusDefesa || []).map((t, i) => <div key={"bd" + i}><i>Bônus</i><b>{t}</b></div>)}
                 {(info.imortal || []).map((t, i) => <div key={"im" + i}><i>Volta à vida após</i><b>{t}</b></div>)}
               </div>
             </div>
