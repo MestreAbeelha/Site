@@ -95,6 +95,7 @@ export const EXTRAS = [
   M("caracteristica_hab", "Característica", "f", 1, { nivel: "habilidade" }),
   M("caracteristica_g", "Característica (+1/g)", "g", 1),
   M("caracteristica_f", "Característica (+1 fixo)", "f", 1),
+  M("pontos_despertar", "Pontos de Despertar", "f", -5, { mult: true }),
   M("efeito_secundario", "Efeito Secundário", "g", 5),
   M("indireto", "Indireto", "g", 3, { tipo: "emissor" }),
   M("multiataque", "Multiataque", "g", 2),
@@ -216,7 +217,7 @@ export function alcanceDoEfeito(alcBase, mods) {
   if (mods.some((m) => m.id === "ataque") && j === 0) j = 1;
   mods.filter((m) => m.id === "distancia_aumentada").forEach((m) => { j += Math.abs(m.valor ?? 1) >= 2 ? 2 : 1; });
   mods.filter((m) => m.id === "alcance_diminuido").forEach((m) => { j -= (m.vezes || 1); });
-  return ESCALA_ALCANCE[Math.max(0, Math.min(3, j))];
+  return ESCALA_ALCANCE[Math.max(i >= 1 ? 1 : 0, Math.min(3, j))]; // Alcance Diminuído nunca baixa de "perto"
 }
 export function duracaoDoEfeito(durBase, mods) {
   if (durBase === "instantaneo" && mods.some((m) => ["duracao_aumentada", "sustentado_afl"].includes(m.id))) return "sustentado";
@@ -373,7 +374,7 @@ export const REGRAS = {
   teleguiado: () => "Teleguiado: o projétil segue o alvo; erro dá nova tentativa no turno seguinte.",
   // falhas gerais
   acao_aumentada: (n) => `Ação Aumentada ${n}: a ação para usar sobe ${n} degrau(s).`,
-  alcance_diminuido: () => "Alcance Diminuído: alcance reduzido um degrau.",
+  alcance_diminuido: (n) => `Alcance Diminuído ${n || 1}: o tipo de alcance cai ${n || 1} degrau(s) (à distância → perto).`,
   alcance_reduzido: (n) => `Alcance Reduzido ${n || 1}: a graduação de distância do efeito escolhido cai ${n || 1} na Tabela de Medidas (alcance e tamanho de área).`,
   aquecimento: () => "Aquecimento: precisa de turnos de preparo antes de ter efeito total.",
   ativacao: () => "Ativação: o 1º clique ativa (ação de movimento); o 2º usa (automático).",
@@ -445,7 +446,7 @@ export const DESC_EFEITO = {
   criar: "Cria objetos de matéria sólida. Volume e resistência do objeto são iguais à graduação (Tabela de Medidas). A habilidade precisa custar pelo menos o seu nível em Nen. Ação padrão, sustentado.",
   cura: "Restaura Vida de outra criatura ao toque. Faça um teste de graduação contra CD 10: cura = graduação × graus de sucesso. Exige custo mínimo de 1 Nen. Ação padrão, instantâneo.",
   dano: "Causa dano. O alvo resiste com Resistência (CD 15 + graduação); cada grau de falha causa dano igual à graduação. Ação padrão, instantâneo, alcance perto. Dano Baseado Em Força/Agilidade custa +0/g e usa o atributo como graduação (dano por falha limitado ao seu nível, exceto com Sobrecarregado).",
-  deflexao: "Você desvia ataques à distância contra você ou contra outro. Ação padrão; fica ativa até o início do seu próximo turno.",
+  deflexao: "Você pode usar Aparar para se defender de ataques à distância (contra você ou contra outro) e recebe um bônus em Aparar igual à graduação. Ação padrão; fica ativa até o início do seu próximo turno.",
   encolhimento: "Você diminui de tamanho: −1 Tamanho, Força e Vigor por graduação, +1 em Esquiva, Aparar e Furtividade. Ação livre, sustentado.",
   enfraquecer: "Reduz uma característica escolhida do alvo ao toque. Resistência Fortitude ou Vontade (CD 10 + graduação). Cada ponto de falha reduz um ponto da característica, até a graduação. O alvo recupera 1 ponto por rodada. Ação padrão, perto.",
   escavacao: "Você se move pela terra e pela rocha. Deslocamento e capacidade pela graduação (Tabela de Medidas). Ação livre, sustentado.",
@@ -489,6 +490,7 @@ export const DESC_MOD = {
   duracao_aumentada: "Um efeito instantâneo passa a ser sustentado. +3/g.",
   caracteristica_hab: "Característica da habilidade: só um campo para anotar o que ela é. Sem efeito mecânico por enquanto. +1 ponto fixo.",
   caracteristica_g: "Característica do efeito: só um campo para anotar. Sem efeito mecânico por enquanto. +1/g.",
+  pontos_despertar: "Falha sem efeito mecânico: cada vez que é adicionada reduz 5 pontos fixos do custo da habilidade (−5 fixo por ponto).",
   caracteristica_f: "Característica do efeito: só um campo para anotar. Sem efeito mecânico por enquanto. +1 ponto fixo.",
   ficha_adicional: "Mais uma ficha de transformação (você tem uma ficha a mais para assumir). +2/g, pode ser comprada várias vezes.",
   equipamento_incorporado: "Cada forma tem o seu próprio inventário: o equipamento dela aparece e some junto com a transformação. +1 ponto fixo.",
@@ -518,7 +520,7 @@ export const DESC_MOD = {
   variavel_municao: "Habilidade com munição: cada uso gasta unidades; fixo −2 por unidade retirada.",
   variavel_nen_vida: "Variável gasta Nen ou Vida: fixo −1 por unidade retirada.",
   acao_aumentada: "A ação para usar sobe um degrau (livre → movimento → padrão); cada passo −1/g.",
-  alcance_diminuido: "O alcance do efeito é reduzido em um passo. −1 fixo, pode repetir.",
+  alcance_diminuido: "O tipo de alcance do efeito cai um degrau: percepção → à distância → perto (corpo-a-corpo). Um ataque à distância vira corpo-a-corpo. −1 fixo, pode repetir.",
   alcance_reduzido: "Falha da habilidade: você escolhe um efeito e a graduação de distância dele cai uma graduação na Tabela de Medidas. Pode ser pega várias vezes. −1 ponto fixo cada.",
   aquecimento: "O efeito começa fraco e só atinge a graduação cheia depois de 3, 5 ou 10 turnos (−3, −5 ou −10/g).",
   ativacao: "Antes de usar, é preciso ativar (ação de movimento); o 1º clique ativa e o 2º usa. −1/g.",
