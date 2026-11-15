@@ -288,7 +288,9 @@ export function calcularHabilidade(ctx, hab) {
     const gradGratis = Math.min(Math.max(0, ef.gradGratis || 0), ef.grad);
     const somaGSemNen = mods.filter((m) => m.k === "g").reduce((s, m) => s + m.valor, 0);
     const custoParteGratis = gradGratis > 0 ? Math.max(0, gradGratis * somaGSemNen) : 0; // extras somam, falhas abatem (mínimo 0)
-    const custo = custoParteGratis + custoEfeito(c, ef.grad - gradGratis);
+    let custo = custoParteGratis + custoEfeito(c, ef.grad - gradGratis);
+    // Dano baseado em atributo com extras/falhas nunca sai de graça: só o dano sozinho custa 0 (mínimo 1 com qualquer modificador).
+    if (gradGratis > 0 && (mods.length > 0 || fixosEf.length > 0)) custo = Math.max(1, custo);
     const sobre = mods.filter((m) => m.id === "sobrecarregado").reduce((s, m) => s + m.vezes, 0);
     const mult = LIMITE_FIXO[ef.id];
     const limite = mult ? mult * nivel : Math.max(nivel, ef.limiteBase || 0) + sobre; // Dano baseado em atributo: a parte do atributo não precisa de Sobrecarregado
@@ -333,7 +335,7 @@ export function calcularHabilidade(ctx, hab) {
   const somaFixos = fixos.reduce((s, f) => s + f.valor, 0);
   const bruto = somaEfeitos + somaFixos;
   // exceção ao mínimo de 1 PP: habilidade só com Dano Baseado Em (sem graduação extra) não custa nada
-  const todosGratis = (hab.efeitos || []).length > 0 && (hab.efeitos || []).every((e) => e.gratis);
+  const todosGratis = (hab.efeitos || []).length > 0 && (hab.efeitos || []).every((e) => e.gratis) && efeitos.every((e) => e.mods.length === 0 && e.fixos.length === 0) && !(hab.fixos || []).some((f) => f.valor); // só o dano sozinho é de graça
   return { total: efeitos.length ? (todosGratis && bruto <= 0 ? 0 : Math.max(1, bruto)) : 0, bruto, somaEfeitos, somaFixos, efeitos, ajustesNen, fixos, avisos, erros };
 }
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
