@@ -852,6 +852,7 @@ const ATRIBUTOS = [
   { k: "forca", l: "Força" }, { k: "agilidade", l: "Agilidade" }, { k: "vigor", l: "Vigor" }, { k: "inteligencia", l: "Inteligência" },
   { k: "presenca", l: "Presença" }, { k: "prontidao", l: "Prontidão" }, { k: "luta", l: "Luta" }, { k: "destreza", l: "Destreza" },
 ];
+const ATRIBUTOS_DANO = ATRIBUTOS.filter((a) => ["forca", "destreza", "presenca", "inteligencia"].includes(a.k));
 const ATRIBUTOS_VAZIOS = ATRIBUTOS.reduce((acc, a) => ({ ...acc, [a.k]: 0 }), {});
 
 const PERICIAS = [
@@ -2148,10 +2149,15 @@ function modsDoPassivo(inst, a) {
   return m;
 }
 /** Calcula o custo de uma habilidade pelo construtor. Retorna o resultado do motor + `porEfeito` (efeitos ativos) e `porPassivo` alinhados com as listas da habilidade. */
-/** Sobrecarregado automático: graduação acima do nível ganha o extra (derivado) com a quantidade necessária */
-function sobrecargaAuto(id, grad, semLimite, ent, mods) {
-  if (semLimite || LIMITE_FIXO[id]) return;
-  const falta = grad - Math.max(1, ent?.nivel || 1);
+/** Sobrecarregado automático (só Dano): a graduação acima de max(nível, atributo do dano) ganha o extra */
+function faltaSobrecargaDano(ef, ent) {
+  if (ef.categoria !== "Dano") return 0;
+  const grad = gradParaCusto(ef, ent);
+  const base = Math.max(Math.max(1, ent?.nivel || 1), ef.baseadoAtivo ? Math.max(0, attr(ent, ef.atributoBase)) : 0);
+  return Math.max(0, grad - base);
+}
+function sobrecargaAuto(ef, ent, mods) {
+  const falta = faltaSobrecargaDano(ef, ent);
   if (falta <= 0) return;
   const manual = mods.filter((m) => m.id === "sobrecarregado").reduce((t, m) => t + (m.vezes || 1), 0);
   if (falta > manual) mods.push({ id: "sobrecarregado", vezes: falta - manual, derivado: true });
@@ -2169,8 +2175,8 @@ function calcularCustoAtaque(a, ent) {
         if (a.extras?.multiataque) mods.push({ id: "multiataque", derivado: true });
       }
       idxAtivo.push(efs.length);
-      sobrecargaAuto(id, gradParaCusto(ef, ent), ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), ent, mods);
-      efs.push({ id, grad: gradParaCusto(ef, ent), base: CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef), gratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), gradGratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0) ? Math.max(0, attr(ent, ef.atributoBase)) : 0, semLimite: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), tipo: ef.nen || undefined, mods });
+      sobrecargaAuto(ef, ent, mods);
+      efs.push({ id, grad: gradParaCusto(ef, ent), limiteBase: ef.categoria === "Dano" && ef.baseadoAtivo ? Math.max(0, attr(ent, ef.atributoBase)) : 0, base: CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef), gratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), gradGratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0) ? Math.max(0, attr(ent, ef.atributoBase)) : 0, semLimite: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), tipo: ef.nen || undefined, mods });
     });
   }
   passivosDe(a).forEach((inst) => {
@@ -2180,7 +2186,6 @@ function calcularCustoAtaque(a, ent) {
     const base = def.custoBasePorAbrangencia ? (def.custoBasePorAbrangencia[inst.campos?.abrangencia] || def.custoBase) : undefined;
     idxPassivo.push(efs.length);
     const modsP = modsDoPassivo(inst, a);
-    sobrecargaAuto(id, Math.max(0, inst.graduacao || 0), false, ent, modsP);
     efs.push({ id, grad: Math.max(0, inst.graduacao || 0), base, tipo: inst.nen || undefined, mods: modsP });
   });
   const r = calcularHabilidade({ nivel: Math.max(1, ent?.nivel || 1), tipoNen: nenEngine(ent?.tipoNen) }, { efeitos: efs, fixos: fixosDoAtaque(a, ent) });
@@ -5860,7 +5865,15 @@ function EfeitoForm({ efeito, onMudar, onCriarArremesso }) {
   return (
     <div className="ed-efeito-bloco">
       {efeito.categoria === "Dano" && (
-        <div className="field-note">O atributo do dano é escolhido no campo "Atributo do dano", abaixo da descrição da habilidade. A graduação do dano é o valor atual do atributo e não custa nada; use as setas ▲ do efeito para somar graduações extras (essas custam).</div>
+        <>
+          <label className="label">Atributo do dano (obrigatório)</label>
+          <SearchableSelect value={efeito.atributoBase || ""} onChange={(e) => onMudar({ ...efeito, atributoBase: e.target.value, baseadoAtivo: true })} style={{ marginBottom: 6 }}>
+            <option value="">Selecione o atributo…</option>
+            {ATRIBUTOS_DANO.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
+          </SearchableSelect>
+          {!efeito.atributoBase && <div className="field-note" style={{ color: "var(--danger, #c0392b)" }}>Escolha um atributo: todo dano é baseado em atributo.</div>}
+          <div className="field-note">A graduação do dano é o valor atual do atributo e não custa nada; use as setas ▲ do efeito para somar graduações extras (essas custam).</div>
+        </>
       )}
       {efeito.categoria === "Aflição" && (
         <>
@@ -7302,7 +7315,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
     const mods = (b.item.mods || []).map((m, idx) => { const c = MOD_POR_ID[m.id]; return c ? { idx, nome: c.nome + ((m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""), neg: (m.valor ?? c.v) < 0 } : null; }).filter(Boolean);
     Object.keys(LEG_EFEITO).filter((id) => LEG_EFEITO[id].ativo(b.item) && (b.ativo || id !== "peculiaridade")).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
     if (!b.ativo && def) [...(def.extras || []).map((e) => ({ e, neg: false })), ...(def.falhas || []).map((e) => ({ e, neg: true }))].forEach(({ e, neg }) => { if (b.item.extrasAtivos?.[e.chave]) mods.push({ idx: -1, fixa: true, id: "x:" + e.chave, nome: nomeX(e), neg }); });
-    if (b.ativo || true) { const tmp = []; const gEf = b.ativo ? gradParaCusto(b.item, ent) : (b.item.graduacao || 0); const semL = b.ativo && b.item.categoria === "Dano" && !!b.item.baseadoAtivo && !((b.item.graduacao || 0) > 0); sobrecargaAuto(b.idCat, gEf, semL, ent, (b.item.mods || []).map((x) => ({ ...x }))); const falta = gEf - Math.max(1, ent?.nivel || 1); const manual = (b.item.mods || []).filter((m) => m.id === "sobrecarregado").reduce((t, m) => t + (m.vezes || 1), 0); if (!semL && !LIMITE_FIXO[b.idCat] && falta > manual) mods.push({ idx: -1, fixa: true, id: "sobrecarregado_auto", nome: `Sobrecarregado ×${falta - manual} (auto)`, neg: false }); }
+    if (b.ativo && b.item.categoria === "Dano") { const falta = faltaSobrecargaDano(b.item, ent); const manual = (b.item.mods || []).filter((m) => m.id === "sobrecarregado").reduce((t, m) => t + (m.vezes || 1), 0); if (falta > manual) mods.push({ idx: -1, fixa: true, id: "sobrecarregado_auto", nome: `Sobrecarregado ×${falta - manual} (auto)`, neg: false }); }
     (b.item.colateraisExtra || []).forEach((_, n) => mods.push({ idx: -1, fixa: true, id: `efeito_colateral#${n + 1}`, nome: "Efeito Colateral", neg: true }));
     Object.keys(LEG_TODOS).filter((id) => LEG_TODOS[id].ativo(ataque) && elegivelTodos(id, b)).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
     return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? (b.item.categoria === "Dano" ? (b.item.atributoBase ? `Dano baseado em ${ATRIBUTOS.find((a) => a.k === b.item.atributoBase)?.l || b.item.atributoBase}` : "Dano (escolha o atributo)") : b.item.categoria) : nomePassivoNo(def, b.item, cat), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTotal: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo ? Math.max(0, attr(ent, b.item.atributoBase)) + (b.item.graduacao || 0) : null, mods, def };
@@ -7625,16 +7638,6 @@ function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir
 
       <label className="label">Descrição / texto da habilidade</label>
       <RichTextEditor value={ataque.textoFormatado || ""} onChange={(html) => upd("textoFormatado", html)} placeholder="Descreva a habilidade…" />
-      {(ataque.efeitos || []).filter((e) => e.categoria === "Dano").map((e, n) => (
-        <div key={e.id} style={{ marginTop: 10 }}>
-          <label className="label">Atributo do dano{(ataque.efeitos || []).filter((x) => x.categoria === "Dano").length > 1 ? ` #${n + 1}` : ""} (obrigatório)</label>
-          <SearchableSelect value={e.atributoBase || ""} onChange={(ev) => upd("efeitos", ataque.efeitos.map((x) => x.id === e.id ? { ...x, atributoBase: ev.target.value, baseadoAtivo: true } : x))} style={{ marginBottom: 4 }}>
-            <option value="">Selecione o atributo…</option>
-            {ATRIBUTOS.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
-          </SearchableSelect>
-          {!e.atributoBase && <div className="field-note" style={{ color: "var(--danger, #c0392b)" }}>Escolha um atributo: todo dano é baseado em atributo.</div>}
-        </div>
-      ))}
       </>
       )}
     </div>
