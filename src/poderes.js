@@ -291,7 +291,7 @@ export function calcularHabilidade(ctx, hab) {
     const custo = custoParteGratis + custoEfeito(c, ef.grad - gradGratis);
     const sobre = mods.filter((m) => m.id === "sobrecarregado").reduce((s, m) => s + m.vezes, 0);
     const mult = LIMITE_FIXO[ef.id];
-    const limite = mult ? mult * nivel : nivel + sobre;
+    const limite = mult ? mult * nivel : Math.max(nivel, ef.limiteBase || 0) + sobre; // Dano baseado em atributo: a parte do atributo não precisa de Sobrecarregado
     if (!ef.semLimite && ef.grad > limite) erros.push(mult ? `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (${mult === 1 ? "nível" : "dobro do nível"}; Sobrecarregado não passa deste limite).` : `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (nível ${nivel}${sobre ? ` + ${sobre} Sobrecarregado` : ""}).`);
     let dica = null;
     if (c <= 0 && !gradGratis) {
