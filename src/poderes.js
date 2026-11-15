@@ -50,7 +50,7 @@ export const EFEITOS = [
   E("imunidade", "Imunidade", 3, "livre", "pessoal", "sustentado", "transmutador"),
   E("invocar", "Invocar", 3, "padrao", "perto", "sustentado", "conjurador"),
   E("leitura_mental", "Leitura Mental", 2, "padrao", "percepcao", "sustentado", "manipulador", { implementado: true }),
-  E("metamorfose", "Metamorfose", 5, "livre", "pessoal", "continuo", "modelador"),
+  E("metamorfose", "Metamorfose", 5, "livre", "pessoal", "sustentado", "modelador"),
   E("membros_extras", "Membros Extras", 4, "nenhuma", "pessoal", "sustentado", "modelador"),
   E("mover_objetos", "Mover Objetos", 3, "padrao", "perto", "sustentado", "manipulador", { implementado: true }),
   E("movimento", "Movimento", 3, "livre", "pessoal", "sustentado", "coringa"),
@@ -95,7 +95,6 @@ export const EXTRAS = [
   M("caracteristica_hab", "Característica", "f", 1, { nivel: "habilidade" }),
   M("caracteristica_g", "Característica (+1/g)", "g", 1),
   M("caracteristica_f", "Característica (+1 fixo)", "f", 1),
-  M("pontos_despertar", "Pontos de Despertar", "f", -5, { mult: true }),
   M("efeito_secundario", "Efeito Secundário", "g", 5),
   M("indireto", "Indireto", "g", 3, { tipo: "emissor" }),
   M("multiataque", "Multiataque", "g", 2),
@@ -154,7 +153,7 @@ export const EXCLUSIVOS = {
   imunidade: [M("metade_efeito", "Metade do Efeito", "g", -2)],
   metamorfose: [M("ficha_adicional", "Ficha Adicional", "g", 2, { mult: true }), M("equipamento_incorporado", "Equipamento Incorporado", "f", 1), M("imitacao", "Imitação", "g", 5, { tipo: "especialista" }), M("vida_independente", "Vida Independente", "g", 10),
     M("aleatoria", "Aleatória", "g", -1), M("reversao_forcada", "Reversão Forçada", "g", -3), M("forma_instavel", "Forma Instável", "g", -2), M("instinto_forma", "Instinto da Forma", "g", -1), M("itens_perdidos", "Itens Perdidos", "f", -1)],
-  invocar: [M("ritual", "Ritual", "g", 8), M("alcance_invocar", "Alcance", "f", 1, { mult: true }), M("ativo", "Ativo", "g", 1), M("horda", "Horda", "g", 2, { mult: true }), M("invocar_objeto", "Invocar Objeto", "g", 1), M("invocar_veiculo", "Invocar Veículo", "g", 1),
+  invocar: [M("alcance_invocar", "Alcance", "f", 1, { mult: true }), M("ativo", "Ativo", "g", 1), M("horda", "Horda", "g", 2, { mult: true }), M("invocar_objeto", "Invocar Objeto", "g", 1), M("invocar_veiculo", "Invocar Veículo", "g", 1),
     M("persistente_inv", "Persistente", "g", 2, { opcoes: [2, 4] }), M("atitude", "Atitude", "g", -2, { opcoes: [-2, -5], exige: "ativo" })],
   leitura_mental: [M("cumulativo_lm", "Cumulativo", "g", 2), M("ligacao_sensorial", "Ligação Sensorial", "g", 1)],
   mover_objetos: [M("camuflagem_mo", "Camuflagem", "g", 1), M("dano_mo", "Dano", "g", 2), M("dividido_mo", "Dividido", "g", 1), M("impulso", "Impulso", "g", 2), M("preciso_mo", "Preciso", "f", 2),
@@ -255,7 +254,7 @@ function resolverMod(it) {
  * Retorna { total, bruto, efeitos:[...], ajustesNen:[...], fixos:[...], avisos:[], erros:[] }
  */
 // Efeitos com limite de graduação fixo (múltiplo do nível); Sobrecarregado não ultrapassa
-const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, invocar: 1, membros_extras: 1, variavel: 1, encolhimento: 1, metamorfose: 1, velocidade: 2, voo: 2 };
+export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, invocar: 1, membros_extras: 1, variavel: 1, encolhimento: 1, metamorfose: 1, velocidade: 2, voo: 2 };
 export function calcularHabilidade(ctx, hab) {
   const { nivel = 1, tipoNen = null } = ctx;
   const erros = [], avisos = [];
@@ -292,8 +291,7 @@ export function calcularHabilidade(ctx, hab) {
     const custo = custoParteGratis + custoEfeito(c, ef.grad - gradGratis);
     const sobre = mods.filter((m) => m.id === "sobrecarregado").reduce((s, m) => s + m.vezes, 0);
     const mult = LIMITE_FIXO[ef.id];
-    const ritual = ef.id === "invocar" && mods.some((m) => m.id === "ritual");
-    const limite = ritual ? Infinity : mult ? mult * nivel : nivel + sobre;
+    const limite = mult ? mult * nivel : nivel + sobre;
     if (!ef.semLimite && ef.grad > limite) erros.push(mult ? `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (${mult === 1 ? "nível" : "dobro do nível"}; Sobrecarregado não passa deste limite).` : `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (nível ${nivel}${sobre ? ` + ${sobre} Sobrecarregado` : ""}).`);
     let dica = null;
     if (c <= 0 && !gradGratis) {
@@ -453,7 +451,7 @@ export const DESC_EFEITO = {
   ilusao: "Cria ilusões que afetam tipos de sentido (1 a 5; cada tipo custa 1 PP por graduação). CD de Intuição 10 + graduação para perceber que é falsa. Ilusões não têm substância física. Sustentado.",
   imortalidade: "Se você morrer, volta à vida depois de um tempo: o tempo da Tabela de Medidas em (19 − graduação). Permanente.",
   imunidade: "Você ganha imunidade a um tipo de efeito, conforme a graduação: 1 (veneno, condição ambiental), 2 (doenças, aflição de grau 1), 5 (fadiga, aflição de grau 2, agarrado, um tipo de dano), 10 (descritor comum), 20 (todos os testes de Fortitude/Vontade ou aflição de grau 3). Passa automaticamente nos testes contra o que for imune.",
-  metamorfose: "Você assume outra ficha: com 1 graduação a ficha tem 25 pontos, e cada graduação adicional soma +15. Ação livre, contínuo (dura sem precisar de ação para manter a cada turno). A graduação é limitada pelo nível.",
+  metamorfose: "Você assume outra ficha: com 1 graduação a ficha tem 25 pontos, e cada graduação adicional soma +15. Ação livre, sustentado. A graduação é limitada pelo nível.",
   invocar: "Invoca uma criatura (nível = graduação, 15 pontos por graduação) que age na sua iniciativa. A invocação usa o Nen do invocador. Ação padrão, sustentado, perto.",
   leitura_mental: "Lê a mente do alvo em até 4 graus (pensamentos de superfície, emoções, memórias, subconsciente). Vontade (CD 10 + graduação). Ação padrão, sustentado.",
   membros_extras: "Você tem braços/pernas extras: +1 membro por graduação para segurar, atacar ou se mover. Sustentado.",
@@ -490,7 +488,6 @@ export const DESC_MOD = {
   duracao_aumentada: "Um efeito instantâneo passa a ser sustentado. +3/g.",
   caracteristica_hab: "Característica da habilidade: só um campo para anotar o que ela é. Sem efeito mecânico por enquanto. +1 ponto fixo.",
   caracteristica_g: "Característica do efeito: só um campo para anotar. Sem efeito mecânico por enquanto. +1/g.",
-  pontos_despertar: "Falha sem efeito mecânico: cada vez que é adicionada reduz 5 pontos fixos do custo da habilidade (−5 fixo por ponto).",
   caracteristica_f: "Característica do efeito: só um campo para anotar. Sem efeito mecânico por enquanto. +1 ponto fixo.",
   ficha_adicional: "Mais uma ficha de transformação (você tem uma ficha a mais para assumir). +2/g, pode ser comprada várias vezes.",
   equipamento_incorporado: "Cada forma tem o seu próprio inventário: o equipamento dela aparece e some junto com a transformação. +1 ponto fixo.",
@@ -501,7 +498,6 @@ export const DESC_MOD = {
   forma_instavel: "Depois de se transformar, você precisa permanecer pelo menos 3 rodadas na forma antes de trocar. −2/g.",
   instinto_forma: "A mente da forma domina: o mestre pode impor comportamentos e instintos dela. −1/g.",
   itens_perdidos: "O equipamento que você carrega cai ou se destrói ao se transformar. −1 ponto fixo. (Sem Itens Perdidos nem Equipamento Incorporado, os itens ficam na ficha base, como se tivessem se transformado junto.)",
-  ritual: "Quebra o limite de graduações do Invocar: pode ser sobrecarregado infinitamente. +8 pontos por graduação.",
   efeito_alternativo: "A habilidade pode trocar este efeito por outro de custo igual ou menor (um por vez). +1 ponto fixo.",
   efeito_secundario: "O efeito se repete automaticamente no turno seguinte do alvo, sem nova rolagem de acerto. +5/g.",
   indireto: "O efeito pode partir de um ponto diferente de você, em outra direção. +3/g; conta como Emissor.",
