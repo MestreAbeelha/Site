@@ -2149,18 +2149,17 @@ function modsDoPassivo(inst, a) {
   return m;
 }
 /** Calcula o custo de uma habilidade pelo construtor. Retorna o resultado do motor + `porEfeito` (efeitos ativos) e `porPassivo` alinhados com as listas da habilidade. */
-/** Sobrecarregado automático (só Dano): a graduação acima de max(nível, atributo do dano) ganha o extra */
-function faltaSobrecargaDano(ef, ent) {
-  if (ef.categoria !== "Dano") return 0;
-  const grad = gradParaCusto(ef, ent);
-  const base = Math.max(Math.max(1, ent?.nivel || 1), ef.baseadoAtivo ? Math.max(0, attr(ent, ef.atributoBase)) : 0);
-  return Math.max(0, grad - base);
+/** Sobrecarregado automático (todos os efeitos): a graduação acima de max(nível, atributo do dano) vira o extra, na quantidade exata.
+    Efeitos de limite fixo (Voo, Velocidade etc.) não passam do próprio limite. */
+function faltaSobrecarga(idCat, grad, ef, ent) {
+  if (LIMITE_FIXO[idCat]) return 0;
+  const danoAttr = ef?.categoria === "Dano" && ef.baseadoAtivo ? Math.max(0, attr(ent, ef.atributoBase)) : 0;
+  return Math.max(0, grad - Math.max(Math.max(1, ent?.nivel || 1), danoAttr));
 }
-function sobrecargaAuto(ef, ent, mods) {
-  const falta = faltaSobrecargaDano(ef, ent);
-  if (falta <= 0) return;
-  const manual = mods.filter((m) => m.id === "sobrecarregado").reduce((t, m) => t + (m.vezes || 1), 0);
-  if (falta > manual) mods.push({ id: "sobrecarregado", vezes: falta - manual, derivado: true });
+function sobrecargaAuto(idCat, grad, ef, ent, mods) {
+  for (let k = mods.length - 1; k >= 0; k--) if (mods[k].id === "sobrecarregado") mods.splice(k, 1); // o manual (antigo) é substituído pelo automático
+  const falta = faltaSobrecarga(idCat, grad, ef, ent);
+  if (falta > 0) mods.push({ id: "sobrecarregado", vezes: falta, derivado: true });
 }
 function calcularCustoAtaque(a, ent) {
   const efs = [];
@@ -2175,7 +2174,7 @@ function calcularCustoAtaque(a, ent) {
         if (a.extras?.multiataque) mods.push({ id: "multiataque", derivado: true });
       }
       idxAtivo.push(efs.length);
-      sobrecargaAuto(ef, ent, mods);
+      sobrecargaAuto(id, gradParaCusto(ef, ent), ef, ent, mods);
       efs.push({ id, grad: gradParaCusto(ef, ent), limiteBase: ef.categoria === "Dano" && ef.baseadoAtivo ? Math.max(0, attr(ent, ef.atributoBase)) : 0, base: CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef), gratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), gradGratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0) ? Math.max(0, attr(ent, ef.atributoBase)) : 0, semLimite: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), tipo: ef.nen || undefined, mods });
     });
   }
@@ -2186,6 +2185,7 @@ function calcularCustoAtaque(a, ent) {
     const base = def.custoBasePorAbrangencia ? (def.custoBasePorAbrangencia[inst.campos?.abrangencia] || def.custoBase) : undefined;
     idxPassivo.push(efs.length);
     const modsP = modsDoPassivo(inst, a);
+    sobrecargaAuto(id, Math.max(0, inst.graduacao || 0), null, ent, modsP);
     efs.push({ id, grad: Math.max(0, inst.graduacao || 0), base, tipo: inst.nen || undefined, mods: modsP });
   });
   const r = calcularHabilidade({ nivel: Math.max(1, ent?.nivel || 1), tipoNen: nenEngine(ent?.tipoNen) }, { efeitos: efs, fixos: fixosDoAtaque(a, ent) });
@@ -2601,16 +2601,16 @@ const AFLICOES_G3 = CONDICOES_POR_GRAU[3].filter((n) => CONDICOES_LISTA.some((c)
 
 function efeitoPadrao(categoria) {
   if (categoria === "Dano") return { categoria, graduacao: 0, baseadoAtivo: true, atributoBase: "" };
-  if (categoria === "Cura") return { categoria, graduacao: 5 };
-  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 5, condicaoExtra: false, resistenciaAlternativa: false, cumulativo: false, recuperacaoInstantanea: false, graus: 3, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
-  if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 5, caracteristica: "" };
-  if (categoria === "Camuflagem") return { categoria, salvamento: "Fortitude", graduacao: 5, sentidos: [] };
-  if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 5, salvamento: "Vontade" };
-  if (categoria === "Leitura Mental") return { categoria, graduacao: 5 };
+  if (categoria === "Cura") return { categoria, graduacao: 1 };
+  if (categoria === "Aflição") return { categoria, salvamento: "Fortitude", graduacao: 1, condicaoExtra: false, resistenciaAlternativa: false, cumulativo: false, recuperacaoInstantanea: false, graus: 3, grau1: "", grau1b: "", grau2: "", grau2b: "", grau3: "", grau3b: "" };
+  if (categoria === "Enfraquecer") return { categoria, salvamento: "Fortitude", graduacao: 1, caracteristica: "" };
+  if (categoria === "Camuflagem") return { categoria, salvamento: "Fortitude", graduacao: 1, sentidos: [] };
+  if (categoria === "Nulificar") return { categoria, graduacaoNulificar: 1, salvamento: "Vontade" };
+  if (categoria === "Leitura Mental") return { categoria, graduacao: 1 };
   if (categoria === "Outros") return { categoria, texto: "" };
   if (categoria === "Mover Objetos") return { categoria, graduacao: 0, concentracao: false, objetos: [] };
   if (categoria === "Metamorfose") return { categoria, graduacao: 1, campos: { formas: [] } };
-  if (UTIL_CATS.includes(categoria)) return { categoria, graduacao: 5, campos: {} };
+  if (UTIL_CATS.includes(categoria)) return { categoria, graduacao: 1, campos: {} };
   return { categoria };
 }
 function dadosEfeito(efeito, oponente, critico, brutal = 0) {
@@ -6515,6 +6515,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
   const livre = (m) => {
     if (LEG_TODOS[m.id]) return !!ataque && !LEG_TODOS[m.id].ativo(ataque) && elegivelTodos(m.id, bloco) && !(m.id === "dividido" && ataque.extras?.multiataque) && !(m.id === "multiataque" && ataque.extras?.dividido);
     if (LEG_HAB[m.id]) return false;
+    if (m.id === "sobrecarregado") return false; // automático
     if (ocultar && ocultar.has(m.id)) return false;
     if (LEG_EFEITO[m.id]) return (m.id === "efeito_colateral" || !LEG_EFEITO[m.id].ativo(item)) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria)));
     if (MODS_LEGADO.has(m.id)) return false;
@@ -7312,10 +7313,10 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
   ].map((b) => {
     const cat = EFEITO_CAT_POR_ID[b.idCat];
     const def = b.ativo ? null : PODERES_PASSIVOS.find((p) => p.id === b.item.tipoId);
-    const mods = (b.item.mods || []).map((m, idx) => { const c = MOD_POR_ID[m.id]; return c ? { idx, nome: c.nome + ((m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""), neg: (m.valor ?? c.v) < 0 } : null; }).filter(Boolean);
+    const mods = (b.item.mods || []).map((m, idx) => { const c = MOD_POR_ID[m.id]; return c && m.id !== "sobrecarregado" ? { idx, nome: c.nome + ((m.vezes || 1) > 1 ? ` ×${m.vezes}` : ""), neg: (m.valor ?? c.v) < 0 } : null; }).filter(Boolean);
     Object.keys(LEG_EFEITO).filter((id) => LEG_EFEITO[id].ativo(b.item) && (b.ativo || id !== "peculiaridade")).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
     if (!b.ativo && def) [...(def.extras || []).map((e) => ({ e, neg: false })), ...(def.falhas || []).map((e) => ({ e, neg: true }))].forEach(({ e, neg }) => { if (b.item.extrasAtivos?.[e.chave]) mods.push({ idx: -1, fixa: true, id: "x:" + e.chave, nome: nomeX(e), neg }); });
-    if (b.ativo && b.item.categoria === "Dano") { const falta = faltaSobrecargaDano(b.item, ent); const manual = (b.item.mods || []).filter((m) => m.id === "sobrecarregado").reduce((t, m) => t + (m.vezes || 1), 0); if (falta > manual) mods.push({ idx: -1, fixa: true, id: "sobrecarregado_auto", nome: `Sobrecarregado ×${falta - manual} (auto)`, neg: false }); }
+    { const gEf = b.ativo ? gradParaCusto(b.item, ent) : Math.max(0, b.item.graduacao || 0); const falta = faltaSobrecarga(b.idCat, gEf, b.ativo ? b.item : null, ent); if (falta > 0) mods.push({ idx: -1, fixa: true, id: "sobrecarregado_auto", nome: `Sobrecarregado ×${falta}`, neg: false }); }
     (b.item.colateraisExtra || []).forEach((_, n) => mods.push({ idx: -1, fixa: true, id: `efeito_colateral#${n + 1}`, nome: "Efeito Colateral", neg: true }));
     Object.keys(LEG_TODOS).filter((id) => LEG_TODOS[id].ativo(ataque) && elegivelTodos(id, b)).forEach((id) => { const c = MOD_POR_ID[id]; mods.push({ idx: -1, fixa: true, id, nome: c?.nome || id, neg: (c?.v ?? 0) < 0 }); });
     return { ...b, tipo: b.item.nen || cat?.tipo || "coringa", nome: b.ativo ? (b.item.categoria === "Dano" ? (b.item.atributoBase ? `Dano baseado em ${ATRIBUTOS.find((a) => a.k === b.item.atributoBase)?.l || b.item.atributoBase}` : "Dano (escolha o atributo)") : b.item.categoria) : nomePassivoNo(def, b.item, cat), grad: b.item[chaveGrad(b.ativo, b.item)] || 0, gradTotal: b.ativo && b.item.categoria === "Dano" && b.item.baseadoAtivo ? Math.max(0, attr(ent, b.item.atributoBase)) + (b.item.graduacao || 0) : null, mods, def };
