@@ -105,7 +105,7 @@ export const EXTRAS = [
   M("resistencia_alternativa", "Resistência Alternativa", "g", 1),
   M("ricochete", "Ricochete", "f", 1),
   M("seletivo", "Seletivo", "g", 1, { tipo: "emissor" }),
-  M("sobrecarregado", "Sobrecarregado", "g", 1, { mult: true, tipo: "fortificador" }),
+  M("sobrecarregado", "Sobrecarregado", "g", 2, { mult: true, tipo: "fortificador" }),
   M("sutil", "Sutil", "g", 1, { opcoes: [1, 2, 3, 4, 5], tipo: "transmutador" }),
   M("teleguiado", "Teleguiado", "g", 1, { tipo: "emissor" }),
   M("variavel_carga", "Variável (Carga)", "f", 1),
@@ -277,8 +277,10 @@ export function calcularHabilidade(ctx, hab) {
     if (tipoNen === "especialista") ajG.push({ nome: "Especialista", g: -1 });
     else tiposEf.forEach((t) => {
       const r = relacaoNen(tipoNen, t);
-      if (r === "propria") ajG.push({ nome: cap(t), g: -1, rel: "do seu tipo" });
-      if (r === "oposta") ajG.push({ nome: cap(t), g: +1, rel: "oposto ao seu tipo" });
+      if (r === "propria") ajG.push({ nome: cap(t), g: -2, rel: "do seu tipo" });
+      if (r === "vizinha") ajG.push({ nome: cap(t), g: -1, rel: "vizinho do seu tipo" });
+      if (r === "oposta") ajG.push({ nome: cap(t), g: +2, rel: "oposto ao seu tipo" });
+      if (r === "paralela") ajG.push({ nome: cap(t), g: +1, rel: "paralelo ao seu tipo" });
     });
     const somaG = mods.filter((m) => m.k === "g").reduce((s, m) => s + m.valor, 0) + ajG.reduce((s, a) => s + a.g, 0);
     const fixosEf = mods.filter((m) => m.k === "f");
@@ -307,15 +309,7 @@ export function calcularHabilidade(ctx, hab) {
   });
 
   // ajustes fixos de Nen (uma vez por habilidade)
-  const ajustesNen = [];
-  if (tipoNen && tipoNen !== "especialista") {
-    const meio = Math.max(1, Math.floor(nivel / 2));
-    tiposHab.forEach((t) => {
-      const r = relacaoNen(tipoNen, t);
-      if (r === "vizinha") ajustesNen.push({ nome: `${cap(t)} (vizinho)`, f: -meio });
-      if (r === "paralela") ajustesNen.push({ nome: `${cap(t)} (paralelo)`, f: +meio });
-    });
-  }
+  const ajustesNen = []; // (os ajustes de tipo de Nen agora são por graduação, dentro de cada efeito)
   const fixos = [
     ...efeitos.flatMap((e) => e.fixos.map((m) => ({ nome: `${m.nome}${m.vezes > 1 ? " ×" + m.vezes : ""} (${e.nome})`, valor: m.valor }))),
     ...(hab.fixos || []).map((f) => ({ nome: f.nome, valor: f.valor })),
@@ -454,7 +448,7 @@ export const DESC_EFEITO = {
   imortalidade: "Se você morrer, volta à vida depois de um tempo: o tempo da Tabela de Medidas em (19 − graduação). Permanente.",
   imunidade: "Você ganha imunidade a um tipo de efeito, conforme a graduação: 1 (veneno, condição ambiental), 2 (doenças, aflição de grau 1), 5 (fadiga, aflição de grau 2, agarrado, um tipo de dano), 10 (descritor comum), 20 (todos os testes de Fortitude/Vontade ou aflição de grau 3). Passa automaticamente nos testes contra o que for imune.",
   metamorfose: "Você assume outra ficha: com 1 graduação a ficha tem 25 pontos, e cada graduação adicional soma +15. Ação livre, sustentado. A graduação é limitada pelo nível.",
-  invocar: "Invoca uma criatura (nível = graduação, 15 pontos por graduação) que age na sua iniciativa. A invocação usa o Nen do invocador. Ação padrão, sustentado, perto.",
+  invocar: "Invoca uma criatura (nível = graduação, 10 pontos por graduação) que age na sua iniciativa. A invocação usa o Nen do invocador. Ação padrão, sustentado, perto.",
   leitura_mental: "Lê a mente do alvo em até 4 graus (pensamentos de superfície, emoções, memórias, subconsciente). Vontade (CD 10 + graduação). Ação padrão, sustentado.",
   membros_extras: "Você tem braços/pernas extras: +1 membro por graduação para segurar, atacar ou se mover. Sustentado.",
   mover_objetos: "Move objetos à distância com Força efetiva igual à graduação, dentro da sua percepção. Concentrando-se (ação de movimento) soma +1. Não serve para manipulação fina. Ação padrão, sustentado.",
@@ -511,7 +505,7 @@ export const DESC_MOD = {
   resistencia_alternativa: "O alvo pode resistir com outro salvamento (Aparar, Esquiva, Luta). +1/g.",
   ricochete: "O ataque pode quicar em superfícies para atingir alvos atrás de cobertura. +1 fixo.",
   seletivo: "Você escolhe quem é afetado por um efeito de área. +1/g; conta como Emissor.",
-  sobrecarregado: "A graduação do efeito pode passar do limite de nível em 1 ponto por vez (aplica ao dano). +1/g, várias vezes; conta como Fortificador.",
+  sobrecarregado: "A graduação do efeito pode passar do limite de nível em 1 ponto por vez (aplica ao dano). +2/g por ponto acima do limite (automático); conta como Fortificador.",
   sutil: "O efeito é difícil de perceber: cada ponto esconde de um sentido. +1/g por sentido (até 5); conta como Transmutador.",
   teleguiado: "O projétil persegue o alvo; se errar, ataca de novo no turno seguinte sem custo. +1/g; conta como Emissor.",
   variavel_carga: "Habilidade com carga: ao usar, a variável sobe; custo fixo por unidade adicionada.",
