@@ -937,9 +937,9 @@ const VANTAGENS = [
   { nome: "Avaliação", desc: "Escolha um alvo que possa perceber e faça um teste de Intuição como uma ação livre, oposto pelo teste de Enganação do alvo. Se você vencer, peça ao mestre o atributo que deseja descobrir com exatidão ou o tipo de Nen do alvo. A cada grau de sucesso adicional, você descobre um atributo a mais do alvo ou o tipo de Nen caso não tenha sido escolhido anteriormente. Se perder o teste oposto, você não descobre nada.", graduacaoMax: 1 },
   { nome: "Bem Informado", desc: "Quando encontrar um indivíduo ou organização pela primeira vez, você pode fazer um teste das perícias Investigação ou Persuasão para ver se seu personagem já ouviu alguma coisa sobre o alvo. Use as diretrizes para obter informações na descrição da perícia Investigação para determinar o nível de informação que você obtém. Você recebe apenas um teste por alvo na primeira vez que o encontrar." },
   { nome: "Benefício", desc: "Você possui um benefício, escolha entre uma das 6 opções. Graduações adicionais nessa vantagem permite você escolher o benefício adicional.\nAmbidestria: você é igualmente apto com as duas mãos, e não sofre penalidades de circunstância por usar sua mão inepta." },
-  { nome: "Crítico Aprimorado", desc: "Escolha uma habilidade sua que faça jogada de ataque, ou uma perícia (ao editar esta vantagem). Cada graduação aumenta a ameaça de crítico em 1, até um máximo de ameaça 16-20 com 4 graduações. Em habilidade, a rolagem de ataque passa a considerar crítico. Em perícia, todo teste com ela que atingir a ameaça soma +5 no resultado (não é sucesso automático).", graduacaoMax: 4, pedeHabilidade: true },
+  { nome: "Crítico Aprimorado", desc: "Escolha uma habilidade sua que faça jogada de ataque, ou uma perícia (ao editar esta vantagem). O crítico é uma dobrada de 6-6 a 10-10; cada graduação inclui mais uma dobrada baixa: 1 graduação = 5-5, 2 = 4-4, 3 = 3-3, 4 = 2-2 também são críticos (e deixam de ser falha crítica). Em habilidade, a rolagem de ataque passa a considerar crítico. Em perícia, todo teste com ela cujos dados forem uma dobrada dentro do crítico soma +5 no resultado (não é sucesso automático).", graduacaoMax: 4, pedeHabilidade: true },
   { nome: "De Pé", desc: "Você passa de caído para de pé sem custo de ação sem a necessidade de um teste da perícia Acrobacia.", graduacaoMax: 1 },
-  { nome: "Defesa Aprimorada", desc: "Quando usa a ação defender-se e rolar um teste de resistência e tirar um resultado abaixo de 10 no d20, o resultado se torna a 10.", graduacaoMax: 1 },
+  { nome: "Defesa Aprimorada", desc: "Quando usa a ação defender-se e rolar um teste de resistência e tirar um resultado abaixo de 10 nos dados (2d10), o resultado se torna a 10.", graduacaoMax: 1 },
   { nome: "Derrubar Aprimorado", desc: "Quando acerta um ataque desarmado, você pode fazer um teste de derrubar imediatamente contra o alvo como uma ação livre. Seu ataque desarmado causa dano normal e conta como o teste de ataque inicial exigido para derrubar seu oponente.", graduacaoMax: 1 },
   { nome: "Desarmar Aprimorado", desc: "Você não sofre penalidades em seu teste de ataque para desarmar um oponente e ao segurar a arma, pode dar um ataque com ela como uma ação livre no oponente desarmado.", graduacaoMax: 1 },
   { nome: "Destemido", desc: "Você é imune a todos os efeitos de medo. Na prática, isto é o efeito Imunidade a Medo.", graduacaoMax: 1 },
@@ -956,7 +956,7 @@ const VANTAGENS = [
   { nome: "Inimigo Favorito", desc: "Você tem um tipo especial de oponente que estudou ou contra o qual é especialmente eficaz. Pode ser um tipo de criatura, uma profissão ou qualquer outra categoria que o mestre aprove. Categorias especialmente amplas como humanos ou vilões não são permitidas. Você ganha um bônus de circunstância de +2 em testes de ataque, Enganação, Intimidação, Intuição e Percepção ao lidar com seu Inimigo Favorito. Você só pode ter 1 inimigo favorito, mas sempre que aumentar o seu nível, você pode mudá-lo.", graduacaoMax: 1, mecanica: { modo: "condicional", bonus: 2, alvos: ["ataque", "Enganação", "Intimidação", "Intuição", "Percepção"], pedeTexto: true } },
   { nome: "Interpor-se", desc: "Quando um aliado dentro do alcance de sua velocidade normal for acertado por um ataque, você pode escolher se colocar entre o atacante e seu aliado como uma reação, tornando-se o alvo do ataque no lugar dele. O ataque acerta você em vez de seu aliado, e você sofre os efeitos normalmente. Você não pode usar esta vantagem contra efeitos de área ou contra ataques de percepção à distância, apenas contra aqueles que exigem um teste de ataque.", graduacaoMax: 1 },
   { nome: "Luta no Chão", desc: "Você não sofre penalidade de circunstância em testes de ataque por estar caído, e oponentes adjacentes não ganham o bônus de circunstância de costume para ataques corpo-a-corpo contra você.", graduacaoMax: 1 },
-  { nome: "Mira Aprimorada", desc: "Com uma ação livre, você pode ganhar +5 na sua próxima jogada de ataque.", graduacaoMax: 1 },
+  { nome: "Mira Aprimorada", desc: "Com uma ação livre, você pode ganhar +2 na sua próxima jogada de ataque.", graduacaoMax: 1 },
   { nome: "Parceiro", desc: "Você tem outro personagem que atua como seu parceiro e ajudante. Crie o parceiro como um personagem independente com (graduações na vantagem x 5) pontos de poder, limitado pelo nível de poder da série. O total de pontos de poder de um parceiro deve ser menor que o seu. Seu parceiro é um personagem do mestre, mas é automaticamente prestativo e leal a você. Caso seu parceiro morra, você recupera os pontos de poder investidos na vantagem no próximo nível." },
   { nome: "Prender Arma", desc: "Quando usa a ação defender-se e você se defende com sucesso de um ataque corpo-a-corpo com arma, você pode tentar desarmar seu oponente de imediato, como uma reação. A tentativa de desarme é feita normalmente, incluindo a oportunidade que o atacante ganha para desarmar você.", graduacaoMax: 1 },
   { nome: "Quebrar Aprimorado", desc: "Você não sofre penalidades em testes de ataque para acertar um objeto segurado por outro personagem.", graduacaoMax: 1 },
@@ -998,7 +998,7 @@ const ACOES_PADRAO = [
   { id: "levantamento", nome: "Levantamento", tag: "Ação Padrão", resolvedor: "levantamento",
     desc: "Levanta ou arremessa objetos. Objetos até a graduação da sua Força são fáceis; acima disso, teste de Atletismo CD 10 + graduações de massa extra." },
   { id: "mirar", nome: "Mirar", tag: "Ação Padrão", resolvedor: "buffMira",
-    desc: "Fica indefeso e imóvel, mas seu próximo teste de ataque recebe +10. Sofrer dano pode cancelar a mira (teste de Prestidigitação CD 15 ou o dano sofrido, o que for maior)." },
+    desc: "Fica indefeso e imóvel, mas seu próximo teste de ataque recebe +5. Sofrer dano pode cancelar a mira (teste de Prestidigitação CD 15 ou o dano sofrido, o que for maior)." },
   { id: "mover", nome: "Mover-se", tag: "Ação de Movimento", resolvedor: "simples", pericia: "Atletismo", cdPadrao: 15,
     desc: "Move-se por uma graduação de distância igual à sua Agilidade. Teste de Atletismo CD 15 opcional: cada grau de sucesso aumenta sua velocidade em +1 por uma rodada." },
   { id: "tratarferido", nome: "Tratar Ferido", tag: "Ação Padrão", resolvedor: "tratarFerido", pericia: "Tratamento",
@@ -1069,7 +1069,7 @@ const RESUMO_ACOES = {
   fugir: { teste: "Furtividade contra a Percepção dos oponentes escolhidos.", efeito: "Quem passar em todos fica furtivo, usando o deslocamento para cobertura." },
   levantarse: { teste: "Acrobacia CD 20.", efeito: "Levanta-se do chão; se falhar, perde a ação de movimento e continua caído." },
   levantamento: { teste: "Atletismo CD 10 + graduações de massa extra.", efeito: "Levanta ou arremessa objetos; até a graduação de Força é automático." },
-  mirar: { teste: "Sem teste.", efeito: "Fica indefeso e imóvel; o próximo ataque recebe +10." },
+  mirar: { teste: "Sem teste.", efeito: "Fica indefeso e imóvel; o próximo ataque recebe +5." },
   mover: { teste: "Atletismo CD 15 (opcional).", efeito: "Move-se pela graduação da Agilidade; cada grau dá +1 de velocidade por uma rodada." },
   quebrar: { teste: "Ataque contra a defesa do personagem (−2 se o item estiver sendo segurado).", efeito: "Danifica o item vestido ou segurado." },
   agarrao: { teste: "Sem teste.", efeito: "Mantém o agarrão ativo sobre o alvo." },
@@ -1173,17 +1173,18 @@ const CONDICOES_LISTA = [
   { nome: "Compelido", desc: "Luta pelo controle da mente; ação de movimento controlada por outro." },
   { nome: "Controlado", desc: "Não tem vontade própria; ações ditadas por quem controla." },
   { nome: "Debilitado", desc: "-5 em todos os testes.", efeito: { testesGerais: -5 } },
-  { nome: "Em Chamas", desc: "Perde vida por turno (2 se natural, Nível de vida se Nen). Pode encerrar com ação padrão." },
+  { nome: "Em Chamas", desc: "Perde vida por turno: 4 se natural, o dobro do nível de quem causou se Nen. O dano não pode ser reduzido. Pode encerrar com ação padrão." },
   { nome: "Envenenado", desc: "-5 em testes de Fortitude.", efeito: { fortitude: -5 } },
   { nome: "Imóvel", desc: "Perde a ação de movimento; falha automaticamente esquiva em área." },
   { nome: "Impedido", desc: "Movimento reduzido à metade." },
   { nome: "Indefeso", desc: "Aparar e Esquiva ficam em 1 (CD 1 para acertá-lo).", efeito: { aparar: "zero", esquiva: "zero" } },
-  { nome: "Machucado", desc: "-1 em Fortitude, Resistência e Vontade. Acumula com novas aplicações.", efeito: { fortitude: -1, resistencia: -1, vontade: -1 }, stackable: true },
+  { nome: "Machucado", desc: "-1 em Fortitude, Resistência e Vontade (aplicado por Aflição). Não acumula com outros Machucados nem com Sangrando: vale só a pior penalidade de cada teste.", efeito: { fortitude: -1, resistencia: -1, vontade: -1 }, grupoSemAcumulo: true },
+  { nome: "Machucado (Morrendo)", desc: "-1 em Fortitude, Resistência e Vontade, por ter saído de Morrendo. Acumula consigo mesmo e com Machucado, Sangrando e outras reduções.", efeito: { fortitude: -1, resistencia: -1, vontade: -1 }, stackable: true },
   { nome: "Molhado", desc: "+5 em Resistência/Fortitude contra fogo, -5 contra elétrico." },
   { nome: "Prejudicado", desc: "-2 de circunstância em todos os testes.", efeito: { testesGerais: -2 } },
   { nome: "Prendendo a Respiração", desc: "Imune a poderes de olfato; pode prender a respiração por 1 + Vigor rodadas." },
   { nome: "Surdo", desc: "Perde o sentido Audição." },
-  { nome: "Sangrando", desc: "Perde 10% da vida máxima por turno até tratamento CD 10 ou cura." },
+  { nome: "Sangrando", desc: "-2 em Resistência e perde 10% da vida máxima por turno (dano que não pode ser reduzido) até tratamento CD 10 ou cura. Não acumula com Machucado de Aflição.", efeito: { resistencia: -2 }, grupoSemAcumulo: true },
   { nome: "Sufocando", desc: "No início do turno, teste de Fortitude CD 10; cada teste passado aumenta a CD em +5. Falhar deixa Fatigado; falhar de novo, Exausto; falhar mais uma vez, Morrendo." },
   { nome: "Tonto", desc: "Perde a ação livre." },
   { nome: "Vulnerável", desc: "Aparar e Esquiva pela metade (a CD para acertá-lo é cortada pela metade).", efeito: { aparar: "metade", esquiva: "metade" } },
@@ -1212,11 +1213,16 @@ function temPercepcaoCegas(ent) {
 }
 function calcModCondicoes(ent) {
   const mod = { testesGerais: 0, fortitude: 0, vontade: 0, resistencia: 0, apararAj: [], esquivaAj: [] };
+  const grupo = { fortitude: 0, vontade: 0, resistencia: 0 }; // Machucado (Aflição) e Sangrando: só vale a pior penalidade de cada teste
   Object.entries(ent?.condicoes || {}).forEach(([nome, qtd]) => {
     if (nome === "Cego" && CEGO_IGNORADO.has(ent?.id)) return;
     const item = CONDICOES_LISTA.find((c) => c.nome === nome);
     const efeito = item?.efeito;
     if (!efeito) return;
+    if (item.grupoSemAcumulo) {
+      ["fortitude", "vontade", "resistencia"].forEach((k) => { if (efeito[k]) grupo[k] = Math.min(grupo[k], efeito[k]); });
+      return;
+    }
     for (let i = 0; i < (qtd || 1); i++) {
       if (efeito.testesGerais) mod.testesGerais += efeito.testesGerais;
       if (efeito.fortitude) mod.fortitude += efeito.fortitude;
@@ -1226,6 +1232,7 @@ function calcModCondicoes(ent) {
       if (efeito.esquiva !== undefined) mod.esquivaAj.push(efeito.esquiva);
     }
   });
+  mod.fortitude += grupo.fortitude; mod.vontade += grupo.vontade; mod.resistencia += grupo.resistencia;
   return mod;
 }
 function aplicarAjusteDefesa(valor, ajustes) {
@@ -1253,20 +1260,20 @@ function migrarFalhasLegado(a) {
   return { ...resto, efeitos: (a.efeitos || []).map((it) => ({ ...it, ...(exigirTeste?.ativo && !it.exigirTeste ? { exigirTeste } : {}), ...(peculiaridade?.ativo && !it.peculiaridade ? { peculiaridade } : {}) })) };
 }
 /* Crítico Aprimorado em perícia: o alvo da vantagem é "pericia:Nome". Ao tirar no dado o limiar ou mais, soma +5 no resultado (não é sucesso automático). */
-function limiarCriticoPericia(ent, nomePericia) {
+function limiarCriticoPericia(ent, nomePericia) { // limiar de dobrada (6 = 6-6 ou mais); 99 = sem Crítico Aprimorado
   const v = (ent?.vantagens || []).find((x) => x.nome === "Crítico Aprimorado" && x.alvoId === `pericia:${nomePericia}`);
   if (!v) return 99;
-  return Math.max(16, 20 - (v.graduacoes || 1));
+  return limiarDobra(v.graduacoes || 1);
 }
-function bonusCriticoPericia(ent, nomePericia, dado) { return nomePericia && dado >= limiarCriticoPericia(ent, nomePericia) ? 5 : 0; }
+function bonusCriticoPericia(ent, nomePericia, dado) { return nomePericia && valorDobrada(dado) >= limiarCriticoPericia(ent, nomePericia) ? 5 : 0; }
 function melhorPericiaDe(ent, nomes) {
   return nomes.reduce((m, n) => (bonusPericia(ent, n) > bonusPericia(ent, m) ? n : m), nomes[0]);
 }
 function limiarCritico(ent, ataqueId) {
-  if (!ataqueId) return 20;
+  if (!ataqueId) return 6;
   const v = (ent?.vantagens || []).find((x) => x.nome === "Crítico Aprimorado" && x.alvoId === ataqueId);
-  if (!v) return 20;
-  return Math.max(16, 20 - (v.graduacoes || 1));
+  if (!v) return 6;
+  return limiarDobra(v.graduacoes || 1);
 }
 
 /* ---------- helpers de valores derivados ---------- */
@@ -1328,7 +1335,7 @@ const PODERES_PASSIVOS = [
     aplicar1() {}, aplicar2(ent, inst, acc) { const g = inst.graduacao || 0; acc.comunicacaoAlcance = Math.max(acc.comunicacaoAlcance, 10 * Math.pow(2, Math.max(0, g))); if (inst.campos?.meio) acc.notas.push(`Comunicação via ${inst.campos.meio} (${Math.round(10 * Math.pow(2, Math.max(0, g)))}m)`); } },
 
   { id: "sorte", nome: "Controle de Sorte", categoria: "Manipulador", custoBase: 6,
-    desc: "Você tem pontos de sorte (igual à graduação) para refazer uma rolagem de d20 e ficar com o maior resultado. Recupera todos ao descansar.",
+    desc: "Você tem pontos de sorte (igual à graduação) para refazer uma rolagem e ficar com o maior resultado. Recupera todos ao descansar.",
     extras: [
       { chave: "azar", label: "Azar (pode inverter para o alvo ficar com o pior resultado)", custoPorGrad: 1 },
       { chave: "sortudo", label: "Sortudo (recupera 1 ponto ao tirar um crítico natural)", custoPorGrad: 1 },
@@ -1730,7 +1737,7 @@ function posProcessarEntidade(prev, ne) {
       r = { ...r, condicoes: c, morrendoContador: 3 };
     } else if ((r.pvAtual || 0) > 0 && c["Morrendo"]) {
       delete c["Morrendo"];
-      c["Machucado"] = (c["Machucado"] || 0) + 1;
+      c["Machucado (Morrendo)"] = (c["Machucado (Morrendo)"] || 0) + 1;
       const { morrendoContador, testeMorteAguardando, ...resto } = r;
       r = { ...resto, condicoes: c };
     }
@@ -1772,7 +1779,7 @@ function aplicarUsoMods(ent, ataque, atualizarCampo, registrar) {
     if ((Number(m.valor) || -3) <= -6) return; // sem teste: nenhuma mensagem no histórico
     const g = Math.max(0, Number(m.item?.graduacao ?? m.item?.graduacaoNulificar) || 0);
     const cd = 10 + g, dado = rolarD20(), bonus = salvBonus(ent, "Vontade"), r = montarTeste(dado, bonus, cd);
-    log(`${ent.nome} tenta controlar "${nome}" (Vontade)`, `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? "Controlou" : "Perdeu o controle — o mestre decide o efeito", r.sucesso ? "hs" : "hd");
+    log(`${ent.nome} tenta controlar "${nome}" (Vontade)`, `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? "Controlou" : "Perdeu o controle — o mestre decide o efeito", r.sucesso ? "hs" : "hd");
   });
   const LEMBRETES = { automatizado: "Automatizado: dispara sozinho, sem ação, nas condições do extra", baseado_agarrar: "Baseado em Agarrar: só funciona contra um alvo que você esteja agarrando", teleguiado: "Teleguiado: se errar, o projétil persegue o alvo e ataca de novo no próximo turno sem custo", contagioso: "Contagioso: o efeito passa a quem tocar o alvo", ricochete: "Ricochete: pode quicar para atingir alvos atrás de cobertura", preciso: "Preciso: ignora cobertura/camuflagem parcial", permear: "Permear: atravessa barreiras", indireto: "Indireto: pode partir de outro ponto", seletivo: "Seletivo: escolha quem é afetado" };
   const lem = [...new Set(ms.map((m) => m.id))].filter((id) => LEMBRETES[id]).map((id) => LEMBRETES[id]);
@@ -1850,7 +1857,7 @@ function rolarTesteColateral(entidade, item, registrar) {
     registrar({
       tipo: "rolagem",
       desc: `${entidade.nome} testa Efeito Colateral (${col.salvamento})`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(entidade, CHAVE_SALV[col.salvamento] || "fortitude"))}`,
+      detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(entidade, CHAVE_SALV[col.salvamento] || "fortitude"))}`,
       total: r.sucesso ? "Resistiu" : `Falhou — fica ${col.condicao}`,
       tipoClasse: r.sucesso ? "hs" : "hw",
     });
@@ -2072,10 +2079,11 @@ function deslocamentoTexto(ent) {
   return DESLOC_TABELA[g + 2];
 }
 function pontosPoderMax(ent) {
-  const base = ent?.rotulo === "Invocação" ? 15 : 25;
+  const ehInv = ent?.rotulo === "Invocação"; // Invocação: 10 pontos por nível (= graduação de Invocar)
+  const base = ehInv ? 10 : 25;
   const complic = Math.max(0, Math.min(2, ent?.complicacoes?.pontos || 0));
   const extra = Math.round(Number(ent?.config?.pontosExtra) || 0); // Configuração da ficha: +/- pontos de poder
-  return Math.max(0, base + (Math.max(1, ent?.nivel || 1) - 1) * 15 + complic + extra);
+  return Math.max(0, base + (Math.max(1, ent?.nivel || 1) - 1) * (ehInv ? 10 : 15) + complic + extra);
 }
 /* ---------- construtor de poder: ponte entre a habilidade da ficha e o motor de custo (poderes.js) ---------- */
 const CAT_PARA_EFEITO = { "Dano": "dano", "Cura": "cura", "Aflição": "aflicao", "Enfraquecer": "enfraquecer", "Camuflagem": "camuflagem", "Nulificar": "nulificar", "Leitura Mental": "leitura_mental", "Mover Objetos": "mover_objetos" };
@@ -2311,7 +2319,7 @@ function infoEfeitoUtil(ef, ent) {
   } else if (ef.categoria === "Invocar") {
     if (contaMod(ef, "invocar_objeto") > 0) { L.push(`Objeto invocado: ${g * 5} PV e resistência ${g} (conta como equipamento; os pontos são gastos na barra do objeto).`); return L; }
     const horda = contaMod(ef, "horda");
-    const pontos = ef.campos?.objeto ? g * 5 : g * 15;
+    const pontos = g * 10; // criatura ou veículo: 10 por graduação
     L.push(`Criatura de nível ${g} com ${pontos} pontos${horda ? ` (Horda ${horda}: ${2 ** horda} criaturas de ${Math.floor(pontos / 2 ** horda)} pontos cada)` : ""}.`);
     L.push(`Ação padrão para invocar; age na sua iniciativa a partir da rodada seguinte. Fica a até ${4.5 + 1.5 * contaMod(ef, "alcance_invocar")} m de você. Usa o seu Nen. Sem Ativo: só ação padrão e de movimento (tonta).`);
   } else if (ef.categoria === "Ilusão") {
@@ -2367,7 +2375,6 @@ function UtilCampos({ ef, onMudar }) {
       )}
       {ef.categoria === "Invocar" && (
         <>
-          <label className="checkbox-row"><input type="checkbox" checked={!!campos.objeto} onChange={(e) => setC("objeto", e.target.checked)} />Objeto/Veículo (5 pontos por graduação em vez de 15)</label>
           <input type="text" placeholder="Nome/descrição da criatura" value={campos.nome || ""} onChange={(e) => setC("nome", e.target.value)} />
         </>
       )}
@@ -2568,7 +2575,7 @@ function criarInvocacao(ent, ef) {
   const g = Math.max(1, Math.round(ef.graduacao || 1));
   const horda = somaVezes(ef.mods, "horda");
   const qtd = 2 ** horda;
-  const pontos = (ef.campos?.objeto ? g * 5 : g * 15);
+  const pontos = g * 10; // criatura ou veículo: 10 por graduação (o Invocar Objeto, com 5, não cria ficha)
   const base = fichaPadrao([ent.rotulo || "Personagem"]);
   const novas = [];
   for (let i = 0; i < qtd; i++) {
@@ -2634,7 +2641,21 @@ function calcGraus(diff) {
   if (diff >= 0) return 1 + Math.floor(diff / 5);
   return -Math.floor((-diff - 1) / 5) - 1;
 }
-function rolarD20() { return Math.floor(Math.random() * 20) + 1; }
+/* Dados do sistema: 2d10. Guarda os últimos resultados para saber se saiu uma dobrada (crítico / falha crítica). */
+let HIST_2D10 = [];
+function rolarD20() { // (nome antigo) rola 2d10 e devolve a soma
+  const a = 1 + Math.floor(Math.random() * 10), b = 1 + Math.floor(Math.random() * 10);
+  HIST_2D10.push({ total: a + b, a, b });
+  if (HIST_2D10.length > 60) HIST_2D10.shift();
+  return a + b;
+}
+function infoDobras(total) { for (let i = HIST_2D10.length - 1; i >= 0; i--) if (HIST_2D10[i].total === total) return HIST_2D10[i]; return null; }
+function valorDobrada(total) { const i = infoDobras(total); return i && i.a === i.b ? i.a : 0; }
+/* Crítico: dobrada de 6-6 a 10-10; cada graduação de Crítico Aprimorado baixa 1 (5-5, 4-4, 3-3, 2-2). Falha crítica: as dobradas abaixo disso (1-1 a 5-5). */
+function limiarDobra(grad) { return Math.max(2, 6 - Math.max(0, grad || 0)); }
+function ehFalhaCriticaDobrada(total, limiar = 6) { const v = valorDobrada(total); return v > 0 && v < Math.min(limiar, 6); }
+// P(2d10 >= n)
+function chance2d10(n) { if (n <= 2) return 1; if (n > 20) return 0; let c = 0; for (let a = 1; a <= 10; a++) for (let b = 1; b <= 10; b++) if (a + b >= n) c++; return c / 100; }
 /* Bônus BASE de uma perícia, usado só na CD do Exigir Teste: atributo base + pontos da perícia.
    Não entra nada de características/passivos, vantagens situacionais (Atraente, Ambiente Favorito...)
    nem condições — só o que a ficha tem "de fábrica". */
@@ -2659,12 +2680,12 @@ function rolarExigirTeste(ent, exigirTeste) {
   const dado = rolarD20();
   const bonus = pericia ? bonusPericia(ent, pericia) : attr(ent, atrLegado);
   const total = dado + bonus;
-  const falhaAutomatica = dado === 1;
+  const falhaAutomatica = ehFalhaCriticaDobrada(dado);
   const sucesso = !falhaAutomatica && total >= cd;
   return { dado, bonus, total, cd, falhaAutomatica, sucesso, pericia };
 }
 function textoResultadoExigirTeste(r) {
-  if (r.falhaAutomatica) return "Falha automática (1 natural) — efeito perdido";
+  if (r.falhaAutomatica) return "Falha automática (falha crítica nos dados) — efeito perdido";
   return r.sucesso ? "Sucesso — todas as graduações do efeito" : "Falhou — efeito perdido";
 }
 /* Aquecimento: o efeito começa com graduação reduzida e vai ganhando graduações até chegar na total em
@@ -2707,25 +2728,28 @@ function comReducaoHab(item, ent, habId) {
   if (typeof item.graduacaoNulificar === "number") out.graduacaoNulificar = Math.max(0, item.graduacaoNulificar - r);
   return out;
 }
-function montarTeste(dado, bonus, cd, limiarCrit = 20) {
+function montarTeste(dado, bonus, cd, limiarCrit = 6) {
   const total = dado + bonus;
   const diff = total - cd;
-  const graus = calcGraus(diff);
-  const ehCrit = dado >= limiarCrit;
+  const dobrada = valorDobrada(dado);
+  const infoD = infoDobras(dado);
+  const ehCrit = dobrada > 0 && dobrada >= limiarCrit;
+  const falhaCrit = !ehCrit && ehFalhaCriticaDobrada(dado, limiarCrit); // falha automática
+  const graus = falhaCrit ? Math.min(calcGraus(diff), -1) : calcGraus(diff);
   let tipoClasse, grauLabel, grauTexto, desc;
   if (graus > 0) {
     tipoClasse = ehCrit ? "hc" : "hs";
-    grauLabel = ehCrit ? "Natural 20!" : "Sucesso";
+    grauLabel = ehCrit ? `Crítico! (${dobrada}-${dobrada})` : "Sucesso";
     grauTexto = graus + (graus === 1 ? " Grau de Sucesso" : " Graus de Sucesso");
     desc = diff === 0 ? "Passou exatamente na CD" : `Superou a CD por ${diff} pontos`;
   } else {
     const absG = Math.abs(graus);
     tipoClasse = absG >= 2 ? "hd" : "hw";
-    grauLabel = "Falha";
+    grauLabel = falhaCrit ? `Falha crítica! (${dobrada}-${dobrada})` : "Falha";
     grauTexto = absG + (absG === 1 ? " Grau de Falha" : " Graus de Falha");
     desc = `Ficou abaixo da CD por ${Math.abs(diff)} pontos`;
   }
-  return { dado, bonus, total, cd, diff, graus, tipoClasse, grauLabel, grauTexto, desc, ehCrit, sucesso: graus > 0 };
+  return { dado, dados: infoD ? [infoD.a, infoD.b] : null, falhaCrit, bonus, total, cd, diff, graus, tipoClasse, grauLabel, grauTexto, desc, ehCrit, sucesso: graus > 0 };
 }
 function grausAflicao(efeito) { return Math.max(1, Math.min(3, efeito?.graus ?? 3)); }
 function textoAflicao(efeito, graus) {
@@ -2841,7 +2865,7 @@ function usarDesgastante(ent, ataque, atualizarCampo, registrar, animar) {
     const bonus = salvBonus(ent, sal);
     const r = montarTeste(dado, bonus, cd);
     teste = { ...r, sal };
-    if (registrar) registrar({ tipo: "rolagem", desc: `${ent.nome} testa Desgastante (${sal}) — "${nomeHab}"`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, total: r.sucesso ? "Resistiu" : `Falhou — ${rotulo}`, tipoClasse: r.sucesso ? "hs" : "hw" });
+    if (registrar) registrar({ tipo: "rolagem", desc: `${ent.nome} testa Desgastante (${sal}) — "${nomeHab}"`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, total: r.sucesso ? "Resistiu" : `Falhou — ${rotulo}`, tipoClasse: r.sucesso ? "hs" : "hw" });
     if (animar) animar({ modo: "simples", nome: `${ent.nome} — Desgastante`, foto: ent.foto, dado, bonus, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu a redução" });
     if (r.sucesso) return { teste, aplicado: false, texto: `Resistiu ao Desgastante (${sal}) — nenhuma redução`, rotulo };
   }
@@ -2877,7 +2901,7 @@ function ResultadoCard({ r, efeito }) {
   return (
     <div>
       <div className="result-row">
-        <div className={"result-cell" + (r.ehCrit ? " crit" : "")}><div className="cl">Dado</div><div className="cv">{r.dado}</div></div>
+        <div className={"result-cell" + (r.ehCrit ? " crit" : "")}><div className="cl">Dado</div><div className="cv">{r.dado}{r.dados ? <small style={{ display: "block", fontSize: "0.6em", opacity: 0.7 }}>{r.dados[0]}+{r.dados[1]}</small> : null}</div></div>
         <div className="result-cell"><div className="cl">Bônus</div><div className="cv">{r.bonus >= 0 ? "+" : ""}{r.bonus}</div></div>
         <div className="result-cell"><div className="cl">Total</div><div className="cv">{r.total}</div></div>
       </div>
@@ -2885,7 +2909,8 @@ function ResultadoCard({ r, efeito }) {
         <span>vs CD <span className="v">{r.cd}</span></span>
         <span>Diferença: <span className="v">{r.diff >= 0 ? "+" : ""}{r.diff}</span></span>
       </div>
-      {r.ehCrit && <div className="crit-badge">★ Natural 20!</div>}
+      {r.ehCrit && <div className="crit-badge">★ Crítico!</div>}
+      {r.falhaCrit && <div className="crit-badge" style={{ background: "#7a1f1f" }}>✖ Falha crítica!</div>}
       <div className={"grau-card " + (r.graus > 0 ? "success" : Math.abs(r.graus) >= 2 ? "danger" : "warn")}>
         <div className="gl">{r.grauLabel}</div><div className="gn">{r.grauTexto}</div><div className="gd">{r.desc}</div>
       </div>
@@ -2906,14 +2931,16 @@ function DiceFace({ valor, rolando, tamanho = 64 }) {
   const [mostrado, setMostrado] = useState(valor);
   useEffect(() => {
     if (!rolando) { setMostrado(valor); return; }
-    const iv = setInterval(() => setMostrado(1 + Math.floor(Math.random() * 20)), 55);
+    const iv = setInterval(() => setMostrado(2 + Math.floor(Math.random() * 19)), 55);
     return () => clearInterval(iv);
   }, [rolando, valor]);
-  const critico = !rolando && valor === 20;
-  const critFalha = !rolando && valor === 1;
+  const dob = valorDobrada(valor);
+  const critico = !rolando && dob >= 6;
+  const critFalha = !rolando && dob > 0 && dob < 6;
+  const faces = !rolando ? infoDobras(valor) : null;
   return (
     <div className={"anim-dado" + (rolando ? " girando" : "") + (critico ? " nat20" : "") + (critFalha ? " nat1" : "")} style={{ width: tamanho, height: tamanho }}>
-      <span>{mostrado}</span>
+      <span>{mostrado}{faces ? <small style={{ display: "block", fontSize: "0.38em", opacity: 0.7, lineHeight: 1 }}>{faces.a}+{faces.b}</small> : null}</span>
     </div>
   );
 }
@@ -3253,7 +3280,7 @@ function PontoFracoJanela({ origem, entidades, pf, nomeHabilidade, onFechar, reg
     registrar({
       tipo: "rolagem",
       desc: `${origem.nome} expõe o Ponto Fraco de "${nomeHabilidade}"`,
-      detalhe: `Enganação d20(${dEng}) ${fmtBonus(bEng)} = ${totEng} vs Investigação: ${resultados.map((r) => `${r.nome} ${r.total}`).join(" · ")}`,
+      detalhe: `Enganação 2d10(${dEng}) ${fmtBonus(bEng)} = ${totEng} vs Investigação: ${resultados.map((r) => `${r.nome} ${r.total}`).join(" · ")}`,
       total: passaram.length ? `${passaram.length} de ${resultados.length} perceberam` : "Ninguém percebeu",
       tipoClasse: passaram.length ? "hs" : "hw",
     });
@@ -3282,11 +3309,11 @@ function PontoFracoJanela({ origem, entidades, pf, nomeHabilidade, onFechar, reg
           <>
             <div className="grau-card warn" style={{ marginBottom: 10 }}>
               <div className="gl">Enganação de {origem.nome}</div>
-              <div className="gn">d20({res.dEng}) {fmtBonus(res.bEng)} = {res.totEng}</div>
+              <div className="gn">2d10({res.dEng}) {fmtBonus(res.bEng)} = {res.totEng}</div>
             </div>
             {res.resultados.map((r) => (
               <div key={r.id} className={"efeito-card " + (r.sucesso ? "dano" : "ok")} style={{ marginBottom: 6 }}>
-                <div className="efeito-t">{r.nome}: Investigação d20({r.dado}) {fmtBonus(r.bonus)} = {r.total}</div>
+                <div className="efeito-t">{r.nome}: Investigação 2d10({r.dado}) {fmtBonus(r.bonus)} = {r.total}</div>
                 <div className="efeito-f">{r.sucesso ? "Percebeu o ponto fraco (o texto aparece na tela dele)" : "Não percebeu"}</div>
               </div>
             ))}
@@ -3370,14 +3397,14 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const dado = rolarD20();
     const critP = contexto.tipo === "pericia" ? bonusCriticoPericia(origemAtual, contexto.chave, dado) : 0;
     const bonusFinal = bonus + (ajudaAtiva ? ajudaAtiva.bonus : 0) + critP;
-    const r = montarTeste(dado, bonusFinal, cd, critP ? limiarCriticoPericia(origemAtual, contexto.chave) : 20);
+    const r = montarTeste(dado, bonusFinal, cd, critP ? limiarCriticoPericia(origemAtual, contexto.chave) : 6);
     setResultado(r);
     setUltimoRoll({ tipo: "simples", bonus: bonusFinal, cd, alvoRolagem });
     consumirAjudaSeHouver();
     registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} testa ${contexto.label}`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""} = ${r.total} vs CD ${cd}${fmtMods([...notasSimples(alvoRolagem), ...(critP ? ["Crítico aprimorado +5"] : [])])}`,
+      detalhe: `2d10(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""} = ${r.total} vs CD ${cd}${fmtMods([...notasSimples(alvoRolagem), ...(critP ? ["Crítico aprimorado +5"] : [])])}`,
       total: r.grauTexto, tipoClasse: r.tipoClasse,
     });
     if (animar) {
@@ -3394,7 +3421,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const mods = calcModCondicoes(origemAtual);
     const penalCaido = condicaoAtiva(origemAtual, "Caído") ? -5 : 0;
     const nossoAlvoBuff = (oponente?.efeitosManobra || []).find((m) => m.tipo === "nossoAlvo");
-    const bonusVant = bonusVantagemToggle(origemAtual, "ataque") + bonusCondicionalTotal + (ajudaAtiva ? ajudaAtiva.bonus : 0) + (origemAtual.mirando ? 10 : 0) + mods.testesGerais + (nossoAlvoBuff ? nossoAlvoBuff.valor : 0) + (usarMira && temVantagem(origemAtual, "Mira Aprimorada") ? 5 : 0) + (contexto.bonusExtra?.valor || 0) + bonusManobra;
+    const bonusVant = bonusVantagemToggle(origemAtual, "ataque") + bonusCondicionalTotal + (ajudaAtiva ? ajudaAtiva.bonus : 0) + (origemAtual.mirando ? 5 : 0) + mods.testesGerais + (nossoAlvoBuff ? nossoAlvoBuff.valor : 0) + (usarMira && temVantagem(origemAtual, "Mira Aprimorada") ? 2 : 0) + (contexto.bonusExtra?.valor || 0) + bonusManobra;
     if (a.tipoAcerto === "corpo") return { bonus: attr(origemAtual, "luta") + bonusVant + penalCaido, defKey: "aparar", defLabel: "Aparar" };
     if (a.tipoAcerto === "distancia") {
       const usaAparar = !!modificadoresPassivos(oponente).temDeflexao;
@@ -3431,7 +3458,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         {!r && <div className="field-note">Rolando o teste…</div>}
         {r && (
           <div className={"grau-card " + (r.sucesso ? "success" : "warn")}>
-            <div className="gl">d20({r.dado}) {fmtBonus(r.bonus)} = {r.total} vs CD {r.cd}{r.pericia ? ` (${r.pericia})` : ""}</div>
+            <div className="gl">2d10({r.dado}) {fmtBonus(r.bonus)} = {r.total} vs CD {r.cd}{r.pericia ? ` (${r.pericia})` : ""}</div>
             <div className="gn">{textoResultadoExigirTeste(r)}</div>
           </div>
         )}
@@ -3440,7 +3467,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   });
   const notasAcerto = (info) => {
     const n = [];
-    if (origemAtual.mirando) n.push("Mirar +10");
+    if (origemAtual.mirando) n.push("Mirar +5");
     n.push(...notasCondicoesGerais(origemAtual));
     if (contexto.ataque?.tipoAcerto === "corpo" && condicaoAtiva(origemAtual, "Caído")) n.push("Caído -5");
     const vt = bonusVantagemToggle(origemAtual, "ataque");
@@ -3450,7 +3477,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const nossoAlvo = (oponente?.efeitosManobra || []).find((m) => m.tipo === "nossoAlvo");
     if (nossoAlvo) n.push(`Nosso Alvo ${fmtBonus(nossoAlvo.valor)}`);
     if (bonusTreinoValor) n.push("Treinamento +2");
-    if (usarMira && temVantagem(origemAtual, "Mira Aprimorada")) n.push("Mira Aprimorada +5");
+    if (usarMira && temVantagem(origemAtual, "Mira Aprimorada")) n.push("Mira Aprimorada +2");
     if (contexto.bonusExtra) n.push(`${contexto.bonusExtra.nome} ${fmtBonus(contexto.bonusExtra.valor)}`);
     if (manobraAtiva && manobraX) n.push(`${manobraAtiva.nome}: ${manobraAtiva.ajuda(manobraX)}`);
     n.push(...notasModsDefesa(oponente, info.defKey).map((t) => `alvo: ${t}`));
@@ -3484,13 +3511,13 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} ataca ${oponente.nome} com "${contexto.ataque.nome}"`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""}${bonusTreinoValor ? " (com bônus de Treinamento)" : ""} = ${r.total} vs ${info.defLabel} ${defVal}${fmtMods(notasAcerto(info))}`,
+      detalhe: `2d10(${dado}) ${fmtBonus(bonusFinal)}${ajudaAtiva ? ` (com ajuda de ${ajudaAtiva.deNome})` : ""}${bonusTreinoValor ? " (com bônus de Treinamento)" : ""} = ${r.total} vs ${info.defLabel} ${defVal}${fmtMods(notasAcerto(info))}`,
       total: r.sucesso ? "Acertou" : "Errou", tipoClasse: r.tipoClasse,
     });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: fotoAtq, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus: bonusFinal, total: r.total, cd: defVal, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Acertou!" : "Errou" });
   };
 
-  /* pontos de sorte: refaz a ÚLTIMA rolagem de d20 (mesmo bônus/CD) e fica com o maior dos dois totais */
+  /* pontos de sorte: refaz a ÚLTIMA rolagem de 2d10 (mesmo bônus/CD) e fica com o maior dos dois totais */
   const pontosSorteMaxOrigem = modificadoresPassivos(origemAtual).pontosSorteMax;
   const pontosSorteDisponiveis = pontosSorteMaxOrigem > 0 ? (origemAtual.pontosSorteAtual ?? pontosSorteMaxOrigem) : 0;
   const rerolarComSorte = () => {
@@ -3503,7 +3530,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} gasta um ponto de sorte para rerolar`,
-      detalhe: `Novo d20(${dado}) ${fmtBonus(ultimoRoll.bonus)} = ${r2.total} vs CD ${ultimoRoll.cd} — fica com o maior (${melhor.total})`,
+      detalhe: `Novo 2d10(${dado}) ${fmtBonus(ultimoRoll.bonus)} = ${r2.total} vs CD ${ultimoRoll.cd} — fica com o maior (${melhor.total})`,
       total: melhor.grauTexto, tipoClasse: melhor.tipoClasse,
     });
     if (ultimoRoll.tipo === "acerto") setAtaqueAcertoR(melhor); else setResultado(melhor);
@@ -3581,7 +3608,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         registrar({
           tipo: "rolagem",
           desc: `${origemAtual.nome} tenta Curar ${alvo.nome}`,
-          detalhe: `d20(${dado}) ${fmtBonus(dados.bonus)} = ${r.total} vs CD ${dados.cd}`,
+          detalhe: `2d10(${dado}) ${fmtBonus(dados.bonus)} = ${r.total} vs CD ${dados.cd}`,
           total: cura > 0 ? `Curou ${cura} PV` : "Sem efeito", tipoClasse: r.tipoClasse,
         });
         if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: fotoAtq, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: cura > 0 ? `Curou ${cura} PV` : "Sem efeito" });
@@ -3590,7 +3617,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       registrar({
         tipo: "rolagem",
         desc: `${origemAtual.nome} tenta Nulificar em ${alvo.nome}`,
-        detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${fmtMods(notasRes)}`,
+        detalhe: `2d10(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${fmtMods(notasRes)}`,
         total: r.sucesso ? r.grauTexto : "Sem efeito", tipoClasse: r.tipoClasse,
       });
       if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: fotoAtq, nomeAlvo: alvo.nome, fotoAlvo: alvo.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? r.grauTexto : "Sem efeito" });
@@ -3739,7 +3766,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({
       tipo: "rolagem",
       desc: `${alvo.nome} resiste a ${efeito.categoria} (${dados.salvLabel})${cdMetade ? " — esquivou, CD pela metade" : ""}`,
-      detalhe: `d20(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${efeito.categoria === "Dano" && !r.sucesso ? ` · Falhou por ${Math.abs(r.graus)} grau(s) — tirou ${r.total} contra CD ${dados.cd} · dano: ${extra.dano}` : ""}${extra.reducaoDefesa > 0 && !r.sucesso ? ` · Defender-se reduz ${extra.reducaoDefesa} de dano` : ""}${fmtMods(notasRes)}${extra.aplicado ? ` · ${extra.aplicado}` : ""}${extra.notasMods?.length && !r.sucesso ? ` · ${extra.notasMods.join(" · ")}` : ""}`,
+      detalhe: `2d10(${dado}) ${dados.bonus >= 0 ? "+" : ""}${dados.bonus} = ${r.total} vs CD ${dados.cd}${efeito.categoria === "Dano" && !r.sucesso ? ` · Falhou por ${Math.abs(r.graus)} grau(s) — tirou ${r.total} contra CD ${dados.cd} · dano: ${extra.dano}` : ""}${extra.reducaoDefesa > 0 && !r.sucesso ? ` · Defender-se reduz ${extra.reducaoDefesa} de dano` : ""}${fmtMods(notasRes)}${extra.aplicado ? ` · ${extra.aplicado}` : ""}${extra.notasMods?.length && !r.sucesso ? ` · ${extra.notasMods.join(" · ")}` : ""}`,
       total: r.sucesso ? "Resistiu" : (efeito.categoria === "Dano" ? `Sofreu ${extra.dano} de dano` : "Sofreu efeito"), tipoClasse: r.tipoClasse,
     });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu efeito" });
@@ -3770,7 +3797,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     const bonus = statDefesa(alvo, "esquiva");
     const r = montarTeste(dado, bonus, cd);
     setEsquivaArea((x) => ({ ...x, [alvo.id]: { ...r, auto: false } }));
-    registrar({ tipo: "rolagem", desc: `${alvo.nome} tenta esquivar de "${contexto.ataque.nome}"`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(alvo, "esquiva"))}`, total: r.sucesso ? "Esquivou — CD de resistência pela metade" : "Falhou na esquiva", tipoClasse: r.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${alvo.nome} tenta esquivar de "${contexto.ataque.nome}"`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(alvo, "esquiva"))}`, total: r.sucesso ? "Esquivou — CD de resistência pela metade" : "Falhou na esquiva", tipoClasse: r.tipoClasse });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus, total: r.total, cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Esquivou!" : "Falhou na esquiva" });
   };
   const renderEsquivaArea = (alvo) => {
@@ -3841,7 +3868,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     registrar({
       tipo: "rolagem",
       desc: `${origemAtual.nome} usa Multiataque (${penalidade}${mesmoAlvo ? ", mesmo alvo" : ", outro alvo"}) com "${contexto.ataque.nome}" em ${alvoMA.nome}`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonusFinal)} = ${r.total} vs ${info.defLabel} ${defVal}`,
+      detalhe: `2d10(${dado}) ${fmtBonus(bonusFinal)} = ${r.total} vs ${info.defLabel} ${defVal}`,
       total: r.sucesso ? "Acertou" : "Errou", tipoClasse: r.tipoClasse,
     });
     if (animar) animar({ modo: "cd", nome: `${origemAtual.nome} (Multiataque)`, foto: fotoAtq, nomeAlvo: alvoMA.nome, fotoAlvo: alvoMA.foto, dado, bonus: bonusFinal, total: r.total, cd: defVal, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Acertou!" : "Errou" });
@@ -3916,7 +3943,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       }
       resultadoTxt = graus >= 2 ? "Alvo ficou AMARRADO" : "Alvo ficou AGARRADO";
     } else resultadoTxt = "Alvo resistiu / escapou";
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} agarra ${oponente.nome} (Agarrar Rápido, sem novo teste de ataque)`, detalhe: `${totalAt} (d20 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (d20 ${dDef}${fmtBonus(bDef)})`, total: resultadoTxt, tipoClasse: vitoria ? "hs" : "hw" });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} agarra ${oponente.nome} (Agarrar Rápido, sem novo teste de ataque)`, detalhe: `${totalAt} (2d10 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (2d10 ${dDef}${fmtBonus(bDef)})`, total: resultadoTxt, tipoClasse: vitoria ? "hs" : "hw" });
     if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
   };
 
@@ -4004,7 +4031,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       registrar({
         tipo: "rolagem",
         desc: `${origemAtual.nome} testa Exigir Teste (${a.nome || "Habilidade"} — ${it.rotulo})`,
-        detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}${fmtMods(notasCondicoesGerais(origemAtual))}`,
+        detalhe: `2d10(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}${fmtMods(notasCondicoesGerais(origemAtual))}`,
         total: textoResultadoExigirTeste(r),
         tipoClasse: r.sucesso ? "hs" : "hw",
       });
@@ -4082,7 +4109,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
             <div className="section-title">Desgastante</div>
             {desgastanteR.teste && (
               <div className={"grau-card " + (desgastanteR.teste.sucesso ? "success" : "warn")}>
-                <div className="gl">{desgastanteR.teste.sal}: d20({desgastanteR.teste.dado}) {fmtBonus(desgastanteR.teste.bonus)} = {desgastanteR.teste.total} vs CD {desgastanteR.teste.cd}</div>
+                <div className="gl">{desgastanteR.teste.sal}: 2d10({desgastanteR.teste.dado}) {fmtBonus(desgastanteR.teste.bonus)} = {desgastanteR.teste.total} vs CD {desgastanteR.teste.cd}</div>
                 <div className="gn">{desgastanteR.texto}</div>
               </div>
             )}
@@ -4218,7 +4245,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
             {oponente && !ataqueAcertoR && infoAtaque() && temVantagem(origemAtual, "Mira Aprimorada") && (
               <label className="checkbox-row" style={{ marginBottom: 12 }}>
                 <input type="checkbox" checked={usarMira} onChange={(e) => setUsarMira(e.target.checked)} />
-                Mira Aprimorada — +5 no ataque (gasta uma ação livre)
+                Mira Aprimorada — +2 no ataque (gasta uma ação livre)
               </label>
             )}
 
@@ -4527,13 +4554,13 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   const bonusAtaque = (ent, penal, ajudaBonus) => {
     const mods = calcModCondicoes(ent);
     const penalCaido = condicaoAtiva(ent, "Caído") ? -5 : 0;
-    return attr(ent, "luta") + penal + bonusVantagemToggle(ent, "ataque") + ajudaBonus + (ent.mirando ? 10 : 0) + mods.testesGerais + penalCaido;
+    return attr(ent, "luta") + penal + bonusVantagemToggle(ent, "ataque") + ajudaBonus + (ent.mirando ? 5 : 0) + mods.testesGerais + penalCaido;
   };
   const limparMira = (ent) => { if (ent.mirando) atualizarCampo(ent.id, "mirando", false); };
   /* resumos de bônus/penalidades pro histórico */
   const nAtq = (penal, ajuda, alvo, defKey, extra) => {
     const n = [];
-    if (origemAtual.mirando) n.push("Mirar +10");
+    if (origemAtual.mirando) n.push("Mirar +5");
     n.push(...notasCondicoesGerais(origemAtual));
     if (condicaoAtiva(origemAtual, "Caído")) n.push("Caído -5");
     const vt = bonusVantagemToggle(origemAtual, "ataque");
@@ -4557,7 +4584,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta ${acao.nome} em ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(acao.penalidade || 0, ajudaBonus, oponente, "aparar"))}`, total: res.sucesso ? "Acertou" : "Errou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta ${acao.nome} em ${oponente.nome}`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(acao.penalidade || 0, ajudaBonus, oponente, "aparar"))}`, total: res.sucesso ? "Acertou" : "Errou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdDef, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Acertou!" : "Errou" });
   };
   const rolarOpostoContestado = () => {
@@ -4588,7 +4615,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
       }
     }
     else resultadoTxt = vitoria ? "Oponente CAIU" : "Oponente resistiu";
-    registrar({ tipo: "rolagem", desc: `Teste oposto (${acao.periciaOposta.join("/")}): ${origemAtual.nome} vs ${oponente.nome}`, detalhe: `${totalAt} (d20 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (d20 ${dDef}${fmtBonus(bDef)})${fmtMods([...notasCondicoesGerais(origemAtual), ...nDescanso(), ...notasCondicoesGerais(oponente).map((t) => `alvo: ${t}`)])}`, total: resultadoTxt, tipoClasse: vitoria ? "hs" : "hw" });
+    registrar({ tipo: "rolagem", desc: `Teste oposto (${acao.periciaOposta.join("/")}): ${origemAtual.nome} vs ${oponente.nome}`, detalhe: `${totalAt} (2d10 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (2d10 ${dDef}${fmtBonus(bDef)})${fmtMods([...notasCondicoesGerais(origemAtual), ...nDescanso(), ...notasCondicoesGerais(oponente).map((t) => `alvo: ${t}`)])}`, total: resultadoTxt, tipoClasse: vitoria ? "hs" : "hw" });
     if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
     consumirBonusDescansoAcao();
   };
@@ -4603,14 +4630,14 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Desarmar ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(acao.penalidade || 0, ajudaBonus, oponente, "aparar"))}`, total: res.sucesso ? "Acertou" : "Errou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Desarmar ${oponente.nome}`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(acao.penalidade || 0, ajudaBonus, oponente, "aparar"))}`, total: res.sucesso ? "Acertou" : "Errou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdDef, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Acertou!" : "Errou" });
   };
   const rolarSalvamentoForca = () => {
     const dado = rolarD20(), bonus = attr(oponente, "forca") + calcModCondicoes(oponente).testesGerais;
     const res = montarTeste(dado, bonus, Number(cd) || 15);
     setR2(res);
-    registrar({ tipo: "rolagem", desc: `${oponente.nome} resiste ao Desarmar`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods(notasCondicoesGerais(oponente))}`, total: res.sucesso ? "Manteve o item" : "Soltou o item", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${oponente.nome} resiste ao Desarmar`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods(notasCondicoesGerais(oponente))}`, total: res.sucesso ? "Manteve o item" : "Soltou o item", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: oponente.nome, foto: oponente.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus, total: res.total, cd: Number(cd) || 15, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Manteve o item" : "Soltou o item" });
   };
 
@@ -4633,7 +4660,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Quebrar "${itemAlvo.nome}" de ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Defesa ${cdDef}${fmtMods(nAtq(0, ajudaBonus, oponente, "aparar", penal ? "Item segurado -2" : ""))}`, total: res.sucesso ? "Acertou o item" : "Errou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Quebrar "${itemAlvo.nome}" de ${oponente.nome}`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Defesa ${cdDef}${fmtMods(nAtq(0, ajudaBonus, oponente, "aparar", penal ? "Item segurado -2" : ""))}`, total: res.sucesso ? "Acertou o item" : "Errou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdDef, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Acertou o item!" : "Errou" });
   };
   const rolarDanoItem = () => {
@@ -4649,7 +4676,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
         const nenAtual = oponente.nenAtual || 0;
         const novoNen = Math.max(0, nenAtual - dano);
         atualizarCampo(oponente.id, "nenAtual", novoNen);
-        registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome}) — absorvido pelo Shu`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: `-${dano} Nen (${novoNen}/${nenMaxCalc(oponente)})`, tipoClasse: "hw" });
+        registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome}) — absorvido pelo Shu`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: `-${dano} Nen (${novoNen}/${nenMaxCalc(oponente)})`, tipoClasse: "hw" });
         if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: `${itemAlvo.nome} (${oponente.nome})`, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdItem, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: `Shu absorve: -${dano} Nen` });
       } else {
         const max = itemAlvo.pvItemMax || 0;
@@ -4657,11 +4684,11 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
         const novoPv = Math.max(0, atualPv - dano);
         const novosAtaques = (oponente.ataques || []).map((a) => a.id === itemAlvo.id ? { ...a, pvItemAtual: novoPv } : a);
         atualizarCampo(oponente.id, "ataques", novosAtaques);
-        registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome})`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: novoPv <= 0 ? `-${dano} PV — QUEBRADO` : `-${dano} PV (${novoPv}/${max})`, tipoClasse: novoPv <= 0 ? "hs" : "hw" });
+        registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome})`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: novoPv <= 0 ? `-${dano} PV — QUEBRADO` : `-${dano} PV (${novoPv}/${max})`, tipoClasse: novoPv <= 0 ? "hs" : "hw" });
         if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: `${itemAlvo.nome} (${oponente.nome})`, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdItem, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: novoPv <= 0 ? "Item quebrado!" : `-${dano} PV do item` });
       }
     } else {
-      registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome})`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: "Sem efeito", tipoClasse: "hw" });
+      registrar({ tipo: "rolagem", desc: `Dano em "${itemAlvo.nome}" (${oponente.nome})`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Resistência ${cdItem}`, total: "Sem efeito", tipoClasse: "hw" });
       if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: `${itemAlvo.nome} (${oponente.nome})`, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdItem, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: "Sem efeito" });
     }
   };
@@ -4676,7 +4703,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const bonus = bonusPericia(origemAtual, "Tratamento") + bonusDescansoAcaoValor + critNota;
     const res = montarTeste(dado, bonus, cdTratarFerido);
     setR1(res);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} trata o ferimento de ${oponente.nome} (Tratamento)`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cdTratarFerido}${fmtMods([...notasPericiaEnt(origemAtual, "Tratamento"), ...nDescanso()])}`, total: res.sucesso ? "Tratamento bem-sucedido" : "Tratamento falhou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} trata o ferimento de ${oponente.nome} (Tratamento)`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cdTratarFerido}${fmtMods([...notasPericiaEnt(origemAtual, "Tratamento"), ...nDescanso()])}`, total: res.sucesso ? "Tratamento bem-sucedido" : "Tratamento falhou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} trata ${oponente.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: cdTratarFerido, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Tratamento bem-sucedido" : "Tratamento falhou" });
     consumirBonusDescansoAcao();
   };
@@ -4699,7 +4726,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
       if (atuais["Amarrado"]) { delete atuais["Amarrado"]; mudou = true; }
       if (mudou) atualizarCampo(origemAtual.id, "condicoes", atuais);
     }
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa ${acao.nome} (${periciaUsada === "inteligencia" ? "Inteligência" : periciaUsada})`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods([...(periciaUsada === "inteligencia" ? notasCondicoesGerais(origemAtual) : notasPericiaEnt(origemAtual, periciaUsada)), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : [])])}`, total: acao.id === "escapar" ? (res.sucesso ? "Escapou! Condição removida" : "Continua preso") : res.grauTexto, tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa ${acao.nome} (${periciaUsada === "inteligencia" ? "Inteligência" : periciaUsada})`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods([...(periciaUsada === "inteligencia" ? notasCondicoesGerais(origemAtual) : notasPericiaEnt(origemAtual, periciaUsada)), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : [])])}`, total: acao.id === "escapar" ? (res.sucesso ? "Escapou! Condição removida" : "Continua preso") : res.grauTexto, tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} testa ${acao.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: Number(cd) || 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: acao.id === "escapar" ? (res.sucesso ? "Escapou!" : "Continua preso") : res.grauTexto });
     consumirBonusDescansoAcao();
   };
@@ -4719,7 +4746,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     bonus += critNota;
     const res = montarTeste(dado, bonus, cdLevantamento);
     setR1(res);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Levantamento (até ${pesoAlvoLevantamento}kg)`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cdLevantamento}${fmtMods([...notasPericiaEnt(origemAtual, "Atletismo"), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : []), ...(gradMassa ? [`Massa extra: CD +${gradMassa}`] : [])])}`, total: res.grauTexto, tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Levantamento (até ${pesoAlvoLevantamento}kg)`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cdLevantamento}${fmtMods([...notasPericiaEnt(origemAtual, "Atletismo"), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : []), ...(gradMassa ? [`Massa extra: CD +${gradMassa}`] : [])])}`, total: res.grauTexto, tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} testa Levantamento`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: cdLevantamento, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.grauTexto });
     consumirBonusDescansoAcao();
   };
@@ -4737,7 +4764,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const resultados = selecionados.map((o) => { const cdP = valorAlvoComoCD(o, "Percepção"); return { id: o.id, nome: o.nome, cd: cdP, sucesso: total >= cdP }; });
     setMultiResultados({ dado, bonus, total, resultados });
     const passouTudo = resultados.length > 0 && resultados.every((r) => r.sucesso);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Fugir de Vista de ${resultados.length || "nenhum"} oponente(s)`, detalhe: `Furtividade d20(${dado}) ${fmtBonus(bonus)} = ${total}${fmtMods([...notasPericiaEnt(origemAtual, "Furtividade"), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : [])])}`, total: resultados.length === 0 ? "Sem alvos selecionados" : passouTudo ? "Ficou furtivo" : "Foi percebido", tipoClasse: resultados.length && passouTudo ? "hs" : "hw" });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Fugir de Vista de ${resultados.length || "nenhum"} oponente(s)`, detalhe: `Furtividade 2d10(${dado}) ${fmtBonus(bonus)} = ${total}${fmtMods([...notasPericiaEnt(origemAtual, "Furtividade"), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : [])])}`, total: resultados.length === 0 ? "Sem alvos selecionados" : passouTudo ? "Ficou furtivo" : "Foi percebido", tipoClasse: resultados.length && passouTudo ? "hs" : "hw" });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} tenta Fugir de Vista`, foto: origemAtual.foto, dado, bonus, total, rotulo: resultados.length === 0 ? "Sem alvos selecionados" : passouTudo ? "Ficou furtivo!" : "Foi percebido" });
     consumirBonusDescansoAcao();
   };
@@ -4757,7 +4784,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
       const buff = { id: uid(), chave: chaveAjuda, bonus: grau * 2, deNome: origemAtual.nome };
       adicionarItemArray(aliado.id, "buffsAjuda", buff);
     }
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} ajuda ${aliado.nome} em ${infoChave.l}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10${fmtMods([...notasCondicoesGerais(origemAtual), ...nDescanso()])}`, total: res.sucesso ? `+${Math.max(1, res.graus) * 2} para ${aliado.nome}` : "Não ajudou", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} ajuda ${aliado.nome} em ${infoChave.l}`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10${fmtMods([...notasCondicoesGerais(origemAtual), ...nDescanso()])}`, total: res.sucesso ? `+${Math.max(1, res.graus) * 2} para ${aliado.nome}` : "Não ajudou", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} ajuda ${aliado.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? `+${Math.max(1, res.graus) * 2} para ${aliado.nome}` : "Não ajudou" });
     consumirBonusDescansoAcao();
   };
@@ -4779,7 +4806,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     setR2({ dAt, bAt, totalAt, dDef, bDef, totalDef, vitoria });
     // Desmoralizar: até o INÍCIO do próximo turno de quem usou. Fintar: até o FIM do próximo turno de quem usou.
     if (vitoria) aplicarCondicaoTemporaria(atualizarCampo, oponente, acao.condicao, acao.id === "fintar" ? "fim" : "inicio", origemAtual.id, iniciativa);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa ${acao.nome} em ${oponente.nome}${fintaAgilAtiva ? " (Finta Ágil: Acrobacia/Enganação)" : ""}`, detalhe: `${totalAt} (d20 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (d20 ${dDef}${fmtBonus(bDef)})${fmtMods([...notasPericiaEnt(origemAtual, acao.pericia), ...nDescanso(), ...notasPericiaEnt(oponente, acao.pericia).map((t) => `alvo: ${t}`)])}`, total: vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Sem efeito", tipoClasse: vitoria ? "hs" : "hw" });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa ${acao.nome} em ${oponente.nome}${fintaAgilAtiva ? " (Finta Ágil: Acrobacia/Enganação)" : ""}`, detalhe: `${totalAt} (2d10 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (2d10 ${dDef}${fmtBonus(bDef)})${fmtMods([...notasPericiaEnt(origemAtual, acao.pericia), ...nDescanso(), ...notasPericiaEnt(oponente, acao.pericia).map((t) => `alvo: ${t}`)])}`, total: vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Sem efeito", tipoClasse: vitoria ? "hs" : "hw" });
     if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
     consumirBonusDescansoAcao();
   };
@@ -4805,7 +4832,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Encontrão em ${oponente.nome}`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(0, ajudaBonus, oponente, "aparar", Number(graduacoesMovidas) ? `Deslocamento ${fmtBonus(Number(graduacoesMovidas))}` : ""))}`, total: res.sucesso ? "Acertou" : "Errou (alvo pode reagir com Agarrar, Derrubar ou Desarmar)", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} tenta Encontrão em ${oponente.nome}`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs Aparar ${cdDef}${fmtMods(nAtq(0, ajudaBonus, oponente, "aparar", Number(graduacoesMovidas) ? `Deslocamento ${fmtBonus(Number(graduacoesMovidas))}` : ""))}`, total: res.sucesso ? "Acertou" : "Errou (alvo pode reagir com Agarrar, Derrubar ou Desarmar)", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: origemAtual.nome, foto: origemAtual.foto, nomeAlvo: oponente.nome, fotoAlvo: oponente.foto, dado, bonus, total: res.total, cd: cdDef, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Acertou!" : "Errou" });
   };
 
@@ -4821,7 +4848,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const res = montarTeste(dado, bonus, 10);
     setR1(res);
     if (res.sucesso) atualizarCampo(origemAtual.id, "plano", { acoes: Math.max(1, res.graus) });
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa Planejar`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10${fmtMods([...notasPericiaEnt(origemAtual, "Investigação"), ...nDescanso()])}`, total: res.sucesso ? `${Math.max(1, res.graus)} Ação(ões) de Planejamento` : "Sem plano", tipoClasse: res.tipoClasse });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa Planejar`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD 10${fmtMods([...notasPericiaEnt(origemAtual, "Investigação"), ...nDescanso()])}`, total: res.sucesso ? `${Math.max(1, res.graus)} Ação(ões) de Planejamento` : "Sem plano", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} testa Planejar`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? `${Math.max(1, res.graus)} Ação(ões) de Planejamento` : "Sem plano" });
     consumirBonusDescansoAcao();
   };
@@ -4969,7 +4996,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
 
         {acao.resolvedor === "buffMira" && (
           <>
-            <div className="field-note">Você fica indefeso e imóvel; seu próximo ataque recebe +10.</div>
+            <div className="field-note">Você fica indefeso e imóvel; seu próximo ataque recebe +5.</div>
             <button className={"btn btn-block " + (origemAtual.mirando ? "btn-accent" : "btn-ghost")} onClick={toggleMirar}>
               {origemAtual.mirando ? "Mirando — clique para cancelar" : "Ativar Mirar"}
             </button>
@@ -5022,7 +5049,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
             {!multiResultados && <button className="btn btn-accent btn-block" onClick={rolarFuga}>⚄ Rolar Furtividade</button>}
             {multiResultados && (
               <div className="subcard">
-                <div className="meta-row"><span>Furtividade</span><span className="v">d20({multiResultados.dado}) {fmtBonus(multiResultados.bonus)} = {multiResultados.total}</span></div>
+                <div className="meta-row"><span>Furtividade</span><span className="v">2d10({multiResultados.dado}) {fmtBonus(multiResultados.bonus)} = {multiResultados.total}</span></div>
                 {multiResultados.resultados.map((r) => (
                   <div key={r.id} className="oponente-check-row">
                     {r.nome} <span style={{ color: "var(--muted)", fontSize: "0.72rem" }}>(CD {r.cd})</span>
@@ -5406,7 +5433,7 @@ export default function MesaMM3() {
     const nova = [...restante, { entidadeId: entidade.id, nome: entidade.nome, valor }].sort((a, b) => b.valor - a.valor);
     const proximaIniciativa = { ...iniciativa, ordem: nova };
     await salvarIniciativa(proximaIniciativa);
-    registrar({ tipo: "rolagem", desc: `${entidade.nome} rola Iniciativa`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${valor}`, total: valor, tipoClasse: "hs" });
+    registrar({ tipo: "rolagem", desc: `${entidade.nome} rola Iniciativa`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${valor}`, total: valor, tipoClasse: "hs" });
     dispararAnimacao({ modo: "simples", nome: `${entidade.nome} rola Iniciativa`, foto: entidade.foto, dado, bonus, total: valor, rotulo: "Iniciativa" });
   };
   /* Ponto Fraco: manda o texto pra tela do dono de cada alvo que passou no teste (fila compartilhada). */
@@ -5456,7 +5483,7 @@ export default function MesaMM3() {
             const dadoR = rolarD20();
             const tR = montarTeste(dadoR, salvBonus(e, d.salvamento), d.cd);
             retesteRef.current[d.id] = { dado: dadoR, sucesso: tR.sucesso, total: tR.total };
-            registrar({ tipo: "rolagem", desc: `${e.nome} refaz o teste de ${d.salvamento} (CD ${d.cd}) contra ${d.nome}`, detalhe: `d20 ${dadoR} → ${tR.sucesso ? "passou, a condição acaba" : "falhou, continua afetado"}`, total: tR.sucesso ? "Livre" : "Continua", tipoClasse: "hd" });
+            registrar({ tipo: "rolagem", desc: `${e.nome} refaz o teste de ${d.salvamento} (CD ${d.cd}) contra ${d.nome}`, detalhe: `2d10 ${dadoR} → ${tR.sucesso ? "passou, a condição acaba" : "falhou, continua afetado"}`, total: tR.sucesso ? "Livre" : "Continua", tipoClasse: "hd" });
           }
           if (retesteRef.current[d.id].sucesso) { if (cond[d.nome]) { cond[d.nome] -= 1; if (cond[d.nome] <= 0) delete cond[d.nome]; } }
           else resto.push({ ...d, id: uid() });
@@ -5466,7 +5493,7 @@ export default function MesaMM3() {
           // Recuperação Instantânea: o dano da condição acontece antes dela acabar.
           if (d.instantanea) {
             let danoCond = 0;
-            if (d.nome === "Em Chamas") danoCond = d.nivelOrigem || e.nivel || 1;
+            if (d.nome === "Em Chamas") danoCond = 2 * (d.nivelOrigem || e.nivel || 1);
             if (d.nome === "Sangrando") danoCond = Math.max(1, Math.round(pvMaxCalc(e) * 0.1));
             if (danoCond > 0) {
               dano += danoCond;
@@ -5515,7 +5542,7 @@ export default function MesaMM3() {
     const jaTratadas = new Set((ent.duracoes || []).filter((d) => d.turnoDeId === entidadeId && d.quando === "inicio").map((d) => d.nome));
     let danoTotal = 0;
     if (condicaoAtiva(ent, "Em Chamas") && !jaTratadas.has("Em Chamas")) {
-      const d = ent.condOrigem?.["Em Chamas"] || 2;
+      const d = 2 * (ent.condOrigem?.["Em Chamas"] || 2); // dobro do nível de quem causou (4 se natural)
       danoTotal += d; log(`${ent.nome} sofre dano de Em Chamas`, `-${d} PV`, "Em Chamas", "hd");
     }
     if (condicaoAtiva(ent, "Sangrando") && !jaTratadas.has("Sangrando")) {
@@ -5535,7 +5562,7 @@ export default function MesaMM3() {
         if (!it?.exigirTeste?.ativo || (ent.efeitosPerdidos || {})[it.id]) return;
         const rotulo = it.categoria || (PODERES_PASSIVOS.find((p) => p.id === it.tipoId)?.nome) || "efeito";
         const r = rolarExigirTeste(ent, it.exigirTeste);
-        log(`${ent.nome} testa Exigir Teste (${a.nome || "Habilidade"} — ${rotulo}) no começo do turno`, `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}`, r.sucesso ? "Passou — mantém todas as graduações" : textoResultadoExigirTeste(r), r.sucesso ? "hs" : "hd");
+        log(`${ent.nome} testa Exigir Teste (${a.nome || "Habilidade"} — ${rotulo}) no começo do turno`, `2d10(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}`, r.sucesso ? "Passou — mantém todas as graduações" : textoResultadoExigirTeste(r), r.sucesso ? "hs" : "hd");
         if (!r.sucesso) {
           perdidosNovos.push(it);
           avisosNovos.push({ id: uid(), texto: `${rotulo} de "${a.nome || "Habilidade"}" foi perdido: ${ent.nome} falhou no Exigir Teste no começo do turno.` });
@@ -5585,7 +5612,7 @@ export default function MesaMM3() {
       const cd = 10 + 5 * passou, dado = rolarD20(), bonus = salvBonus(ent, "Fortitude"), r = montarTeste(dado, bonus, cd);
       const efeito = r.sucesso ? null : (falhou === 0 ? "Fatigado" : falhou === 1 ? "Exausto" : "Morrendo");
       sufoco = { passou: passou + (r.sucesso ? 1 : 0), falhou: falhou + (r.sucesso ? 0 : 1), efeito };
-      log(`${ent.nome} testa Sufocando (Fortitude)`, `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? `Passou — próxima CD ${cd + 5}` : `Falhou — fica ${efeito}`, r.sucesso ? "hs" : "hd");
+      log(`${ent.nome} testa Sufocando (Fortitude)`, `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? `Passou — próxima CD ${cd + 5}` : `Falhou — fica ${efeito}`, r.sucesso ? "hs" : "hd");
     }
     // Morrendo: contador desce e abre o teste de morte
     const morrendo = condicaoAtiva(ent, "Morrendo") && ((pvSim - danoTotal) <= 0 || !!ent.sufocoMorrendo);
@@ -5645,7 +5672,7 @@ export default function MesaMM3() {
     const r = montarTeste(dado, bonus, cd);
     const novo = (ent.morrendoContador ?? 0) + (r.sucesso ? 1 : 0);
     const morreu = novo <= 0;
-    registrar({ tipo: "rolagem", desc: `${ent.nome} faz o teste de morte`, detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(ent, "fortitude"))}`, total: morreu ? "Morreu" : (r.sucesso ? `Sobreviveu — contador ${novo}` : `Falhou — contador ${novo}`), tipoClasse: r.sucesso ? "hs" : "hd" });
+    registrar({ tipo: "rolagem", desc: `${ent.nome} faz o teste de morte`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}${fmtMods(notasModsDefesa(ent, "fortitude"))}`, total: morreu ? "Morreu" : (r.sucesso ? `Sobreviveu — contador ${novo}` : `Falhou — contador ${novo}`), tipoClasse: r.sucesso ? "hs" : "hd" });
     dispararAnimacao({ modo: "simples", nome: `${ent.nome} · teste de morte`, foto: ent.foto, dado, bonus, total: r.total, rotulo: "Teste de morte" });
     atualizarCampo(ent.id, "*", (e) => {
       const { testeMorteAguardando, ...resto } = e;
@@ -7694,10 +7721,10 @@ function AjusteImagem({ src, ajuste, onMudar, proporcao = "1 / 1", maxLargura = 
 /* ---------- Dashboard da ficha (edição) ---------- */
 const PAL_DASH = ["#e8c84a", "#5cc3f5", "#4cba7a", "#c084fc", "#e8964a", "#f08fb0", "#3fae9a", "#a3b4ff", "#d9d36b", "#ff8f70"];
 function pct(n) { return Math.round(Math.max(0, Math.min(1, n)) * 100); }
-function chanceMinD20(necessario) { return Math.max(0, Math.min(1, (21 - necessario) / 20)); } // P(d20 >= necessario)
+function chanceMinD20(necessario) { return chance2d10(necessario); } // P(2d10 >= necessario)
 function fmtNum(n, d = 1) { return Number.isInteger(n) ? String(n) : n.toFixed(d).replace(".", ","); }
 function danoPorTurnoCondicao(cond, ficha) {
-  if (cond === "Em Chamas") return Math.max(1, ficha?.nivel || 1);
+  if (cond === "Em Chamas") return 2 * Math.max(1, ficha?.nivel || 1);
   if (cond === "Sangrando") return Math.max(1, Math.round(pvMaxCalc(ficha) * 0.1));
   return 0;
 }
@@ -7836,7 +7863,7 @@ function PainelFicha({ f }) {
       if (it?.categoria === "Aflição") {
         ["grau1", "grau1b", "grau2", "grau2b", "grau3", "grau3b"].forEach((k) => {
           const v = String(it[k] || "");
-          if (/em chamas/i.test(v)) alvoCond.push({ cond: "Em Chamas", dano: Math.max(1, f.nivel || 1) });
+          if (/em chamas/i.test(v)) alvoCond.push({ cond: "Em Chamas", dano: 2 * Math.max(1, f.nivel || 1) });
           if (/sangrando/i.test(v)) alvoCond.push({ cond: "Sangrando", dano: "10% da vida máx. do alvo" });
         });
       }
@@ -8122,13 +8149,13 @@ function PainelFicha({ f }) {
 
       <div className="dash-bloco">
         <div className="dash-titulo">Médias de dados</div>
-        <div className="field-note">Um d20 rende em média 10,5. Veja o total médio de cada teste e a chance de alcançar uma CD.</div>
+        <div className="field-note">Os 2d10 rendem em média 11. Veja o total médio de cada teste e a chance de alcançar uma CD.</div>
         <div className="dash-tabela-wrap">
           <table className="dash-tabela">
             <thead><tr><th>Teste</th><th>Bônus</th><th>Média</th><th>Faixa</th><th>CD 10</th><th>CD 15</th><th>CD 20</th></tr></thead>
             <tbody>
               {[...linhasRolagem, ...linhasPericias].map((l) => (
-                <tr key={l.n}><td>{l.n}</td><td>{fmtBonus(l.b)}</td><td><b>{fmtNum(10.5 + l.b)}</b></td><td>{1 + l.b}–{20 + l.b}</td><td>{pct(chanceMinD20(10 - l.b))}%</td><td>{pct(chanceMinD20(15 - l.b))}%</td><td>{pct(chanceMinD20(20 - l.b))}%</td></tr>
+                <tr key={l.n}><td>{l.n}</td><td>{fmtBonus(l.b)}</td><td><b>{fmtNum(11 + l.b)}</b></td><td>{2 + l.b}–{20 + l.b}</td><td>{pct(chanceMinD20(10 - l.b))}%</td><td>{pct(chanceMinD20(15 - l.b))}%</td><td>{pct(chanceMinD20(20 - l.b))}%</td></tr>
               ))}
             </tbody>
           </table>
@@ -8148,7 +8175,7 @@ function PainelFicha({ f }) {
               const b = h.a.tipoAcerto === "corpo" ? bAtqC : bAtqD;
               const lim = limiarCritico(f, h.a.id);
               return (
-                <div key={h.a.id} className="dash-linha"><span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> ({h.a.tipoAcerto === "corpo" ? "corpo a corpo" : "distância"} {fmtBonus(b)}) contra CD {cdDefAlvo}: acerta em <b>{pct(chanceMinD20(cdDefAlvo - b))}%</b> · crítico em <b>{pct((21 - lim) / 20)}%</b> (ameaça {lim}–20).</div>
+                <div key={h.a.id} className="dash-linha"><span className="dash-dot" style={{ background: h.cor }} /><b>{h.a.nome || "(sem nome)"}</b> ({h.a.tipoAcerto === "corpo" ? "corpo a corpo" : "distância"} {fmtBonus(b)}) contra CD {cdDefAlvo}: acerta em <b>{pct(chanceMinD20(cdDefAlvo - b))}%</b> · crítico em <b>{pct((11 - lim) / 100)}%</b> (dobradas de {lim}-{lim} a 10-10).</div>
               );
             })}
           </div>
@@ -8670,7 +8697,7 @@ const CONDICAO_TOM = {
   "Amarrado": "controle", "Caído": "controle", "Incapacitado": "controle", "Paralisado": "controle", "Transe": "controle", "Tonto": "controle",
   "Surdo": "controle", "Cego": "controle", "Zetsu": "controle",
   "Adoecido": "fraqueza", "Debilitado": "fraqueza", "Prejudicado": "fraqueza", "Vulnerável": "fraqueza", "Indefeso": "fraqueza",
-  "Exausto": "fraqueza", "Fatigado": "fraqueza", "Machucado": "fraqueza", "Surpreso": "fraqueza",
+  "Exausto": "fraqueza", "Fatigado": "fraqueza", "Machucado": "fraqueza", "Machucado (Morrendo)": "fraqueza", "Surpreso": "fraqueza",
 };
 function tomCondicao(nome) { return CONDICAO_TOM[nome] || "neutro"; }
 function CartaoStat({ rotulo, valor, onClick, tipo }) {
@@ -8742,7 +8769,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
           registrar({
             tipo: "rolagem",
             desc: `${e.nome} testa Exigir Teste (${ataque.nome || "Passiva"} — ${it.rotulo})`,
-            detalhe: `d20(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}${fmtMods(notasCondicoesGerais(e))}`,
+            detalhe: `2d10(${r.dado}) ${fmtBonus(r.bonus)} = ${r.total} vs CD ${r.cd}${r.pericia ? ` (${r.pericia})` : ""}${fmtMods(notasCondicoesGerais(e))}`,
             total: textoResultadoExigirTeste(r),
             tipoClasse: r.sucesso ? "hs" : "hw",
           });
@@ -8792,7 +8819,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
     if ((e.variaveis || []).length) onAtualizarCampo(e.id, "variaveis", e.variaveis.map((v) => ({ ...v, valor: valorInicialVariavel(e, v) })));
   };
   // Machucado (que vem de ser curado de Morrendo) some numa ação de descanso — exceto se a pessoa estava Morrendo agora.
-  const removerMachucadoDescanso = () => { if (condicaoAtiva(e, "Morrendo")) return; onAtualizarCampo(e.id, "condicoes", (c) => { const n = { ...(c || {}) }; delete n["Machucado"]; return n; }); };
+  const removerMachucadoDescanso = () => { if (condicaoAtiva(e, "Morrendo")) return; onAtualizarCampo(e.id, "condicoes", (c) => { const n = { ...(c || {}) }; delete n["Machucado (Morrendo)"]; return n; }); };
   const pararSustentacao = (a) => { onAtualizarCampo(e.id, "ataques", (l) => (l || []).map((x) => (x.id === a.id ? { ...x, sustentando: false, ...(afetaOutrosHab(x) ? { alvosOutros: [] } : {}) } : x))); desativarColaterais(e, a, onAtualizarCampo); desativarColateraisOutros(a, a.alvosOutros, onAtualizarCampo); };
   const limparEnfraq = () => onAtualizarCampo(e.id, "duracoes", (l) => (l || []).filter((d) => d.quando !== "recupera"));
   const alimentarSe = () => { limparEnfraq(); onAtualizarCampo(e.id, "pvAtual", Math.min(pvMaxCalc(e), (e.pvAtual || 0) + attr(e, "vigor") + (e.nivel || 1))); resetarVariaveis(); removerMachucadoDescanso(); };
@@ -8835,8 +8862,8 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
   };
   const ajustarMachucado = (delta) => {
     const atuais = { ...(e.condicoes || {}) };
-    const atual = (atuais["Machucado"] || 0) + delta;
-    if (atual <= 0) delete atuais["Machucado"]; else atuais["Machucado"] = atual;
+    const atual = (atuais["Machucado (Morrendo)"] || 0) + delta;
+    if (atual <= 0) delete atuais["Machucado (Morrendo)"]; else atuais["Machucado (Morrendo)"] = atual;
     onAtualizarCampo(e.id, "condicoes", atuais);
   };
 
@@ -8888,7 +8915,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
                 {Object.entries(e.condicoes || {}).map(([nome, qtd]) => (
                   <button key={nome} type="button" className={"tag-cond " + tomCondicao(nome) + (editavel ? " pode" : "")} title={CONDICOES_LISTA.find((c) => c.nome === nome)?.desc}
                     onClick={() => { if (!editavel) return; if (CONDICOES_LISTA.find((c) => c.nome === nome)?.stackable) ajustarMachucado(-1); else toggleCondicao(nome); }}>
-                    {nome}{qtd > 1 ? ` ×${qtd}` : ""}{nome === "Morrendo" ? ` · ${e.morrendoContador ?? 3} turno(s)` : ""}
+                    {nome}{qtd > 1 && !CONDICOES_LISTA.find((c) => c.nome === nome)?.grupoSemAcumulo ? ` ×${qtd}` : ""}{nome === "Morrendo" ? ` · ${e.morrendoContador ?? 3} turno(s)` : ""}
                   </button>
                 ))}
               </div>
@@ -9314,7 +9341,7 @@ function HistoricoTab({ historico, onAtualizar, identidade, registrar }) {
     registrar({
       tipo: "rolagem", oculto: true, donoOculto: identidade.nome,
       desc: `${identidade.nome} faz uma rolagem oculta`,
-      detalhe: `d20(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cdOculto}`,
+      detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cdOculto}`,
       total: r.grauTexto, tipoClasse: r.tipoClasse,
     });
   };
