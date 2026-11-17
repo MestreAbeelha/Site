@@ -158,6 +158,7 @@ export const EXCLUSIVOS = {
   leitura_mental: [M("cumulativo_lm", "Cumulativo", "g", 2), M("ligacao_sensorial", "Ligação Sensorial", "g", 1)],
   mover_objetos: [M("camuflagem_mo", "Camuflagem", "g", 1), M("dano_mo", "Dano", "g", 2), M("dividido_mo", "Dividido", "g", 1), M("impulso", "Impulso", "g", 2), M("preciso_mo", "Preciso", "f", 2),
     M("veloz", "Veloz", "g", 2), M("concentrado", "Concentrado", "g", -1), M("direcao_limitada", "Direção Limitada", "g", -1)],
+  dano: [M("rebote", "Rebote", "g", -3, { opcoes: [-3, -6] })],
   nulificar: [M("concentracao_nul", "Concentração", "g", 1), M("cumulativo_nul", "Cumulativo", "g", 2), M("grau_limitado_nul", "Grau Limitado", "g", -1, { opcoes: [-1, -2] })],
   rapidez: [M("continuo_rap", "Contínuo", "g", 1, { muda: "duracao" }), M("permanente_rap", "Permanente", "g", 0, { muda: "duracao" })],
   salto: [M("quicar", "Quicar", "g", 1), M("poder_total", "Poder Total", "g", -1)],
@@ -254,7 +255,8 @@ function resolverMod(it) {
  * Retorna { total, bruto, efeitos:[...], ajustesNen:[...], fixos:[...], avisos:[], erros:[] }
  */
 // Efeitos com limite de graduação fixo (múltiplo do nível); Sobrecarregado não ultrapassa
-export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, invocar: 1, membros_extras: 1, variavel: 1, encolhimento: 1, metamorfose: 1, velocidade: 2, voo: 2 };
+export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, invocar: 1, membros_extras: 1, variavel: 1, encolhimento: 0.5, crescimento: 0.5, metamorfose: 1, velocidade: 2, voo: 2 };
+export const limiteFixoDe = (id, nivel) => (LIMITE_FIXO[id] ? Math.max(1, Math.floor(LIMITE_FIXO[id] * nivel)) : null);
 export function calcularHabilidade(ctx, hab) {
   const { nivel = 1, tipoNen = null } = ctx;
   const erros = [], avisos = [];
@@ -269,6 +271,12 @@ export function calcularHabilidade(ctx, hab) {
       const extras = mods.filter((m) => m.id === "ficha_adicional").reduce((s, m) => s + m.vezes, 0);
       mods.forEach((m) => { if (m.id === "aleatoria") m.valor = -extras; });
       if (mods.some((m) => m.id === "aleatoria") && !extras) erros.push("Metamorfose: a falha Aleatória exige pelo menos uma Ficha Adicional.");
+    }
+    // Sobrecarregado automático: a graduação acima do limite vira o extra (exceto efeitos de limite fixo)
+    for (let k = mods.length - 1; k >= 0; k--) if (mods[k].id === "sobrecarregado") mods.splice(k, 1);
+    if (!LIMITE_FIXO[ef.id] && !ef.semLimite) {
+      const falta = ef.grad - Math.max(nivel, ef.limiteBase || 0);
+      if (falta > 0) mods.push(resolverMod({ id: "sobrecarregado", vezes: falta, derivado: true }));
     }
     const tiposEf = new Set([tipoEf, ...mods.map((m) => m.tipo).filter(Boolean)]);
     tiposEf.forEach((t) => tiposHab.add(t));
@@ -295,8 +303,8 @@ export function calcularHabilidade(ctx, hab) {
     if (gradGratis > 0 && (mods.length > 0 || fixosEf.length > 0)) custo = Math.max(1, custo);
     const sobre = mods.filter((m) => m.id === "sobrecarregado").reduce((s, m) => s + m.vezes, 0);
     const mult = LIMITE_FIXO[ef.id];
-    const limite = mult ? mult * nivel : Math.max(nivel, ef.limiteBase || 0) + sobre; // Dano baseado em atributo: a parte do atributo não precisa de Sobrecarregado
-    if (!ef.semLimite && ef.grad > limite) erros.push(mult ? `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (${mult === 1 ? "nível" : "dobro do nível"}; Sobrecarregado não passa deste limite).` : `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (nível ${nivel}${sobre ? ` + ${sobre} Sobrecarregado` : ""}).`);
+    const limite = mult ? limiteFixoDe(ef.id, nivel) : Math.max(nivel, ef.limiteBase || 0) + sobre; // Dano baseado em atributo: a parte do atributo não precisa de Sobrecarregado
+    if (!ef.semLimite && ef.grad > limite) erros.push(mult ? `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (Sobrecarregado não passa deste limite).` : `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (nível ${nivel}${sobre ? ` + ${sobre} Sobrecarregado` : ""}).`);
     let dica = null;
     if (c <= 0 && !gradGratis) {
       const maxMesmoCusto = custo * (1 - c);
@@ -355,7 +363,7 @@ export const REGRAS = {
   automatizado: () => "Automatizado: sem ação; ativa sempre que o alvo perde PV ou é selecionado como alvo, antes de qualquer rolagem.",
   contagioso: () => "Contagioso: o efeito pode passar para quem tocar/for tocado pelo alvo.",
   indireto: () => "Indireto: o efeito pode partir de um ponto diferente de você.",
-  multiataque: () => "Multiataque: ataca vários alvos (−10 no mesmo alvo / −5 em outro alvo).",
+  multiataque: () => "Multiataque: ataca vários alvos (−5 no mesmo alvo / −2 em outro alvo).",
   penetrante: (n) => `Penetrante ${n}: ignora ${n} ponto(s) de Proteção/redução de dano do alvo (aplicado automaticamente).`,
   permear: () => "Permear: atravessa barreiras e cobertura.",
   preciso: () => "Preciso: ignora cobertura/camuflagem parciais.",
@@ -429,42 +437,42 @@ Object.assign(REGRAS, {
 /* ---------- descrições completas (mostradas ao tocar num efeito ou numa peça no construtor) ----------
    Redigidas a partir do catálogo e das decisões da mesa; o que o catálogo não dizia segue a regra-base de M&M 3e. */
 export const DESC_EFEITO = {
-  aflicao: "Impõe condições ao alvo, em graus. O alvo resiste com Fortitude ou Vontade (CD 10 + graduação). Falhou por 1 grau: condição de grau 1 (adoecido, caído, impedido, machucado, tonto, vulnerável). 2 graus: grau 2 (atordoado, compelido, em chamas, envenenado, imóvel, indefeso, sangrando, em transe). 3 graus: grau 3 (controlado, incapacitado, paralisado). As condições de cada grau são escolhidas ao criar o poder.",
-  alongamento: "Você estica o corpo. Seu alcance de corpo a corpo e de agarrar aumenta conforme a graduação (distância da Tabela de Medidas com graduação −1) e você consegue passar por frestas finas. Ação livre, sustentado.",
-  camuflagem: "Você fica camuflado contra um sentido escolhido (o tato não pode ser camuflado). Quem tenta detectá-lo precisa de CD 15 + graduação, usando outro sentido ou Percepção. Ação livre, sustentado.",
-  caracteristica_aumentada: "Aumenta um atributo seu em tantas graduações quanto a graduação do efeito, até o máximo de nível + 4 no atributo. Ação livre, sustentado.",
-  compreender: "Você entende um tipo de comunicação sem estudo: animais, espíritos, idiomas, máquinas ou plantas (uma opção por graduação). Permanente.",
-  comunicacao: "Comunicação à distância por um sentido ou meio escolhido. O alcance base é 10 m e dobra a cada graduação. Ação livre, sustentado.",
+  aflicao: "Impõe condições ao alvo, em graus. O alvo resiste com Fortitude ou Vontade (CD 10 + graduação).",
+  alongamento: "Você estica o corpo. Seu alcance de corpo a corpo e de agarrar aumenta conforme a graduação (distância da Tabela de Medidas com graduação −1) e você consegue passar por frestas finas.",
+  camuflagem: "Você fica camuflado contra um sentido escolhido (o tato não pode ser camuflado). Quem tenta detectá-lo precisa de CD 15 + graduação, usando outro sentido ou Percepção.",
+  caracteristica_aumentada: "Aumenta um atributo seu em tantas graduações quanto a graduação do efeito, até o máximo de nível + 4 no atributo.",
+  compreender: "Você entende um tipo de comunicação sem estudo: animais, espíritos, idiomas, máquinas ou plantas (uma opção por graduação).",
+  comunicacao: "Comunicação à distância por um sentido ou meio escolhido. O alcance base é 10 m e dobra a cada graduação.",
   controle_sorte: "Você tem pontos de sorte (um por graduação) para refazer rolagens e ficar com o melhor resultado. Pode ser usado como reação, à vista do alvo.",
-  crescimento: "Você aumenta de tamanho: +1 Tamanho, Força, Vigor e Alcance por graduação, e −1 em Esquiva, Aparar e Furtividade por graduação. O máximo de graduações é metade do seu nível. Ação livre, sustentado.",
-  criar: "Cria objetos de matéria sólida. Volume e resistência do objeto são iguais à graduação (Tabela de Medidas). A habilidade precisa custar pelo menos o seu nível em Nen. Ação padrão, sustentado.",
-  cura: "Restaura Vida de outra criatura ao toque. Faça um teste de graduação contra CD 10: cura = graduação × graus de sucesso. Exige custo mínimo de 1 Nen. Ação padrão, instantâneo.",
-  dano: "Causa dano. O alvo resiste com Resistência (CD 15 + graduação); cada grau de falha causa dano igual à graduação. Ação padrão, instantâneo, alcance perto. Dano Baseado Em Força/Agilidade custa +0/g e usa o atributo como graduação (dano por falha limitado ao seu nível, exceto com Sobrecarregado).",
-  deflexao: "Você pode usar Aparar para se defender de ataques à distância (contra você ou contra outro) e recebe um bônus em Aparar igual à graduação. Ação padrão; fica ativa até o início do seu próximo turno.",
-  encolhimento: "Você diminui de tamanho: −1 Tamanho, Força e Vigor por graduação, +1 em Esquiva, Aparar e Furtividade. Ação livre, sustentado.",
-  enfraquecer: "Reduz uma característica escolhida do alvo ao toque. Resistência Fortitude ou Vontade (CD 10 + graduação). Cada ponto de falha reduz um ponto da característica, até a graduação. O alvo recupera 1 ponto por rodada. Ação padrão, perto.",
-  escavacao: "Você se move pela terra e pela rocha. Deslocamento e capacidade pela graduação (Tabela de Medidas). Ação livre, sustentado.",
-  ilusao: "Cria ilusões que afetam tipos de sentido (1 a 5; cada tipo custa 1 PP por graduação). CD de Intuição 10 + graduação para perceber que é falsa. Ilusões não têm substância física. Sustentado.",
-  imortalidade: "Se você morrer, volta à vida depois de um tempo: o tempo da Tabela de Medidas em (19 − graduação). Permanente.",
+  crescimento: "Você aumenta de tamanho: +1 Tamanho e alcance por graduação, +1 Força e Vigor a cada 2 graduações, e −1 em Esquiva e Aparar por graduação.",
+  criar: "Cria objetos de matéria sólida. Volume e resistência do objeto são iguais à graduação (Tabela de Medidas). A habilidade precisa custar pelo menos o seu nível em Nen.",
+  cura: "Restaura Vida de outra criatura ao toque. Faça um teste de graduação contra CD 10: cura = graduação × graus de sucesso. Exige custo mínimo de 1 Nen.",
+  dano: "Causa dano. O alvo resiste com Resistência (CD 15 + graduação); cada grau de falha causa dano igual à graduação.",
+  deflexao: "Você pode usar Aparar para se defender de ataques à distância (contra você ou contra outro) e recebe +1 em Aparar a cada 2 graduações.",
+  encolhimento: "Você diminui de tamanho: −1 Tamanho, Força e Agilidade por graduação, +1 em Esquiva, Aparar e Furtividade a cada 2 graduações.",
+  enfraquecer: "Reduz uma característica escolhida do alvo ao toque. Resistência Fortitude ou Vontade (CD 10 + graduação). Cada ponto de falha reduz um ponto da característica, até a graduação. O alvo recupera 1 ponto por rodada.",
+  escavacao: "Você se move pela terra e pela rocha. Deslocamento e capacidade pela graduação (Tabela de Medidas).",
+  ilusao: "Cria ilusões que afetam tipos de sentido (1 a 5; cada tipo custa 1 PP por graduação). CD de Intuição 10 + graduação para perceber que é falsa. Ilusões não têm substância física.",
+  imortalidade: "Se você morrer, volta à vida depois de um tempo: o tempo da Tabela de Medidas em (19 − graduação).",
   imunidade: "Você ganha imunidade a um tipo de efeito, conforme a graduação: 1 (veneno, condição ambiental), 2 (doenças, aflição de grau 1), 5 (fadiga, aflição de grau 2, agarrado, um tipo de dano), 10 (descritor comum), 20 (todos os testes de Fortitude/Vontade ou aflição de grau 3). Passa automaticamente nos testes contra o que for imune.",
-  metamorfose: "Você assume outra ficha: com 1 graduação a ficha tem 25 pontos, e cada graduação adicional soma +15. Ação livre, sustentado. A graduação é limitada pelo nível.",
-  invocar: "Invoca uma criatura (nível = graduação, 10 pontos por graduação) que age na sua iniciativa. A invocação usa o Nen do invocador. Ação padrão, sustentado, perto.",
-  leitura_mental: "Lê a mente do alvo em até 4 graus (pensamentos de superfície, emoções, memórias, subconsciente). Vontade (CD 10 + graduação). Ação padrão, sustentado.",
-  membros_extras: "Você tem braços/pernas extras: +1 membro por graduação para segurar, atacar ou se mover. Sustentado.",
-  mover_objetos: "Move objetos à distância com Força efetiva igual à graduação, dentro da sua percepção. Concentrando-se (ação de movimento) soma +1. Não serve para manipulação fina. Ação padrão, sustentado.",
-  movimento: "Um tipo de movimento especial por graduação: andar na água, balançar-se, deslizar, escalar paredes, permear ou natação. Ação livre, sustentado.",
-  nulificar: "Desliga os poderes de um alvo. Você rola graduação contra CD 10 + a defesa do alvo (Fortitude ou Vontade). 1 grau: reduz uma habilidade à metade. 2 graus: nulifica uma habilidade. 3 graus: nulifica todas de um tipo de Nen. 4+ graus: nulifica tudo e deixa o alvo Indefeso. Ação padrão, perto.",
-  protecao: "Reduz o dano que você sofre em um valor igual à graduação. Ação livre, sustentado.",
+  metamorfose: "Você assume outra ficha: com 1 graduação a ficha tem 25 pontos, e cada graduação adicional soma +15. A graduação é limitada pelo nível.",
+  invocar: "Invoca uma criatura (nível = graduação, 10 pontos por graduação) que age na sua iniciativa. A invocação usa o Nen do invocador.",
+  leitura_mental: "Lê a mente do alvo em até 4 graus (pensamentos de superfície, emoções, memórias, subconsciente). Vontade (CD 10 + graduação).",
+  membros_extras: "Você tem braços/pernas extras: +1 membro por graduação para segurar, atacar ou se mover, e +1 em testes de agarrar a cada 2 graduações.",
+  mover_objetos: "Move objetos à distância com Força efetiva igual à graduação, dentro da sua percepção. Concentrando-se (ação de movimento) soma +1. Não serve para manipulação fina.",
+  movimento: "Concede formas especiais de se mover.",
+  nulificar: "Desliga os poderes de um alvo. Você rola graduação contra CD 10 + a defesa do alvo (Fortitude ou Vontade). 1 grau: reduz uma habilidade à metade. 2 graus: nulifica uma habilidade. 3 graus: nulifica todas de um tipo de Nen. 4+ graus: nulifica tudo e deixa o alvo Indefeso.",
+  protecao: "Reduz o dano que você sofre em um valor igual à graduação.",
   rapidez: "Cada graduação dá pontos para comprar vantagens de combate (Máquina de Palavras 1, Elusivo 3, Carente 3, Mestre do Nen 5, Adrenalina 10, Apressado 15, Mestre do Combate 20). A mesma opção não pode ser repetida na mesma habilidade.",
-  regeneracao: "Você recupera Vida igual à graduação por turno. Com 10 graduações, recupera membros perdidos em 1 minuto. Exige custo mínimo de 1 Nen. Ação livre, sustentado.",
-  salto: "Você salta longe. Distância para cima = distância da graduação −1; em parábola, o dobro. Ação livre, instantâneo.",
-  sentidos: "Um sentido especial por graduação: Infravisão, Percepção às Cegas, Rastrear, Sentido de Perigo, Sentido Sísmico, Ver Nen ou Visão no Escuro. Sustentado.",
-  sentido_remoto: "Desloca um ou mais sentidos para longe do corpo. Custa 4/g para um tipo de sentido, 5/g para dois, 6/g para todos. Sustentado.",
-  teleporte: "Move você (e o que carregar, até a massa da graduação) a uma distância da Tabela de Medidas, para um lugar que você perceba ou conheça bem. Ação de movimento, instantâneo.",
-  transformacao: "Transforma matéria: muda o estado físico (3/g), uma coisa em outra do mesmo estado (4/g) ou qualquer coisa em qualquer outra (7/g). Massa afetada pela graduação −3. Sustentado.",
+  regeneracao: "Você recupera Vida igual à graduação por turno. Com 10 graduações, recupera membros perdidos em 1 minuto. Exige custo mínimo de 1 Nen.",
+  salto: "Você salta longe. Distância para cima = distância da graduação −1; em parábola, o dobro.",
+  sentidos: "Concede sentidos especiais, além dos normais.",
+  sentido_remoto: "Desloca um ou mais sentidos para longe do corpo. Custa 4/g para um tipo de sentido, 5/g para dois, 6/g para todos.",
+  teleporte: "Move você (e o que carregar, até a massa da graduação) a uma distância da Tabela de Medidas, para um lugar que você perceba ou conheça bem.",
+  transformacao: "Transforma matéria: muda o estado físico (3/g), uma coisa em outra do mesmo estado (4/g) ou qualquer coisa em qualquer outra (7/g). Massa afetada pela graduação −3.",
   variavel: "Você tem 5 pontos de poder por graduação para montar outros efeitos na hora (realocar custa uma ação padrão). Parar de sustentar zera tudo. Não pode ser permanente.",
-  velocidade: "Aumenta seu deslocamento com a graduação (Tabela de Medidas). Ação livre, sustentado.",
-  voo: "Você voa com deslocamento pela graduação. Ação livre, sustentado.",
+  velocidade: "Aumenta seu deslocamento com a graduação (Tabela de Medidas).",
+  voo: "Você voa com deslocamento pela graduação.",
   natacao: "Você nada com deslocamento pela graduação.",
   bonus_pericia: "Aumenta o bônus de uma perícia em tantos pontos quanto a graduação.",
   caracteristica: "Uma característica fixa e específica, de 1 ponto, combinada com o mestre.",
@@ -497,7 +505,8 @@ export const DESC_MOD = {
   efeito_alternativo: "A habilidade pode trocar este efeito por outro de custo igual ou menor (um por vez). +1 ponto fixo.",
   efeito_secundario: "O efeito se repete automaticamente no turno seguinte do alvo, sem nova rolagem de acerto. +5/g.",
   indireto: "O efeito pode partir de um ponto diferente de você, em outra direção. +3/g; conta como Emissor.",
-  multiataque: "Permite um ataque extra por ataque: contra o mesmo alvo com −10 no acerto, ou contra outro alvo engajado com −5. Não combina com Dividido. +2/g.",
+  multiataque: "Permite um ataque extra por ataque: contra o mesmo alvo com −5 no acerto, ou contra outro alvo engajado com −2. Não combina com Dividido. +2/g.",
+  rebote: "Você sofre o mesmo dano e faz o mesmo teste de resistência: metade dos PV com −3, todo o dano com −6. Proteção não reduz.",
   penetrante: "O dano ignora 1 ponto de Proteção/redução de dano do alvo por vez. +1/g, pode ser comprado várias vezes.",
   permear: "O efeito atravessa barreiras e cobertura. +1/g; conta como Emissor.",
   preciso: "Ignora penalidades de cobertura e camuflagem parciais. +1 fixo.",
@@ -505,7 +514,7 @@ export const DESC_MOD = {
   resistencia_alternativa: "O alvo pode resistir com outro salvamento (Aparar, Esquiva, Luta). +1/g.",
   ricochete: "O ataque pode quicar em superfícies para atingir alvos atrás de cobertura. +1 fixo.",
   seletivo: "Você escolhe quem é afetado por um efeito de área. +1/g; conta como Emissor.",
-  sobrecarregado: "A graduação do efeito pode passar do limite de nível em 1 ponto por vez (aplica ao dano). +2/g por ponto acima do limite (automático); conta como Fortificador.",
+  sobrecarregado: "Permite a graduação passar do nível. +2/g por ponto acima.",
   sutil: "O efeito é difícil de perceber: cada ponto esconde de um sentido. +1/g por sentido (até 5); conta como Transmutador.",
   teleguiado: "O projétil persegue o alvo; se errar, ataca de novo no turno seguinte sem custo. +1/g; conta como Emissor.",
   variavel_carga: "Habilidade com carga: ao usar, a variável sobe; custo fixo por unidade adicionada.",
