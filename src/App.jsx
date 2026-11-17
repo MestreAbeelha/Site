@@ -9,7 +9,7 @@ import {
 } from "./firebase.js";
 import {
   calcularHabilidade, custoColateral, grauCondicao, CONDICOES_POR_GRAU, razaoTxt, modsDisponiveis, alcanceDoEfeito, MOD_POR_ID, EFEITOS as EFEITOS_CAT, EFEITO_POR_ID as EFEITO_CAT_POR_ID,
-  LIMITE_FIXO, TIPOS_NEN as TIPOS_NEN_CAT, relacaoNen, EXCLUSIVOS as EXCLUSIVOS_CAT, regraDoMod, DESC_EFEITO, DESC_MOD, descEfeitoCompleta,
+  LIMITE_FIXO, limiteFixoDe, TIPOS_NEN as TIPOS_NEN_CAT, relacaoNen, EXCLUSIVOS as EXCLUSIVOS_CAT, regraDoMod, DESC_EFEITO, DESC_MOD, descEfeitoCompleta,
 } from "./poderes.js";
 
 /* Toda ficha salva leva junto os máximos reais de Vida e Nen (com bônus de poderes). A extensão do Owlbear
@@ -1173,18 +1173,18 @@ const CONDICOES_LISTA = [
   { nome: "Compelido", desc: "Luta pelo controle da mente; ação de movimento controlada por outro." },
   { nome: "Controlado", desc: "Não tem vontade própria; ações ditadas por quem controla." },
   { nome: "Debilitado", desc: "-5 em todos os testes.", efeito: { testesGerais: -5 } },
-  { nome: "Em Chamas", desc: "Perde vida por turno: 4 se natural, o dobro do nível de quem causou se Nen. O dano não pode ser reduzido. Pode encerrar com ação padrão." },
+  { nome: "Em Chamas", desc: "Perde vida por turno: 4 se natural, o dobro do nível de quem causou se Nen. Pode encerrar com ação padrão." },
   { nome: "Envenenado", desc: "-5 em testes de Fortitude.", efeito: { fortitude: -5 } },
   { nome: "Imóvel", desc: "Perde a ação de movimento; falha automaticamente esquiva em área." },
   { nome: "Impedido", desc: "Movimento reduzido à metade." },
   { nome: "Indefeso", desc: "Aparar e Esquiva ficam em 1 (CD 1 para acertá-lo).", efeito: { aparar: "zero", esquiva: "zero" } },
-  { nome: "Machucado", desc: "-1 em Fortitude, Resistência e Vontade (aplicado por Aflição). Não acumula com outros Machucados nem com Sangrando: vale só a pior penalidade de cada teste.", efeito: { fortitude: -1, resistencia: -1, vontade: -1 }, grupoSemAcumulo: true },
-  { nome: "Machucado (Morrendo)", desc: "-1 em Fortitude, Resistência e Vontade, por ter saído de Morrendo. Acumula consigo mesmo e com Machucado, Sangrando e outras reduções.", efeito: { fortitude: -1, resistencia: -1, vontade: -1 }, stackable: true },
+  { nome: "Machucado", desc: "-1 em Fortitude, Resistência e Vontade. Não acumula com Sangrando.", efeito: { fortitude: -1, resistencia: -1, vontade: -1 }, grupoSemAcumulo: true },
+  { nome: "Machucado (Morrendo)", desc: "-1 em Fortitude, Resistência e Vontade. Acumula.", efeito: { fortitude: -1, resistencia: -1, vontade: -1 }, stackable: true },
   { nome: "Molhado", desc: "+5 em Resistência/Fortitude contra fogo, -5 contra elétrico." },
   { nome: "Prejudicado", desc: "-2 de circunstância em todos os testes.", efeito: { testesGerais: -2 } },
   { nome: "Prendendo a Respiração", desc: "Imune a poderes de olfato; pode prender a respiração por 1 + Vigor rodadas." },
   { nome: "Surdo", desc: "Perde o sentido Audição." },
-  { nome: "Sangrando", desc: "-2 em Resistência e perde 10% da vida máxima por turno (dano que não pode ser reduzido) até tratamento CD 10 ou cura. Não acumula com Machucado de Aflição.", efeito: { resistencia: -2 }, grupoSemAcumulo: true },
+  { nome: "Sangrando", desc: "-2 em Resistência e perde 10% da vida máxima por turno até tratamento CD 10 ou cura.", efeito: { resistencia: -2 }, grupoSemAcumulo: true },
   { nome: "Sufocando", desc: "No início do turno, teste de Fortitude CD 10; cada teste passado aumenta a CD em +5. Falhar deixa Fatigado; falhar de novo, Exausto; falhar mais uma vez, Morrendo." },
   { nome: "Tonto", desc: "Perde a ação livre." },
   { nome: "Vulnerável", desc: "Aparar e Esquiva pela metade (a CD para acertá-lo é cortada pela metade).", efeito: { aparar: "metade", esquiva: "metade" } },
@@ -1366,15 +1366,15 @@ const PODERES_PASSIVOS = [
     }, aplicar2() {} },
 
   { id: "deflexao", nome: "Deflexão", categoria: "Fortificador", custoBase: 6,
-    desc: "Pode usar Aparar para se defender de ataques à distância, e recebe um bônus em Aparar igual à graduação.",
+    desc: "Permite usar Aparar contra ataques à distância. +1 em Aparar a cada 2 graduações.",
     extras: [
       { chave: "queVaiVolta", label: "O Que Vai Volta (2+ graduações: pode refletir o ataque no atacante)", custoPorGrad: 1 },
       { chave: "multitarefas", label: "Multitarefas (pode usar Deflexão num ataque adicional na rodada)", custoPorGrad: 1 },
     ], falhas: [],
-    aplicar1(ent, inst, acc) { acc.aparar += (inst.graduacao || 0); acc.temDeflexao = true; }, aplicar2() {} },
+    aplicar1(ent, inst, acc) { acc.aparar += Math.floor((inst.graduacao || 0) / 2); acc.temDeflexao = true; }, aplicar2() {} },
 
   { id: "encolhimento", nome: "Encolhimento", categoria: "Modelador", custoBase: 2,
-    desc: "Para cada graduação, Tamanho, Força e Agilidade diminuem 1, mas Esquiva, Aparar e Furtividade aumentam 1.",
+    desc: "Tamanho, Força e Agilidade diminuem 1 por graduação. Esquiva, Aparar e Furtividade aumentam 1 a cada 2 graduações.",
     extras: [
       { chave: "forcaNormal", label: "Força Normal (não reduz mais Força e Agilidade)", custoPorGrad: 2 },
       { chave: "encolhedor", label: "Encolhedor (equipamentos e itens também encolhem com você)", custoPorGrad: 1 },
@@ -1383,7 +1383,7 @@ const PODERES_PASSIVOS = [
       const g = inst.graduacao || 0; const fn = !!inst.extrasAtivos?.forcaNormal;
       acc.tamanho -= g;
       if (!fn) { acc.atributos.forca = (acc.atributos.forca || 0) - g; acc.atributos.agilidade = (acc.atributos.agilidade || 0) - g; }
-      acc.esquiva += g; acc.aparar += g; acc.furtividade += g;
+      const gb = Math.floor(g / 2); acc.esquiva += gb; acc.aparar += gb; acc.furtividade += gb;
     }, aplicar2() {} },
 
   { id: "escavacao", nome: "Escavação", categoria: "Modelador", custoBase: 1,
@@ -1392,9 +1392,9 @@ const PODERES_PASSIVOS = [
     aplicar1() {}, aplicar2(ent, inst, acc) { acc.deslocamentos.escavacao = Math.max(acc.deslocamentos.escavacao, (inst.graduacao || 0) - 3); acc.deslocamentos.temEscavacao = true; } },
 
   { id: "membrosExtras", nome: "Membros Extras", categoria: "Modelador", custoBase: 4,
-    desc: "Cada graduação concede um membro manipulador extra (considerado inábil). +1 em Aparar e Fintar por graduação.",
+    desc: "Cada graduação concede um membro manipulador extra (inábil). +1 em testes de agarrar a cada 2 graduações.",
     extras: [], falhas: [],
-    aplicar1(ent, inst, acc) { acc.membrosExtras += (inst.graduacao || 0); acc.aparar += (inst.graduacao || 0); }, aplicar2() {} },
+    aplicar1(ent, inst, acc) { acc.membrosExtras += (inst.graduacao || 0); acc.agarrar += Math.floor((inst.graduacao || 0) / 2); }, aplicar2() {} },
 
   { id: "movimento", nome: "Movimento Especial", categoria: "Coringa", custoBase: 3,
     desc: "Para cada graduação, escolha uma forma especial de movimento: Andar na Água, Balançar-se, Deslizar, Escalar Paredes ou Permear.",
@@ -1556,14 +1556,14 @@ const PODERES_PASSIVOS = [
    como referência, pra descontar manualmente cada turno. */
 const FUNDAMENTOS = [
   { id: "ren", nome: "Ren", custoNen: 2, sustentado: true,
-    desc: "Característica Aumentada em Força, Agilidade e Vigor (graduação 1 cada). Ação livre pra ativar; sustentado; custa 2 de Nen por turno enquanto ativo.",
+    desc: "Característica Aumentada em Força, Agilidade e Vigor (graduação 1 cada). Custa 2 de Nen por turno.",
     passivos: () => [
       { id: uid(), tipoId: "caracteristica", graduacao: 1, campos: { atributo: "forca" }, extrasAtivos: {} },
       { id: uid(), tipoId: "caracteristica", graduacao: 1, campos: { atributo: "agilidade" }, extrasAtivos: {} },
       { id: uid(), tipoId: "caracteristica", graduacao: 1, campos: { atributo: "vigor" }, extrasAtivos: {} },
     ] },
   { id: "zetsu", nome: "Zetsu", custoNen: 0, sustentado: true,
-    desc: "Camuflagem contra Ver Nen (graduação 4) + 1 de Furtividade. Ação livre pra ativar; sustentado; sem custo de Nen por turno.",
+    desc: "Camuflagem contra Ver Nen (graduação 4) + 1 de Furtividade.",
     passivos: () => [
       { id: uid(), tipoId: "camuflagem", graduacao: 4, campos: { sentido: "Ver Nen" }, extrasAtivos: {} },
       { id: uid(), tipoId: "bonusPericiaPassivo", graduacao: 1, campos: { pericia: "Furtividade" }, extrasAtivos: {} },
@@ -1572,16 +1572,16 @@ const FUNDAMENTOS = [
     desc: "Quando um item seu sofrer dano com o Shu ativo, esse dano é descontado dos seus Pontos de Nen em vez dos Pontos de Vida do item (aplicado automaticamente na ação Quebrar).",
     passivos: () => [{ id: uid(), tipoId: "shuNota", graduacao: 1, campos: {}, extrasAtivos: {} }] },
   { id: "ken", nome: "Ken", custoNen: 1, sustentado: true,
-    desc: "Proteção (graduação 1). Ação livre pra ativar; sustentado; custa 1 de Nen por turno enquanto ativo.",
+    desc: "Proteção (graduação 1). Custa 1 de Nen por turno.",
     passivos: () => [{ id: uid(), tipoId: "protecao", graduacao: 1, campos: {}, extrasAtivos: {} }] },
   { id: "gyo", nome: "Gyo", custoNen: 1, sustentado: true,
-    desc: "Sentido Ver Nen (graduação 1) + 1 de Percepção. Ação livre pra ativar; sustentado; custa 1 de Nen por turno; enquanto sustentado, você fica Vulnerável.",
+    desc: "Sentido Ver Nen (graduação 1) + 1 de Percepção. Custa 1 de Nen por turno; enquanto ativo, você fica Vulnerável.",
     passivos: () => [
       { id: uid(), tipoId: "sentidos", graduacao: 1, campos: { sentido: "Ver Nen" }, extrasAtivos: {}, colateral: { ativo: true, condicao: "Vulnerável", comTeste: false } },
       { id: uid(), tipoId: "bonusPericiaPassivo", graduacao: 1, campos: { pericia: "Percepção" }, extrasAtivos: {} },
     ] },
   { id: "em", nome: "Em", custoNen: 2, sustentado: true,
-    desc: "Sentido Percepção às Cegas (graduação 1). Ação livre pra ativar; sustentado; custa 2 de Nen por turno enquanto ativo.",
+    desc: "Sentido Percepção às Cegas (graduação 1). Custa 2 de Nen por turno.",
     passivos: () => [{ id: uid(), tipoId: "sentidos", graduacao: 1, campos: { sentido: "Percepção às Cegas" }, extrasAtivos: {} }] },
 ];
 function construirFundamento(def) {
@@ -1596,7 +1596,7 @@ function construirFundamento(def) {
 
 function acumuladorPassivoVazio() {
   return {
-    atributos: {}, tamanho: 0, aparar: 0, esquiva: 0, furtividade: 0, temDeflexao: false,
+    atributos: {}, tamanho: 0, agarrar: 0, aparar: 0, esquiva: 0, furtividade: 0, temDeflexao: false,
     reducaoDano: 0, reducaoDanoLimitado: 0, reducaoDanoItens: [], regenPorTurno: 0, pontosSorteMax: 0, membrosExtras: 0,
     comunicacaoAlcance: 0, deslocamentos: { base: 0, voo: 0, natacao: 0, escavacao: 0, temVoo: false, temNatacao: false, temEscavacao: false },
     periciasBonus: {}, notas: [], imunidades: [],
@@ -2235,8 +2235,13 @@ function objetoDaHabilidade(a, ent) {
 function pontosObjetoGastos(ent, objetoId) {
   return (ent?.ataques || []).reduce((s, a) => s + (objetoDaHabilidade(a, ent)?.id === objetoId ? ppAtaque(a, ent) : 0), 0);
 }
+function custoAtributos(ent) {
+  const nv = Math.max(1, ent?.nivel || 1);
+  return Object.values(ent?.atributos || {}).reduce((s, v) => { v = v || 0; return s + (v > nv ? 2 * nv + 3 * (v - nv) : 2 * v); }, 0);
+}
+function danoConfig0(efeito, origem) { const c = danoPorGrauConfigurado(origem); return c != null ? c : efeito.graduacao || 0; }
 function pontosPoderGastos(ent) {
-  const custoAtr = Object.values(ent?.atributos || {}).reduce((s, v) => s + (v || 0), 0) * 2;
+  const custoAtr = custoAtributos(ent);
   const custoPer = Object.values(ent?.periciaPontos || {}).reduce((s, v) => s + (v || 0), 0) * 1;
   const custoVant = (ent?.vantagens || []).reduce((s, v) => s + (v.graduacoes || 1), 0) * 1;
   const custoHabilidades = (ent?.ataques || []).reduce((s, a) => s + custoAtaque(a, ent), 0);
@@ -2289,6 +2294,28 @@ const contaMod = (ef, id) => (ef?.mods || []).filter((m) => m.id === id).reduce(
 const fmtM = (m) => (m >= 1000 ? `${Math.round(m / 100) / 10} km` : `${m} m`);
 const fmtKg = (kg) => (kg >= 1000 ? `${Math.round(kg / 100) / 10} t` : `${kg} kg`);
 /** linhas de informação do cartão de uso de um efeito de utilidade */
+/** linhas de informação de um efeito passivo (quanto ele rende na graduação atual) */
+function infoPassivo(inst, ent) {
+  const g = Math.max(0, Math.round(inst.graduacao || 0));
+  const L = [];
+  const id = inst.tipoId;
+  if (g <= 0) return L;
+  const dist = `${graduacaoParaDistancia(g)} m`;
+  if (id === "sentidos") {
+    const sn = inst.campos?.sentido;
+    if (sn === "Rastrear") L.push(`Rastreia rastros de até ${linhaMedida(g).tempo} atrás.`);
+    else if (sn) L.push(`${sn}: alcance de ${dist}.`);
+  } else if (id === "voo") {
+    L.push(`Voa ${deslocamentoTextoDe(g)} por turno.`);
+  } else if (id === "natacao") {
+    const ag = attr(ent, "agilidade");
+    L.push(`Nada ${deslocamentoTextoDe(g === 1 ? ag - 1 : ag + g - 2)} por turno.`);
+  } else if (id === "movimento") {
+    const ag = attr(ent, "agilidade");
+    L.push(`Move-se ${deslocamentoTextoDe(ag)} por turno nas formas escolhidas.`);
+  }
+  return L;
+}
 function infoEfeitoUtil(ef, ent) {
   const g = Math.max(0, Math.round(ef.graduacao || 0));
   const L = [];
@@ -2317,11 +2344,11 @@ function infoEfeitoUtil(ef, ent) {
     if (imp) L.push(`Impenetrável ${imp}: resistência +${imp} (${g + imp}).`);
     if (contaMod(ef, "proporcional")) L.push("Proporcional: a resistência é a graduação de volume, não do efeito.");
   } else if (ef.categoria === "Invocar") {
-    if (contaMod(ef, "invocar_objeto") > 0) { L.push(`Objeto invocado: ${g * 5} PV e resistência ${g} (conta como equipamento; os pontos são gastos na barra do objeto).`); return L; }
+    if (contaMod(ef, "invocar_objeto") > 0) { L.push(`Objeto invocado: ${g * 5} PV e resistência ${g}.`); return L; }
     const horda = contaMod(ef, "horda");
     const pontos = g * 10; // criatura ou veículo: 10 por graduação
     L.push(`Criatura de nível ${g} com ${pontos} pontos${horda ? ` (Horda ${horda}: ${2 ** horda} criaturas de ${Math.floor(pontos / 2 ** horda)} pontos cada)` : ""}.`);
-    L.push(`Ação padrão para invocar; age na sua iniciativa a partir da rodada seguinte. Fica a até ${4.5 + 1.5 * contaMod(ef, "alcance_invocar")} m de você. Usa o seu Nen. Sem Ativo: só ação padrão e de movimento (tonta).`);
+    L.push(`Ação padrão para invocar; age na sua iniciativa a partir da rodada seguinte. Fica a até ${9 + 1.5 * contaMod(ef, "alcance_invocar")} m de você. Usa o seu Nen. Sem Ativo: só ação padrão e de movimento (tonta).`);
   } else if (ef.categoria === "Ilusão") {
     const s = Math.max(1, Math.min(5, Number(ef.campos?.sentidos) || 1));
     L.push(`Afeta ${s >= 5 ? "todos os tipos de sentido" : s + " tipo(s) de sentido"} · área até ${graduacaoParaVolume(g)} L · CD de Intuição ${10 + g} (+5 se alguém avisou o grupo).`);
@@ -2676,7 +2703,7 @@ function rolarExigirTeste(ent, exigirTeste) {
   const pericia = exigirTeste?.pericia || "";
   const atrLegado = exigirTeste?.atributo || "luta";
   const base = pericia ? bonusBasePericia(ent, pericia) : attrBase(ent, atrLegado);
-  const cd = 10 + (pontos - 1) + base;
+  const cd = 8 + (pontos - 1) + base;
   const dado = rolarD20();
   const bonus = pericia ? bonusPericia(ent, pericia) : attr(ent, atrLegado);
   const total = dado + bonus;
@@ -3771,6 +3798,18 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu efeito" });
     if (efeito.categoria === "Dano" && extra.dano > 0) aplicarDano(alvo.id, extra.dano);
+    if (efeito.categoria === "Dano") {
+      const reb = (efeito.mods || []).find((m) => m.id === "rebote");
+      if (reb) {
+        const dR = dadosEfeito(efeito, origemAtual, false, 0);
+        const dadoR = rolarD20();
+        const rR = montarTeste(dadoR, dR.bonus, dados.cd);
+        const brutoR = rR.sucesso ? 0 : (danoConfig0(efeito, origemAtual)) * Math.abs(rR.graus);
+        const danoR = Math.abs(Number(reb.valor)) >= 6 ? brutoR : Math.floor(brutoR / 2);
+        registrar({ tipo: "rolagem", desc: `${origemAtual.nome} sofre Rebote de ${efeito.categoria}`, detalhe: `2d10(${dadoR}) ${dR.bonus >= 0 ? "+" : ""}${dR.bonus} = ${rR.total} vs CD ${dados.cd}${rR.sucesso ? "" : ` · Falhou por ${Math.abs(rR.graus)} grau(s)`}`, total: rR.sucesso ? "Resistiu" : `Sofreu ${danoR} de dano`, tipoClasse: rR.tipoClasse });
+        if (danoR > 0) aplicarDano(origemAtual.id, danoR);
+      }
+    }
     if (efeito.categoria === "Dano" && extra.absorcoesItens?.length && atualizarCampo) {
       const novosAtaques = (alvo.ataques || []).map((a) => {
         const abs = extra.absorcoesItens.find((x) => x.ataqueId === a.id);
@@ -3838,7 +3877,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   };
 
   /* ----- Multiataque: ataque extra com penalidade fixa no teste de ataque —
-     -10 se for repetido no mesmo alvo do ataque principal, -5 se for em outro alvo engajado ----- */
+     -5 se for repetido no mesmo alvo do ataque principal, -2 se for em outro alvo engajado ----- */
   const temMultiataque = ehAtaque && !isArea && !!contexto.ataque?.extras?.multiataque && !contexto.ataque?.extras?.dividido;
   const [multiAtaques, setMultiAtaques] = useState([]);
   const [multiAlvoEscolha, setMultiAlvoEscolha] = useState("");
@@ -3852,7 +3891,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     if (!alvoMA) return;
     const info = infoAtaque();
     const mesmoAlvo = oponente && alvoMA.id === oponente.id;
-    const penalidade = mesmoAlvo ? -10 : -5;
+    const penalidade = mesmoAlvo ? -5 : -2;
     const idMA = uid();
     if (!info) {
       setMultiAtaques((s) => [...s, { id: idMA, alvo: alvoMA, penalidade: 0, r: "auto", efeitosR: {} }]);
@@ -4155,7 +4194,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
         )}
         {(temMultiataque || temDividido) && (
           <div style={{ display: "flex", gap: 6, marginBottom: 12, flexWrap: "wrap" }}>
-            {temMultiataque && <span className="stat-chip ataque-chip" style={{ cursor: "default" }}>⚔ Multiataque — -10 no mesmo alvo / -5 em outro alvo</span>}
+            {temMultiataque && <span className="stat-chip ataque-chip" style={{ cursor: "default" }}>⚔ Multiataque — -5 no mesmo alvo / -2 em outro alvo</span>}
             {temDividido && <span className="stat-chip ataque-chip" style={{ cursor: "default" }}>🔀 Dividido — reparte a graduação entre dois alvos diferentes</span>}
           </div>
         )}
@@ -4578,7 +4617,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   const rolarAtaqueOposto = () => {
     if (!oponente) return;
     const ajudaBonus = consumirAjuda(origemAtual, "ataque");
-    const bonus = bonusAtaque(origemAtual, acao.penalidade || 0, ajudaBonus);
+    const bonus = bonusAtaque(origemAtual, acao.penalidade || 0, ajudaBonus) + (acao.id === "agarrar" ? modificadoresPassivos(origemAtual).agarrar : 0);
     const dado = rolarD20();
     const cdDef = cdDefesa(oponente, "aparar");
     const res = montarTeste(dado, bonus, cdDef);
@@ -4589,7 +4628,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   };
   const rolarOpostoContestado = () => {
     if (!oponente) return;
-    const bAt0 = melhorDe(origemAtual, acao.periciaOposta) + bonusDescansoAcaoValor, bDef = melhorDe(oponente, acao.periciaOposta);
+    const bAt0 = melhorDe(origemAtual, acao.periciaOposta) + bonusDescansoAcaoValor + (acao.id === "agarrar" ? modificadoresPassivos(origemAtual).agarrar : 0), bDef = melhorDe(oponente, acao.periciaOposta);
     const dAt = rolarD20(), dDef = rolarD20();
     critNota = bonusCriticoPericia(origemAtual, melhorPericiaDe(origemAtual, acao.periciaOposta), dAt);
     const bAt = bAt0 + critNota;
@@ -5229,6 +5268,8 @@ export default function MesaMM3() {
   const [modalCtx, setModalCtx] = useState(null);
   const [acaoCtx, setAcaoCtx] = useState(null);
   const [abaDireita, setAbaDireita] = useState("iniciativa");
+  const [fichasAbertas, setFichasAbertas] = useState({}); // fichas expandidas (fica aqui para não fechar ao salvar)
+  const [focoFicha, setFocoFicha] = useState(null);
   const [eventosAnim, setEventosAnim] = useState([]);
   const [erroSync, setErroSync] = useState(null);
   const [pastas, setPastas] = useState([]);
@@ -5739,7 +5780,7 @@ export default function MesaMM3() {
           <div className="split-col col-fichas">
             <FichasTab entidades={entidades} salvar={salvarEntidades} identidade={identidade} usuario={usuario} registrar={registrar}
               onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa}
-              pastas={pastas} onSalvarPastas={salvarPastas} />
+              pastas={pastas} onSalvarPastas={salvarPastas} fichasAbertas={fichasAbertas} setFichasAbertas={setFichasAbertas} foco={focoFicha} onFocoConsumido={() => setFocoFicha(null)} />
           </div>
           <div className="split-col col-lateral">
             <div className="tabs-row">
@@ -5747,7 +5788,9 @@ export default function MesaMM3() {
               <div className={"tab-btn" + (abaDireita === "historico" ? " sel" : "")} onClick={() => setAbaDireita("historico")}>Histórico</div>
             </div>
             {abaDireita === "iniciativa" && (
-              <IniciativaTab iniciativa={iniciativa} identidade={identidade} onAvancar={avancarTurno} onRetroceder={retrocederTurno} onZerar={zerarIniciativa} />
+              <IniciativaTab iniciativa={iniciativa} identidade={identidade} onAvancar={avancarTurno} onRetroceder={retrocederTurno} onZerar={zerarIniciativa}
+                podeFocar={(id) => { if (identidade?.papel === "mestre") return true; const e = entidades.find((x) => x.id === id); return !!e && (e.donoUid ? e.donoUid === usuario?.uid : e.dono === identidade?.nome); }}
+                onFocar={(id) => setFocoFicha({ id, t: Date.now() })} />
             )}
             {abaDireita === "historico" && (
               <HistoricoTab historico={historico} onAtualizar={carregarTudo} identidade={identidade} registrar={registrar} />
@@ -5898,8 +5941,6 @@ function EfeitoForm({ efeito, onMudar, onCriarArremesso }) {
             <option value="">Selecione o atributo…</option>
             {ATRIBUTOS_DANO.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
           </SearchableSelect>
-          {!efeito.atributoBase && <div className="field-note" style={{ color: "var(--danger, #c0392b)" }}>Escolha um atributo: todo dano é baseado em atributo.</div>}
-          <div className="field-note">A graduação do dano é o valor atual do atributo e não custa nada; use as setas ▲ do efeito para somar graduações extras (essas custam).</div>
         </>
       )}
       {efeito.categoria === "Aflição" && (
@@ -5992,7 +6033,7 @@ function ExigirTesteEditor({ valor, onMudar }) {
       {v.ativo && (
         <>
           <div className="field-note" style={{ marginBottom: 8 }}>
-            Ao usar este efeito (e, se for sustentado, no começo de cada turno), rola um teste da perícia escolhida contra CD 10 + (pontos − 1) + bônus base da perícia (só atributo + pontos da perícia; características e vantagens situacionais não contam). Se falhar, só este efeito é perdido (a ação é gasta). Um 1 natural sempre falha. Ao passar, todas as graduações do efeito ficam disponíveis.
+            Ao usar este efeito (e, se for sustentado, no começo de cada turno), rola um teste da perícia escolhida contra CD 8 + (pontos − 1) + bônus base da perícia (só atributo + pontos da perícia; características e vantagens situacionais não contam). Se falhar, só este efeito é perdido (a ação é gasta). Um 1 natural sempre falha. Ao passar, todas as graduações do efeito ficam disponíveis.
           </div>
           <div className="grid2">
             <div>
@@ -6211,7 +6252,6 @@ function PassivoInstanceEditor({ passivo, onMudar }) {
     <div className="ed-efeito-bloco">
       {def && (
         <>
-          <div className="field-note" style={{ marginBottom: 8 }}>{def.desc}</div>
           {def.id === "rapidez" && <RapidezLoja passivo={passivo} onMudar={onMudar} />}
           {ce && !ce.multi && (
             <div style={{ marginBottom: 8 }}>
@@ -6487,7 +6527,7 @@ function derivarHabilidade(a, calc, ent) {
     const g = Math.max(0, Math.round(g0) + passos);
     return `${ALCANCE_TXT[l.alcance]} · ${fmtM(graduacaoParaDistancia(g))} (graduação ${g})`;
   }).filter(Boolean))];
-  const bonusDefesaPassivo = pas.filter((p) => p.tipoId === "deflexao").map((p) => `Aparar +${p.graduacao || 0} (também contra ataques à distância)`);
+  const bonusDefesaPassivo = pas.filter((p) => p.tipoId === "deflexao").map((p) => `Aparar +${Math.floor((p.graduacao || 0) / 2)} (também contra ataques à distância)`);
   let bonusAcerto = null, defesa = null;
   if (ent && tipoAcerto === "corpo") { bonusAcerto = attr(ent, "luta"); defesa = "Aparar"; }
   if (ent && tipoAcerto === "distancia") { bonusAcerto = attr(ent, "destreza"); defesa = "Esquiva (ou Aparar contra Deflexão)"; }
@@ -6576,7 +6616,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     </div>
   );
 }
-function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, onDescer, children }) {
+function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, onDescer, ent, children }) {
   const [cfg, setCfg] = useState(false);
   const cat = EFEITO_CAT_POR_ID[idCat];
   const tipoPadrao = cat?.tipo || "coringa";
@@ -6596,6 +6636,7 @@ function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, 
       </div>
       <DescBonita cor={COR_NEN[tipo] || COR_NEN.coringa} titulo={nome} selo={capNen(tipo) + (ativo ? "" : " · aprimoramento")} chips={chips} texto={d?.texto || ""}
         nota={res ? `${res.grad} graduações · base ${res.base}${res.ajG.length ? " · " + res.ajG.map((a) => `${a.nome} ${a.g > 0 ? "+" : ""}${a.g}`).join(" · ") : ""}` : null} notaTitulo="Como o custo foi calculado" />
+      {!ativo && infoPassivo(item, ent).length > 0 && <div className="field-note" style={{ margin: "6px 0" }}>{infoPassivo(item, ent).map((l, i) => <div key={i}>• {l}</div>)}</div>}
       {res?.dicaNivel && <div className="px-dica">💡 Pode subir para a graduação {res.dicaNivel} pelo mesmo custo.</div>}
       <button type="button" className="px-cfg" onClick={() => setCfg((v) => !v)}>{cfg ? "▼ Fechar configuração" : "⚙ Configurar este efeito"}</button>
       {cfg && (
@@ -6720,7 +6761,7 @@ function InspetorHabilidade({ ataque, onMudar, onNovoEfeito }) {
   const setFixos = (novos) => onMudar({ ...ataque, fixosHab: [...(ataque.fixosHab || []).filter(ehEspecial), ...novos] });
   return (
     <div className="px">
-      <DescBonita cor="#e8c84a" titulo={ataque.nome || "Habilidade"} selo="Habilidade" texto="Esta é a habilidade inteira. Toque num efeito para ver a descrição e ajustar a graduação com os triângulos. Toque numa peça verde ou vermelha para ver o que ela faz. Multiataque, Dividido e Ponto Fraco aparecem em todos os efeitos aplicáveis. Só Desgastante e Efeito Alternativo ficam presos aqui, embaixo do nome." />
+      <DescBonita cor="#e8c84a" titulo={ataque.nome || "Habilidade"} selo="Habilidade" texto="" />
       <div className="px-ctrl">
         <button type="button" className="btn btn-ghost btn-sm" onClick={onNovoEfeito}>+ Novo efeito</button>
       </div>
@@ -7224,7 +7265,7 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
               </svg>
             )}
             {caixa && <div className="mp-caixa" style={{ left: caixa.x, top: caixa.y, width: caixa.w, height: caixa.h }} />}
-            <No k="raiz" cls={"mp-raiz" + (raizSel && !selecionado.fixoHab && !selecionado.pal ? " sel" : "")} onClick={() => onSel({ raiz: true })}>
+            <No k="raiz" cls={"mp-raiz" + (raizSel && !selecionado.fixoHab && !selecionado.pal ? " sel" : "")} style={{ cursor: "default" }}>
               <b>{ataque.nome || "Habilidade"}</b><span>{total} PP</span>
             </No>
             {habMods.map((h) => (
@@ -7355,11 +7396,16 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
   ];
 
   const bSel = sel && sel.key ? blocos.find((b) => b.key === sel.key) : null;
-  const atualizarBloco = (b, novo) => (b.ativo ? setEfs(efs.map((x, j) => (j === b.i ? novo : x))) : setPas(pas.map((x, j) => (j === b.i ? novo : x))));
+  const atualizarBloco = (b, novo0) => {
+    const lim = limiteFixoDe(b.idCat, Math.max(1, ent?.nivel || 1)); const kg = chaveGrad(b.ativo, novo0);
+    const novo = lim != null && (novo0[kg] || 0) > lim ? { ...novo0, [kg]: lim } : novo0;
+    return b.ativo ? setEfs(efs.map((x, j) => (j === b.i ? novo : x))) : setPas(pas.map((x, j) => (j === b.i ? novo : x)));
+  };
+  const _atualizarBlocoAntigo = (b, novo) => (b.ativo ? setEfs(efs.map((x, j) => (j === b.i ? novo : x))) : setPas(pas.map((x, j) => (j === b.i ? novo : x))));
   const removerBloco = (b) => { setSel(null); if (b.ativo) { onMudar({ ...ataque, efeitos: efs.filter((_, j) => j !== b.i), alcances: (ataque.alcances || []).filter((x) => x.efeitoId !== b.item.id) }); } else setPas(pas.filter((_, j) => j !== b.i)); };
   const lista = (b) => (b.ativo ? efs : pas);
   const setLista = (b, arr) => (b.ativo ? setEfs(arr) : setPas(arr));
-  const onGrad = (b, d) => { const k = chaveGrad(b.ativo, b.item); atualizarBloco(b, { ...b.item, [k]: Math.max(0, (b.item[k] || 0) + d) }); };
+  const onGrad = (b, d) => { const k = chaveGrad(b.ativo, b.item); const lim = limiteFixoDe(b.idCat, Math.max(1, ent?.nivel || 1)); let v = Math.max(0, (b.item[k] || 0) + d); if (lim != null) v = Math.min(v, lim); atualizarBloco(b, { ...b.item, [k]: v }); };
   const addMod = (b, m) => {
     if (m.id.startsWith("x:")) { atualizarBloco(b, { ...b.item, extrasAtivos: { ...(b.item.extrasAtivos || {}), [m.id.slice(2)]: true } }); setSel({ key: b.key, fixo: m.id }); return; }
     if (LEG_TODOS[m.id]) { onMudar(LEG_TODOS[m.id].on(ataque)); setSel({ key: b.key, fixo: m.id }); return; }
@@ -7493,7 +7539,6 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
         onRemover={() => { onMudar({ ...ataque, usoVariaveis: ataque.usoVariaveis.filter((x) => x.id !== uid0) }); setSel({ raiz: true }); }} /> : null;
     }
     else if (sel.fixoHab) inspetor = <InspetorLegado id={sel.fixoHab} item={ataque} ehHab onMudar={onMudar} onRemover={() => { onMudar(LEG_HAB[sel.fixoHab].off(ataque)); setSel({ raiz: true }); }} grad={0} />;
-    else inspetor = <InspetorHabilidade ataque={ataque} onMudar={onMudar} onNovoEfeito={() => { setSel(null); setPaleta(true); setLadoAberto(true); }} />;
   } else if (bSel) {
     if (sel.pal) {
       inspetor = <PaletaMods ataque={ataque} bloco={bSel} idCat={bSel.idCat} item={bSel.item} ativo={bSel.ativo} ocultar={bSel.def ? modsOcultosDoPassivo(bSel.def) : undefined} onAdd={(m) => addMod(bSel, m)} />;
@@ -7518,7 +7563,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
       inspetor = <InspetorMod efsLista={bSel.ativo ? efs.filter((e) => e.id !== bSel.item.id && !CATS_SEM_ROLAGEM.includes(e.categoria) && e.categoria !== "Outros") : undefined} passosExtra={(ataque.alcances || []).filter((x) => x.efeitoId === bSel.item.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1) * Math.max(1, x.vezes || 1), 0)} item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { removerModIdx(bSel, new Set([sel.mod])); setSel({ key: bSel.key }); }} />;
     } else {
       inspetor = (
-        <InspetorEfeito key={bSel.key} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat}
+        <InspetorEfeito key={bSel.key} ent={ent} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat}
           onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => removerBloco(bSel)}
           onSubir={bSel.i > 0 ? () => setLista(bSel, mover(lista(bSel), bSel.i, -1)) : null} onDescer={bSel.i < lista(bSel).length - 1 ? () => setLista(bSel, mover(lista(bSel), bSel.i, 1)) : null}>
           {bSel.ativo
@@ -7856,7 +7901,7 @@ function PainelFicha({ f }) {
         const pontos = Math.max(1, Number(et.graduacoes) || 1);
         const base = et.pericia ? bonusBasePericia(f, et.pericia) : attrBase(f, et.atributo || "luta");
         const bonus = et.pericia ? bonusPericia(f, et.pericia) : attr(f, et.atributo || "luta");
-        const cd = 10 + (pontos - 1) + base;
+        const cd = 8 + (pontos - 1) + base;
         const need = Math.max(2, cd - bonus);
         testes.push({ nome: it.categoria || (PODERES_PASSIVOS.find((p) => p.id === it.tipoId)?.nome) || "Efeito", cd, bonus, p: chanceMinD20(need), pericia: et.pericia || et.atributo || "" });
       }
@@ -7905,7 +7950,7 @@ function PainelFicha({ f }) {
   const gastosPP = pontosPoderGastos(f), ppMax = pontosPoderMax(f);
 
   // pontos de poder
-  const ppAtr = Object.values(f.atributos || {}).reduce((s, v) => s + (v || 0), 0) * 2;
+  const ppAtr = custoAtributos(f);
   const ppPer = Object.values(f.periciaPontos || {}).reduce((s, v) => s + (v || 0), 0);
   const ppVan = (f.vantagens || []).reduce((s, v) => s + (v.graduacoes || 1), 0);
   const ppHabs = ataques.reduce((s, a) => s + custoAtaque(a, f), 0);
@@ -8140,7 +8185,7 @@ function PainelFicha({ f }) {
         <div className="dash-duplo">
           <Radar itens={ATRIBUTOS.map((a) => ({ l: a.l, v: attrBase(f, a.k) }))} max={radarMax} />
           <div className="dash-lista">
-            <div className="dash-linha">PP em atributos: <b>{ppAtr}</b> (2 por ponto). Máximo por atributo no nível {f.nivel || 1}: <b>{radarMax}</b>.</div>
+            <div className="dash-linha">PP em atributos: <b>{ppAtr}</b>. Máximo por atributo no nível {f.nivel || 1}: <b>{radarMax}</b>.</div>
             <div className="dash-linha">Vida máx. <b>{pvMax}</b> = (5 + Vigor) × nível · Nen máx. <b>{nenMax}</b> = (3 + Prontidão) × nível.</div>
             <div className="dash-linha">Deslocamento: <b>{deslocamentoTexto(f)}</b>{passivosCalc.reducaoDano > 0 ? <> · Proteção: <b>−{passivosCalc.reducaoDano}</b> de dano</> : null}</div>
           </div>
@@ -8540,9 +8585,18 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   );
 }
 
-function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas }) {
-  const [editando, setEditando] = useState(null);
+function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas, fichasAbertas = {}, setFichasAbertas = () => {}, foco = null, onFocoConsumido = () => {} }) {
+  const [editando, setEditandoRaw] = useState(null);
+  const scrollSalvo = useRef(null);
+  // ao abrir o formulário guarda a rolagem; ao fechar (salvar/cancelar) a lista volta ao mesmo ponto, com as fichas ainda abertas
+  const setEditando = (v) => { if (v && !editando) scrollSalvo.current = { y: window.scrollY, col: document.querySelector(".col-fichas")?.scrollTop || 0 }; setEditandoRaw(v); };
+  useEffect(() => {
+    if (editando || !scrollSalvo.current) return;
+    const { y, col } = scrollSalvo.current; scrollSalvo.current = null;
+    requestAnimationFrame(() => { window.scrollTo(0, y); const c = document.querySelector(".col-fichas"); if (c) c.scrollTop = col; });
+  }, [editando]);
   const [pastasAbertas, setPastasAbertas] = useState({});
+  const setAbertaFicha = (id, v) => setFichasAbertas((m) => ({ ...m, [id]: v }));
   const [criandoPasta, setCriandoPasta] = useState(false);
   const [nomeNovaPasta, setNomeNovaPasta] = useState("");
   const [pastaParaExcluir, setPastaParaExcluir] = useState(null);
@@ -8551,6 +8605,17 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   const [busca, setBusca] = useState("");
   const [vantagemCtx, setVantagemCtx] = useState(null);
   const ehMestre = identidade.papel === "mestre";
+  // duplo clique na iniciativa: abre a ficha (e a pasta dela) e leva a tela até ela
+  useEffect(() => {
+    if (!foco) return;
+    const alvo = entidades.find((x) => x.id === foco.id);
+    if (!alvo) { onFocoConsumido(); return; }
+    setFichasAbertas((m) => ({ ...m, [alvo.id]: true }));
+    if (alvo.pasta) setPastasAbertas((x) => ({ ...x, [alvo.pasta]: true }));
+    setBusca("");
+    const t = setTimeout(() => { document.getElementById("ficha-" + alvo.id)?.scrollIntoView({ behavior: "smooth", block: "start" }); onFocoConsumido(); }, 150);
+    return () => clearTimeout(t);
+  }, [foco]);
   const rotulosProprio = ehMestre ? ["Criatura", "NPC"] : ["Personagem", "Invocação"];
   const souDono = (e) => e.donoUid ? e.donoUid === usuario?.uid : e.dono === identidade.nome;
   const meusTodos = entidades.filter(souDono);
@@ -8628,7 +8693,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
     onDragLeave: (ev) => { if (!ev.currentTarget.contains(ev.relatedTarget) && alvoDrop === chave) setAlvoDrop(null); },
     onDrop: (ev) => soltarEm(ev, pastaId),
   });
-  const renderItem = (e) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
+  const renderItem = (e) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
     pastas={pastas} onMoverPasta={(id) => atualizarCampo(e.id, "pasta", id || null)} />;
 
   return (
@@ -8645,7 +8710,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
           <div key={p.id} className="subcard2" style={{ marginBottom: 10, ...(alvoDrop === p.id ? { outline: "2px dashed var(--accent)", background: "var(--accent-soft)" } : {}) }} {...zonaDrop(p.id, p.id)}>
             <div className="row-inline" style={{ justifyContent: "space-between", alignItems: "center" }}>
               <div className="acoes-header" style={{ flex: 1 }} onClick={() => setPastasAbertas((x) => ({ ...x, [p.id]: !x[p.id] }))}>
-                <div className="stat-group-label" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.25rem", letterSpacing: "0.03em", textTransform: "none", color: "var(--text)" }}>📁 {p.nome} ({todos.length}{todos.some((e) => e.oponente) ? ` · ${todos.filter((e) => e.oponente).length} engajada(s)` : ""})</div>
+                <div className="stat-group-label" style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.25rem", letterSpacing: "0.03em", textTransform: "none", color: todos.some((e) => e.oponente) ? "#e8c84a" : "var(--text)" }}>📁 {p.nome} ({todos.length})</div>
                 <span className={"arrow" + (aberta ? " open" : "")}>▶</span>
               </div>
               {ehMestre && <button className={"btn btn-sm " + (engajadas ? "btn-danger" : "btn-ghost")} disabled={!todos.length} onClick={() => engajarPasta(p)}>{engajadas ? "Desengajar pasta" : "Engajar pasta"}</button>}
@@ -8677,7 +8742,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
         <>
           <div className="section-title">Outras fichas na mesa</div>
           {outros.length === 0 && <div className="card empty">Ninguém mais cadastrou fichas ainda.</div>}
-          {outros.map((e) => <EntidadeItem key={e.id} e={e} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} />)}
+          {outros.map((e) => <EntidadeItem key={e.id} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} />)}
         </>
       )}
 
@@ -8730,8 +8795,10 @@ function StatChip({ label, value, onClick }) {
   return <button className="stat-chip" onClick={onClick}>{label} <b>{value >= 0 ? "+" : ""}{value}</b></button>;
 }
 
-function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta }) {
-  const [aberto, setAberto] = useState(false);
+function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta, abertoExt, onAbertoExt }) {
+  const [abertoLocal, setAbertoLocal] = useState(false);
+  const aberto = abertoExt !== undefined ? !!abertoExt : abertoLocal; // estado levantado: sobrevive ao salvar a ficha e à troca de aba
+  const setAberto = (v) => { const novo = typeof v === "function" ? v(aberto) : v; if (onAbertoExt) onAbertoExt(novo); else setAbertoLocal(novo); };
   const [confirmandoExclusao, setConfirmandoExclusao] = useState(false);
   const confirmarExclusao = () => { setConfirmandoExclusao(false); onExcluir(); };
   const [secoes, setSecoes] = useState({ acoes: false, manobras: false, vantagens: false, ataques: true, defesas: false, atributos: false, pericias: false, condicoes: false });
@@ -8895,7 +8962,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
   }
 
   return (
-    <div className="ent-item">
+    <div className="ent-item" id={"ficha-" + e.id}>
       <div className="ficha-hero">
         {e.foto && <div className="hero-bg" style={{ backgroundImage: `url(${e.foto})` }} />}
         <div className="hero-conteudo">
@@ -9386,7 +9453,7 @@ function HistoricoTab({ historico, onAtualizar, identidade, registrar }) {
 }
 
 /* ---------- iniciativa ---------- */
-function IniciativaTab({ iniciativa, identidade, onAvancar, onRetroceder, onZerar }) {
+function IniciativaTab({ iniciativa, identidade, onAvancar, onRetroceder, onZerar, podeFocar, onFocar }) {
   const ordem = iniciativa.ordem || [];
   const ehMestre = identidade?.papel === "mestre";
   return (
@@ -9402,7 +9469,7 @@ function IniciativaTab({ iniciativa, identidade, onAvancar, onRetroceder, onZera
       </div>
       {ordem.length === 0 && <div className="card empty">Ninguém rolou iniciativa ainda. Use o botão "Iniciativa" na ficha.</div>}
       {ordem.map((o, i) => (
-        <div key={o.entidadeId} className={"init-item" + (i === iniciativa.turnoAtual ? " atual" : "")}>
+        <div key={o.entidadeId} className={"init-item" + (i === iniciativa.turnoAtual ? " atual" : "")} title={podeFocar && podeFocar(o.entidadeId) ? "Duplo clique: abrir a ficha" : undefined} style={podeFocar && podeFocar(o.entidadeId) ? { cursor: "pointer" } : undefined} onDoubleClick={() => { if (podeFocar && podeFocar(o.entidadeId) && onFocar) onFocar(o.entidadeId); }}>
           <div className="init-val">{o.valor}</div>
           <div>
             <div className="init-nome">{o.nome}</div>
