@@ -33,7 +33,7 @@ export const EFEITOS = [
   E("aflicao", "Aflição", 3, "padrao", "perto", "instantaneo", "coringa", { implementado: true }),
   E("alongamento", "Alongamento", 1, "livre", "pessoal", "sustentado", "modelador"),
   E("camuflagem", "Camuflagem", 2, "livre", "pessoal", "sustentado", "coringa", { implementado: true }),
-  E("caracteristica_aumentada", "Característica Aumentada", 2, "livre", "pessoal", "sustentado", "fortificador"),
+  E("caracteristica_aumentada", "Característica Aumentada", 3, "livre", "pessoal", "sustentado", "fortificador"),
   E("compreender", "Compreender", 5, "nenhuma", "pessoal", "permanente", "especialista"),
   E("comunicacao", "Comunicação", 2, "livre", "graduacao", "sustentado", "emissor"),
   E("controle_sorte", "Controle de Sorte", 6, "reacao", "percepcao", "instantaneo", "manipulador"),
