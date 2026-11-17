@@ -811,6 +811,31 @@ const GlobalStyle = () => (
     .mm3 .px-add { font:inherit; font-weight:800; letter-spacing:.08em; background:#e8c84a; color:#1a1a1a; border:none; border-radius:10px; padding:10px; cursor:pointer; }
     .mm3 .px-add:hover { filter:brightness(1.08); }
     .mm3 .ssel-grupo { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); padding:7px 10px 3px; }
+
+    .mm3 .cc-painel { border:1px solid #3a3f50; background:linear-gradient(180deg,#1a1c25,#15171e); }
+    .mm3 .cc-painel.cc-engajada { border-color:#e8c84a66; }
+    .mm3 .cc-foto { width:44px; height:44px; border-radius:50%; object-fit:cover; background:#242734; display:inline-flex; align-items:center; justify-content:center; font-size:1.5rem; }
+    .mm3 .cc-mapa { display:flex; flex-direction:column; gap:8px; margin:12px 0; }
+    .mm3 .cc-linha { display:flex; gap:8px; justify-content:center; } .mm3 .cc-linha > .cc-tile { flex:1; min-width:0; }
+    .mm3 .cc-col { display:flex; flex-direction:column; gap:8px; flex:1; min-width:0; } .mm3 .cc-col > .cc-tile { flex:1; }
+    .mm3 .cc-meio > .cc-torax { flex:1.3; }
+    .mm3 .cc-torax { min-height:130px; justify-content:center; border-width:2px; background:#222637; }
+    .mm3 .cc-tile { position:relative; display:flex; flex-direction:column; gap:3px; align-items:stretch; text-align:left; padding:9px 10px; border-radius:12px; border:1px solid #3a3f50; background:#1d202a; color:var(--text); cursor:pointer; min-height:78px; transition:transform .12s, border-color .12s; }
+    .mm3 .cc-tile:hover { transform:translateY(-1px); border-color:var(--accent); }
+    .mm3 .cc-nome { font-weight:600; font-size:.9rem; } .mm3 .cc-nivel { font-size:.7rem; opacity:.6; }
+    .mm3 .cc-pv { height:7px; border-radius:4px; background:#0f1117; overflow:hidden; display:block; }
+    .mm3 .cc-pv i { display:block; height:100%; background:#4fbf7a; transition:width .25s; }
+    .mm3 .cc-baixa .cc-pv i { background:#e0a43a; }
+    .mm3 .cc-inc .cc-pv i { background:#d9544d; }
+    .mm3 .cc-pvn { font-size:.72rem; opacity:.75; }
+    .mm3 .cc-inc { border-color:#d9544d; background:#2a1a1c; opacity:.85; }
+    .mm3 .cc-selo { font-size:.62rem; letter-spacing:.08em; font-weight:700; color:#ff8a82; }
+    .mm3 .cc-conds { font-size:.64rem; opacity:.7; line-height:1.2; }
+    .mm3 .cc-vazio { opacity:.4; cursor:default; }
+    .mm3 .cc-abas { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
+    .mm3 .cc-aba { padding:7px 12px; border-radius:999px; border:1px solid #3a3f50; background:#1d202a; color:var(--text); cursor:pointer; font-size:.85rem; }
+    .mm3 .cc-aba.ativa { background:var(--accent); color:#111; border-color:var(--accent); font-weight:600; }
+    @media (max-width:520px) { .mm3 .cc-mapa { gap:6px; } .mm3 .cc-tile { padding:7px 8px; } }
 `}</style>
 );
 
@@ -852,6 +877,40 @@ const ATRIBUTOS = [
   { k: "forca", l: "Força" }, { k: "agilidade", l: "Agilidade" }, { k: "vigor", l: "Vigor" }, { k: "inteligencia", l: "Inteligência" },
   { k: "presenca", l: "Presença" }, { k: "prontidao", l: "Prontidão" }, { k: "luta", l: "Luta" }, { k: "destreza", l: "Destreza" },
 ];
+/* ---------- Criatura Composta: cada parte do corpo é uma ficha ligada às outras pelo grupoId ---------- */
+const PARTES_COMPOSTA = [
+  { k: "torax", nome: "Tórax / Cabeça", curto: "Tórax", icone: "🫀" },
+  { k: "bracoE", nome: "Braço Esquerdo", curto: "Braço E", icone: "🦾" },
+  { k: "bracoD", nome: "Braço Direito", curto: "Braço D", icone: "🦾" },
+  { k: "pernaE", nome: "Perna Esquerda", curto: "Perna E", icone: "🦵" },
+  { k: "pernaD", nome: "Perna Direita", curto: "Perna D", icone: "🦵" },
+];
+const TIPOS_PARTE = { torax: { nome: "Tórax", icone: "🫀" }, braco: { nome: "Braço", icone: "🦾" }, perna: { nome: "Perna", icone: "🦵" }, cabeca: { nome: "Cabeça", icone: "🗣️" }, outra: { nome: "Parte", icone: "🔹" } };
+const tipoParte = (m) => { const p = m?.composta?.parte || ""; return m?.composta?.tipo || (p === "torax" ? "torax" : /^braco/.test(p) ? "braco" : /^perna/.test(p) ? "perna" : "outra"); };
+const rotuloParte = (m) => m?.composta?.rotulo || PARTES_COMPOSTA.find((p) => p.k === m?.composta?.parte)?.curto || m?.nome || "";
+const ordemParte = (m) => { const i = PARTES_COMPOSTA.findIndex((p) => p.k === m?.composta?.parte); return i >= 0 ? i : 100 + (m?.composta?.ordem || 0); };
+const ordenarPartes = (ms) => [...ms].sort((x, y) => ordemParte(x) - ordemParte(y));
+const membrosDe = (entidades, gid) => ordenarPartes((entidades || []).filter((x) => x.composta?.grupoId === gid));
+const PERICIAS_DA_PARTE = ["Atletismo", "Acrobacia"];
+const somaPericiasPP = (e) => Object.entries(e?.periciaPontos || {}).reduce((s, [k, v]) => s + (ehParteSecundaria(e) && !PERICIAS_DA_PARTE.includes(k) ? 0 : (v || 0)), 0);
+function opcoesEntidades(lista) {
+  const out = []; const vistos = new Set();
+  lista.forEach((o) => {
+    const g = o.composta?.grupoId;
+    if (!g) { out.push(<option key={o.id} value={o.id}>{o.nome}</option>); return; }
+    if (vistos.has(g)) return; vistos.add(g);
+    const ms = ordenarPartes(lista.filter((x) => x.composta?.grupoId === g));
+    out.push(<optgroup key={"g" + g} label={ms[0].composta.nome || ms[0].nome}>{ms.map((m) => <option key={m.id} value={m.id}>{m.nome}</option>)}</optgroup>);
+  });
+  return out;
+}
+const ATRS_SO_TORAX = ["presenca", "prontidao", "inteligencia"];
+const CONDICOES_MENTAIS = ["Atordoado", "Compelido", "Controlado", "Tonto", "Transe", "Nulificado", "Amarrado"];
+const MANOBRAS_SO_TORAX = ["fintar", "desmoralizar"];
+const toraxDe = (e, entidades) => (ehParteSecundaria(e) ? (entidades || []).find((x) => x.composta?.grupoId === e.composta.grupoId && x.composta.parte === "torax") || e : e);
+const metrosDe = (t) => parseFloat(String(t).replace(",", ".")) || 0;
+const ehParteSecundaria = (e) => !!e?.composta && e.composta.parte !== "torax";
+const atributosDaFicha = (e) => (ehParteSecundaria(e) ? ATRIBUTOS.filter((a) => !ATRS_SO_TORAX.includes(a.k)) : ATRIBUTOS);
 const ATRIBUTOS_DANO = ATRIBUTOS.filter((a) => ["forca", "destreza", "presenca", "inteligencia"].includes(a.k));
 const ATRIBUTOS_VAZIOS = ATRIBUTOS.reduce((acc, a) => ({ ...acc, [a.k]: 0 }), {});
 
@@ -1277,7 +1336,7 @@ function limiarCritico(ent, ataqueId) {
 }
 
 /* ---------- helpers de valores derivados ---------- */
-function attrBase(ent, key) { return (ent && ent.atributos && ent.atributos[key]) || 0; }
+function attrBase(ent, key) { if (ent?.composta && ent.composta.parte !== "torax" && ["presenca", "prontidao", "inteligencia"].includes(key)) return ent.composta.attrsTx?.[key] || 0; return (ent && ent.atributos && ent.atributos[key]) || 0; }
 function reducaoAtributoTemp(ent, key) {
   return (ent?.duracoes || []).filter((d) => d.tipo === "atributo" && d.chave === key).reduce((t, d) => t + (d.valor || 0), 0);
 }
@@ -1305,7 +1364,7 @@ const PODERES_PASSIVOS = [
     cdInfo: (inst) => ({ cd: 15 + (inst.graduacao || 0), teste: `Percepção (ou teste do sentido) para detectar apesar da camuflagem contra ${inst.campos?.sentido || "o sentido escolhido"}` }),
     aplicar1() {}, aplicar2(ent, inst, acc) { if (inst.campos?.sentido) acc.notas.push(`Camuflado contra ${inst.campos.sentido}`); } },
 
-  { id: "caracteristica", nome: "Característica Aumentada", categoria: "Fortificador", custoBase: 2,
+  { id: "caracteristica", nome: "Característica Aumentada", categoria: "Fortificador", custoBase: 3,
     desc: "Aumenta um atributo em graduações iguais à graduação deste efeito, até o máximo de nível+4.",
     campoEscolha: { chave: "atributo", label: "Atributo aumentado", opcoes: ATRIBUTOS.map((a) => a.k), rotulos: ATRIBUTOS },
     extras: [
@@ -1732,7 +1791,7 @@ function posProcessarEntidade(prev, ne) {
   }
   if ((prev.pvAtual || 0) !== (r.pvAtual || 0)) {
     const c = { ...(r.condicoes || {}) };
-    if ((r.pvAtual || 0) <= 0 && !c["Morrendo"] && !c["Morto"]) {
+    if ((r.pvAtual || 0) <= 0 && !c["Morrendo"] && !c["Morto"] && !ehParteSecundaria(r)) {
       c["Morrendo"] = 1;
       r = { ...r, condicoes: c, morrendoContador: 3 };
     } else if ((r.pvAtual || 0) > 0 && c["Morrendo"]) {
@@ -2073,8 +2132,9 @@ function computeBonusBase(ent, tipo, chave) {
   return 0;
 }
 function pvMaxCalc(ent) { return (5 + attr(ent, "vigor")) * (ent?.nivel || 1); }
-function nenMaxCalc(ent) { return (3 + attr(ent, "prontidao")) * (ent?.nivel || 1); }
-function deslocamentoTexto(ent) {
+function nenMaxCalc(ent) { if (ehParteSecundaria(ent) && ent.composta.nenMax != null) return ent.composta.nenMax; return (3 + attr(ent, "prontidao")) * (ent?.nivel || 1); }
+function deslocamentoTexto(ent) { return ent?.composta?.mov || deslocamentoTextoBase(ent); }
+function deslocamentoTextoBase(ent) {
   const g = Math.max(-2, Math.min(24, attr(ent, "agilidade") + modificadoresPassivos(ent).deslocamentos.base));
   return DESLOC_TABELA[g + 2];
 }
@@ -2242,7 +2302,7 @@ function custoAtributos(ent) {
 function danoConfig0(efeito, origem) { const c = danoPorGrauConfigurado(origem); return c != null ? c : efeito.graduacao || 0; }
 function pontosPoderGastos(ent) {
   const custoAtr = custoAtributos(ent);
-  const custoPer = Object.values(ent?.periciaPontos || {}).reduce((s, v) => s + (v || 0), 0) * 1;
+  const custoPer = somaPericiasPP(ent);
   const custoVant = (ent?.vantagens || []).reduce((s, v) => s + (v.graduacoes || 1), 0) * 1;
   const custoHabilidades = (ent?.ataques || []).reduce((s, a) => s + custoAtaque(a, ent), 0);
   return custoAtr + custoPer + custoVant + custoHabilidades;
@@ -3572,7 +3632,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
      os efeitos colaterais (dano na vida, condições, etc). Não mexe em estado de UI — quem chama
      decide onde guardar o resultado. Isso permite reaproveitar a mesma lógica tanto no fluxo normal
      quanto no Multiataque (vários alvos/ataques) e no Dividido (efeito com graduação repartida). */
-  const rolarEfeitoGenerico = (efeito, alvo, aplicarProtecaoLimitada, critico, cdMetade = false) => {
+  const rolarEfeitoGenerico = (efeito, alvo0, aplicarProtecaoLimitada, critico, cdMetade = false) => {
+    const alvo = efeito.categoria === "Nulificar" || (efeito.categoria === "Aflição" && efeito.salvamento === "Vontade") ? toraxDe(alvo0, entidades) : alvo0;
     const efeitoOriginal = efeito;
     // Dano Baseado Em: a graduação vem do atributo (+ dano adicional) do atacante, ao vivo.
     if (efeito.categoria === "Dano") efeito = { ...efeito, semLimiteNivel: !!efeito.baseadoAtivo && !((efeito.graduacao || 0) > 0), graduacao: graduacaoEfetiva(efeito, origemAtual), baseadoAtivo: false };
@@ -4176,7 +4237,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
               if (novo) ativarColateraisOutros(ataqueAtual, novo, atualizarCampo, registrar);
             }}>
               <option value="">{afetaOutrosHab(ataqueAtual).apenas ? "Selecione…" : "Só eu (sem outro alvo)"}</option>
-              {entidades.filter((x) => x.id !== origemAtual.id).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+              {opcoesEntidades(entidades.filter((x) => x.id !== origemAtual.id))}
             </SearchableSelect>
             <div className="field-note">{afetaOutrosHab(ataqueAtual).apenas ? "Apenas outros: você não recebe o efeito." : "Você também recebe o efeito."}</div>
           </div>
@@ -4257,7 +4318,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
             <label className="label">Oponente</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+              {opcoesEntidades(entidades.filter((e) => e.id !== origemAtual.id && e.oponente))}
             </SearchableSelect>
 
             {oponente && podeAgarrarRapido && !ataqueAcertoR && (
@@ -4476,7 +4537,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
             <label className="label">Oponente</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setStatOponente(""); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).map((e) => <option key={e.id} value={e.id}>{e.nome}</option>)}
+              {opcoesEntidades(entidades.filter((e) => e.id !== origemAtual.id && e.oponente))}
             </SearchableSelect>
             {oponente && (
               <>
@@ -4546,7 +4607,8 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   const [multiResultados, setMultiResultados] = useState(null);
   const [usarBonusDescansoAcao, setUsarBonusDescansoAcao] = useState(false);
 
-  const oponente = entidades.find((e) => e.id === oponenteId);
+  const oponente0 = entidades.find((e) => e.id === oponenteId);
+  const oponente = oponente0 && MANOBRAS_SO_TORAX.includes(acao?.id) ? toraxDe(oponente0, entidades) : oponente0;
   // Idem: usa o registro completo se disponível (ex.: já é oponente engajado, ou é o dono da
   // própria ficha), senão cai pro nome público do roster — o suficiente pra registrar quem foi
   // ajudado, já que rolarAjuda() usa só os atributos de quem está ajudando, não do aliado.
@@ -4844,7 +4906,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const vitoria = totalAt > totalDef;
     setR2({ dAt, bAt, totalAt, dDef, bDef, totalDef, vitoria });
     // Desmoralizar: até o INÍCIO do próximo turno de quem usou. Fintar: até o FIM do próximo turno de quem usou.
-    if (vitoria) aplicarCondicaoTemporaria(atualizarCampo, oponente, acao.condicao, acao.id === "fintar" ? "fim" : "inicio", origemAtual.id, iniciativa);
+    if (vitoria) (oponente.composta ? membrosDe(entidades, oponente.composta.grupoId) : [oponente]).forEach((m) => aplicarCondicaoTemporaria(atualizarCampo, m, acao.condicao, acao.id === "fintar" ? "fim" : "inicio", origemAtual.id, iniciativa));
     registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa ${acao.nome} em ${oponente.nome}${fintaAgilAtiva ? " (Finta Ágil: Acrobacia/Enganação)" : ""}`, detalhe: `${totalAt} (2d10 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (2d10 ${dDef}${fmtBonus(bDef)})${fmtMods([...notasPericiaEnt(origemAtual, acao.pericia), ...nDescanso(), ...notasPericiaEnt(oponente, acao.pericia).map((t) => `alvo: ${t}`)])}`, total: vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Sem efeito", tipoClasse: vitoria ? "hs" : "hw" });
     if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
     consumirBonusDescansoAcao();
@@ -4946,7 +5008,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
             <label className="label">Oponente</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); setR2(null); setR3(null); setItemAlvoId(""); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+              {opcoesEntidades(oponentesDisponiveis)}
             </SearchableSelect>
 
             {acao.resolvedor === "ataqueObjeto" && oponente && (
@@ -5106,7 +5168,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
             <label className="label">Oponente engajado que esteja Morrendo</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {feridosMorrendo.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+              {opcoesEntidades(feridosMorrendo)}
             </SearchableSelect>
             {feridosMorrendo.length === 0 && <div className="field-note">Nenhum oponente engajado está Morrendo.</div>}
             {oponente && <div className="field-note">CD do tratamento: <b>{cdTratarFerido}</b> (15 ou a vida negativa de {oponente.nome}, o que for maior).</div>}
@@ -5120,7 +5182,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
             <label className="label">Aliado a ajudar</label>
             <SearchableSelect listaCheia value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {aliadosDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+              {opcoesEntidades(aliadosDisponiveis)}
             </SearchableSelect>
             {aliado && (
               <>
@@ -5141,7 +5203,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
             <label className="label">Alvo</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR2(null); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+              {opcoesEntidades(oponentesDisponiveis)}
             </SearchableSelect>
             {oponente && !r2 && <button className="btn btn-accent btn-block" onClick={rolarOposicaoCondicao}>⚄ Rolar {acao.pericia}</button>}
             {r2 && (
@@ -5165,7 +5227,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
             <label className="label">Oponente</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+              {opcoesEntidades(oponentesDisponiveis)}
             </SearchableSelect>
             <label className="label">Graduações de deslocamento antes do ataque</label>
             <input type="number" value={graduacoesMovidas} onChange={(e) => setGraduacoesMovidas(e.target.value)} style={{ marginBottom: 12 }} />
@@ -5220,7 +5282,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
                     <label className="label">Inimigo</label>
                     <SearchableSelect listaCheia value={oponenteId} onChange={(e) => setOponenteId(e.target.value)} style={{ marginBottom: 12 }}>
                       <option value="">Selecione…</option>
-                      {oponentesDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+                      {opcoesEntidades(oponentesDisponiveis)}
                     </SearchableSelect>
                   </>
                 )}
@@ -5229,7 +5291,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
                     <label className="label">Aliado</label>
                     <SearchableSelect listaCheia value={aliadoId} onChange={(e) => setAliadoId(e.target.value)} style={{ marginBottom: 12 }}>
                       <option value="">Selecione…</option>
-                      {aliadosDisponiveis.map((o) => <option key={o.id} value={o.id}>{o.nome}</option>)}
+                      {opcoesEntidades(aliadosDisponiveis)}
                     </SearchableSelect>
                   </>
                 )}
@@ -5430,12 +5492,25 @@ export default function MesaMM3() {
     await adicionarHistorico({ tipo: "sistema", ...entry, hora: horaAgora() });
   };
   /* dano > 0 tira primeiro da Vida Temporária; dano < 0 é cura. */
-  const aplicarDano = async (entidadeId, dano) => {
+  const aplicarDano = async (entidadeId, dano0) => {
     const antes = entidades.find((x) => x.id === entidadeId);
+    let dano = dano0;
+    // Criatura composta: o dano que sobra ao zerar uma parte (que não é o tórax) vai para o tórax
+    if (antes && ehParteSecundaria(antes) && dano > 0) {
+      const cabe = Math.max(0, antes.pvAtual || 0) + Math.max(0, antes.pvTemp || 0);
+      const sobra = dano - Math.min(dano, cabe);
+      const tx = toraxDe(antes, entidades);
+      if (sobra > 0 && tx && tx.id !== antes.id) {
+        dano = dano - sobra;
+        registrar({ tipo: "rolagem", desc: `${antes.nome} não aguenta o dano`, detalhe: `${sobra} de dano passam para ${tx.nome}`, total: `${sobra} → Tórax`, tipoClasse: "hw" });
+        aplicarDano(tx.id, sobra);
+      }
+    }
     if (antes && dano > 0 && (antes.pvTemp || 0) > 0) {
       const abs = Math.min(antes.pvTemp, dano);
       registrar({ tipo: "rolagem", desc: `${antes.nome} perde Vida Temporária`, detalhe: `${abs} PV temporários absorveram o dano`, total: `${antes.pvTemp - abs} PV temp.`, tipoClasse: "hw" });
     }
+    if (dano0 > 0 && dano <= 0) return;
     const chaveTurno = chaveTurnoIniciativa(iniciativa);
     atualizarCampo(entidadeId, "*", (e) => { const d = danoComTemp(e, dano); return { ...e, pvTemp: d.pvTemp, pvAtual: d.pvAtual, ...(dano > 0 ? { ultimoDanoTurno: chaveTurno } : {}) }; });
   };
@@ -5465,13 +5540,83 @@ export default function MesaMM3() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entidades, identidade, usuario]);
+  /* Criatura Composta (só o mestre sincroniza): Nen, variáveis e tipo de Nen são do tórax; condições mentais, Nulificado, Prejudicado e Vulnerável
+     vão para o tórax e se espalham pelas 5 partes; parte com 0 PV fica incapacitada; tórax com 0 PV derruba a criatura;
+     o movimento vem das pernas (uma incapacitada = metade; as duas = imóvel). */
+  useEffect(() => {
+    if (identidade?.papel !== "mestre") return;
+    const grupos = {};
+    entidades.forEach((e) => { if (e.composta?.grupoId) (grupos[e.composta.grupoId] ||= []).push(e); });
+    Object.values(grupos).forEach((ms) => {
+      const tx = ms.find((m) => m.composta.parte === "torax");
+      if (!tx) return;
+      const partes = ms.filter((m) => m !== tx);
+      // condições espalhadas
+      const mTx = {};
+      CONDICOES_MENTAIS.forEach((c) => { mTx[c] = tx.condicoes?.[c] || 0; });
+      partes.forEach((p) => CONDICOES_MENTAIS.forEach((c) => { const d = (p.condicoes?.[c] || 0) - (p.composta.espelho?.[c] || 0); if (d > 0) mTx[c] += d; }));
+      const espelho = {}; CONDICOES_MENTAIS.forEach((c) => { if (mTx[c] > 0) espelho[c] = mTx[c]; });
+      // Nen compartilhado (soma das mudanças feitas em qualquer parte)
+      let nen = tx.nenAtual || 0;
+      if (tx.composta.espNen !== undefined) {
+        const ref = tx.composta.espNen;
+        nen = Math.max(0, ref + ((tx.nenAtual || 0) - ref) + partes.reduce((s, p) => s + (p.composta.espNen !== undefined ? (p.nenAtual || 0) - p.composta.espNen : 0), 0));
+      }
+      // variáveis compartilhadas (o tórax vence se os dois mudaram)
+      let vars = tx.variaveis || [];
+      if (tx.composta.espVar !== undefined && JSON.stringify(vars) === tx.composta.espVar) {
+        const mud = partes.find((p) => p.composta.espVar !== undefined && JSON.stringify(p.variaveis || []) !== p.composta.espVar);
+        if (mud) vars = mud.variaveis || [];
+      }
+      const espVar = JSON.stringify(vars);
+      const nenMax = nenMaxCalc(tx);
+      // movimento pelas pernas
+      const pernas = ms.filter((m) => tipoParte(m) === "perna");
+      const pernaInc = (m) => (m.pvAtual || 0) <= 0 || !!m.condicoes?.["Incapacitado"];
+      const nInc = pernas.filter(pernaInc).length;
+      let mov = "";
+      if (pernas.length) {
+        const melhor = Math.max(...pernas.map((m) => metrosDe(deslocamentoTextoBase({ ...m, composta: undefined }))));
+        mov = nInc >= pernas.length ? "Imóvel" : nInc > 0 ? `${+(melhor * (pernas.length - nInc) / pernas.length).toFixed(2)}m (${pernas.length - nInc}/${pernas.length} pernas)` : `${melhor}m`;
+      }
+      const imovel = pernas.length > 0 && nInc >= pernas.length;
+      const txCaiu = (tx.pvAtual || 0) <= 0;
+      ms.forEach((m) => {
+        const cond = { ...(m.condicoes || {}) };
+        CONDICOES_MENTAIS.forEach((c) => { if (mTx[c] > 0) cond[c] = mTx[c]; else delete cond[c]; });
+        let incapAuto = !!m.composta.incapAuto;
+        if (m !== tx) {
+          const querInc = txCaiu || (m.pvAtual || 0) <= 0;
+          if (querInc && !cond["Incapacitado"]) { cond["Incapacitado"] = 1; incapAuto = true; }
+          else if (!querInc && cond["Incapacitado"] && incapAuto) { delete cond["Incapacitado"]; incapAuto = false; }
+        }
+        let imovelAuto = !!m.composta.imovelAuto;
+        if (imovel && !cond["Imóvel"]) { cond["Imóvel"] = 1; imovelAuto = true; }
+        else if (!imovel && cond["Imóvel"] && imovelAuto) { delete cond["Imóvel"]; imovelAuto = false; }
+        const c0 = m.composta;
+        const attrsTx = { presenca: tx.atributos?.presenca || 0, prontidao: tx.atributos?.prontidao || 0, inteligencia: tx.atributos?.inteligencia || 0 };
+        const ppNovo = m !== tx ? { ...(tx.periciaPontos || {}), Atletismo: m.periciaPontos?.Atletismo || 0, Acrobacia: m.periciaPontos?.Acrobacia || 0 } : null;
+        const mudou = JSON.stringify(cond) !== JSON.stringify(m.condicoes || {}) || incapAuto !== !!c0.incapAuto || imovelAuto !== !!c0.imovelAuto
+          || JSON.stringify(espelho) !== JSON.stringify(c0.espelho || {}) || c0.mov !== mov || c0.espNen !== nen || c0.espVar !== espVar || c0.nenMax !== nenMax
+          || (m.nenAtual || 0) !== nen || JSON.stringify(m.variaveis || []) !== espVar || m.tipoNen !== tx.tipoNen
+          || (m !== tx && (JSON.stringify(c0.attrsTx || {}) !== JSON.stringify(attrsTx) || JSON.stringify(m.periciaPontos || {}) !== JSON.stringify(ppNovo)));
+        if (mudou) atualizarCampo(m.id, "*", (e) => ({ ...e, condicoes: cond, nenAtual: nen, variaveis: vars, tipoNen: tx.tipoNen, ...(ppNovo ? { periciaPontos: ppNovo } : {}), composta: { ...e.composta, espelho, incapAuto, imovelAuto, mov, espNen: nen, espVar, nenMax, attrsTx } }));
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entidades, identidade]);
   const salvarIniciativa = async (nova) => { setIniciativa(nova); await escreverCompartilhado("iniciativa", nova); };
-  const rolarIniciativa = async (entidade) => {
+  const rolarIniciativa = async (entidade0) => {
+    // Criatura composta: a iniciativa é rolada pelo tórax e todas as partes agem com o mesmo valor
+    const gid = entidade0.composta?.grupoId;
+    const membros = gid ? membrosDe(entidades, gid) : [entidade0];
+    const entidade = gid ? (membros.find((m) => m.composta.parte === "torax") || entidade0) : entidade0;
     const dado = rolarD20();
     const bonus = attr(entidade, "agilidade");
     const valor = dado + bonus;
-    const restante = (iniciativa.ordem || []).filter((o) => o.entidadeId !== entidade.id);
-    const nova = [...restante, { entidadeId: entidade.id, nome: entidade.nome, valor }].sort((a, b) => b.valor - a.valor);
+    const idsM = new Set(membros.map((m) => m.id));
+    const restante = (iniciativa.ordem || []).filter((o) => !idsM.has(o.entidadeId));
+    const nova = [...restante, ...membros.map((m) => ({ entidadeId: m.id, nome: m.nome, valor }))].sort((a, b) => b.valor - a.valor);
     const proximaIniciativa = { ...iniciativa, ordem: nova };
     await salvarIniciativa(proximaIniciativa);
     registrar({ tipo: "rolagem", desc: `${entidade.nome} rola Iniciativa`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${valor}`, total: valor, tipoClasse: "hs" });
@@ -7951,7 +8096,7 @@ function PainelFicha({ f }) {
 
   // pontos de poder
   const ppAtr = custoAtributos(f);
-  const ppPer = Object.values(f.periciaPontos || {}).reduce((s, v) => s + (v || 0), 0);
+  const ppPer = somaPericiasPP(f);
   const ppVan = (f.vantagens || []).reduce((s, v) => s + (v.graduacoes || 1), 0);
   const ppHabs = ataques.reduce((s, a) => s + custoAtaque(a, f), 0);
   const ppLivre = Math.max(0, ppMax - gastosPP);
@@ -8183,7 +8328,7 @@ function PainelFicha({ f }) {
       <div className="dash-bloco">
         <div className="dash-titulo">Atributos</div>
         <div className="dash-duplo">
-          <Radar itens={ATRIBUTOS.map((a) => ({ l: a.l, v: attrBase(f, a.k) }))} max={radarMax} />
+          <Radar itens={atributosDaFicha(f).map((a) => ({ l: a.l, v: attrBase(f, a.k) }))} max={radarMax} />
           <div className="dash-lista">
             <div className="dash-linha">PP em atributos: <b>{ppAtr}</b>. Máximo por atributo no nível {f.nivel || 1}: <b>{radarMax}</b>.</div>
             <div className="dash-linha">Vida máx. <b>{pvMax}</b> = (5 + Vigor) × nível · Nen máx. <b>{nenMax}</b> = (3 + Prontidão) × nível.</div>
@@ -8380,7 +8525,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
           {f.foto && ajFotoAberto && <div style={{ marginTop: 12 }}><AjusteImagem src={f.foto} ajuste={f.fotoAj} onMudar={(v) => upd("fotoAj", v)} proporcao="1 / 1" maxLargura={220} /></div>}
           <div className="grid3" style={{ marginTop: 12 }}>
             <div><label className="label">Tipo</label><SearchableSelect listaCheia value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>
-            <div><label className="label">Tipo de Nen</label><SearchableSelect listaCheia value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>
+            {!ehParteSecundaria(f) && <div><label className="label">Tipo de Nen</label><SearchableSelect listaCheia value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>}
             <div><label className="label">Nível</label><input type="number" min="1" value={f.nivel} disabled={!!nivelFixo} title={nivelFixo ? "Fixo: é a graduação da Metamorfose" : undefined} onChange={(e) => upd("nivel", Math.max(1, Number(e.target.value)))} /></div>
           </div>
         </div>
@@ -8406,7 +8551,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       <section className="ed-sec">
       <div className="section-title">Atributos (máx. {maxAtr}, mín. -2)</div>
       <div className="ed-attr-grid" style={{ marginBottom: 10 }}>
-        {ATRIBUTOS.map((a) => <div key={a.k} className="ed-attr"><label className="label">{a.l}</label><input type="number" min={-2} max={maxAtr} value={f.atributos[a.k]} onChange={(e) => updAtributo(a.k, Number(e.target.value))} /></div>)}
+        {atributosDaFicha(f).map((a) => <div key={a.k} className="ed-attr"><label className="label">{a.l}</label><input type="number" min={-2} max={maxAtr} value={f.atributos[a.k]} onChange={(e) => updAtributo(a.k, Number(e.target.value))} /></div>)}
       </div>
 
       </section>
@@ -8433,7 +8578,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       <section className="ed-sec">
       <div className="section-title">Perícias (máx. {maxPer} ponto(s) cada)</div>
       <div className="pericias-grid" style={{ marginBottom: 10 }}>
-        {PERICIAS.map((p) => (
+        {(ehParteSecundaria(f) ? PERICIAS.filter((p) => PERICIAS_DA_PARTE.includes(p.nome)) : PERICIAS).map((p) => (
           <div className="pe-row" key={p.nome}>
             <span>{p.nome}</span>
             <input type="number" min={0} max={maxPer} value={f.periciaPontos[p.nome]} onChange={(e) => updPericia(p.nome, Number(e.target.value))} />
@@ -8585,6 +8730,88 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
   );
 }
 
+/* ---------- Criatura Composta: painel do grupo ---------- */
+function PainelComposta({ grupo, ehMestre, renderItem, setAbertaFicha, onEditar, onExcluir, onEngajar, onIniciativa, onAdicionar }) {
+  const [aberto, setAberto] = useState(true);
+  const [addAberto, setAddAberto] = useState(false);
+  const ms = ordenarPartes(grupo);
+  const tx = ms.find((m) => tipoParte(m) === "torax") || ms[0];
+  const nomeCriatura = tx.composta.nome || tx.nome;
+  const engajada = grupo.every((m) => m.oponente);
+  const alguma = grupo.some((m) => m.oponente);
+  const abrirParte = (m) => {
+    setAbertaFicha(m.id, true);
+    setTimeout(() => document.getElementById("ficha-" + m.id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
+  };
+  const Tile = ({ m }) => {
+    const t = tipoParte(m);
+    const pvMax = pvMaxCalc(m); const pv = m.pvAtual || 0;
+    const pct = Math.max(0, Math.min(100, pvMax > 0 ? (pv / pvMax) * 100 : 0));
+    const inc = pv <= 0 || !!m.condicoes?.["Incapacitado"] || !!m.condicoes?.["Morrendo"];
+    const conds = Object.keys(m.condicoes || {}).filter((c) => (m.condicoes[c] || 0) > 0);
+    return (
+      <button type="button" className={"cc-tile" + (t === "torax" ? " cc-torax" : "") + (inc ? " cc-inc" : "") + (pct <= 25 && !inc ? " cc-baixa" : "")} onClick={() => abrirParte(m)} title={"Abrir " + rotuloParte(m)}>
+        <span className="cc-nome">{TIPOS_PARTE[t].icone} {rotuloParte(m)}</span>
+        <span className="cc-nivel">Nv {m.nivel || 1}</span>
+        <span className="cc-pv"><i style={{ width: pct + "%" }} /></span>
+        <span className="cc-pvn">{pv} / {pvMax} PV</span>
+        {inc && <span className="cc-selo">{t === "torax" ? "CAÍDA" : "INCAPACITADA"}</span>}
+        {conds.length > 0 && <span className="cc-conds">{conds.slice(0, 3).join(" · ")}{conds.length > 3 ? " +" + (conds.length - 3) : ""}</span>}
+      </button>
+    );
+  };
+  const bracos = ms.filter((m) => tipoParte(m) === "braco");
+  let alt = 0;
+  const esq = [], dir = [];
+  bracos.forEach((m) => { const p = m.composta.parte; if (p === "bracoE") esq.push(m); else if (p === "bracoD") dir.push(m); else (alt++ % 2 === 0 ? esq : dir).push(m); });
+  const cabecas = ms.filter((m) => tipoParte(m) === "cabeca");
+  const pernas = ms.filter((m) => tipoParte(m) === "perna");
+  const outras = ms.filter((m) => tipoParte(m) === "outra");
+  return (
+    <div className={"subcard2 cc-painel" + (alguma ? " cc-engajada" : "")} style={{ marginBottom: 12 }}>
+      <div className="row-inline" style={{ alignItems: "center", gap: 10 }}>
+        <div className="acoes-header" style={{ flex: 1, display: "flex", alignItems: "center", gap: 10 }} onClick={() => setAberto(!aberto)}>
+          {tx.foto ? <img src={tx.foto} alt="" className="cc-foto" /> : <span className="cc-foto cc-foto-vazia">🐙</span>}
+          <div>
+            <div style={{ fontFamily: "'Bebas Neue', sans-serif", fontSize: "1.35rem", letterSpacing: "0.03em", color: alguma ? "#e8c84a" : "var(--text)" }}>{nomeCriatura}</div>
+            <div className="field-note" style={{ margin: 0 }}>Criatura composta · {ms.length} partes</div>
+          </div>
+          <span className={"arrow" + (aberto ? " open" : "")} style={{ marginLeft: "auto" }}>▶</span>
+        </div>
+      </div>
+      {aberto && (
+        <>
+          <div className="cc-mapa">
+            {cabecas.length > 0 && <div className="cc-linha">{cabecas.map((m) => <Tile key={m.id} m={m} />)}</div>}
+            <div className="cc-linha cc-meio">
+              {esq.length > 0 && <div className="cc-col">{esq.map((m) => <Tile key={m.id} m={m} />)}</div>}
+              <Tile m={tx} />
+              {dir.length > 0 && <div className="cc-col">{dir.map((m) => <Tile key={m.id} m={m} />)}</div>}
+            </div>
+            {pernas.length > 0 && <div className="cc-linha">{pernas.map((m) => <Tile key={m.id} m={m} />)}</div>}
+            {outras.length > 0 && <div className="cc-linha">{outras.map((m) => <Tile key={m.id} m={m} />)}</div>}
+          </div>
+          {ehMestre && (
+            <div className="row-inline" style={{ gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+              <button className="btn btn-accent btn-sm" onClick={onIniciativa}>🎲 Iniciativa (Tórax)</button>
+              <button className={"btn btn-sm " + (engajada ? "btn-danger" : "btn-ghost")} onClick={onEngajar}>{engajada ? "Desengajar tudo" : "Engajar tudo"}</button>
+              <button className="btn btn-ghost btn-sm" onClick={onEditar}>✏️ Editar partes</button>
+              <button className="btn btn-ghost btn-sm" onClick={() => setAddAberto(!addAberto)}>➕ Parte</button>
+              <button className="btn btn-ghost btn-sm" onClick={onExcluir}>🗑 Excluir criatura</button>
+            </div>
+          )}
+          {ehMestre && addAberto && (
+            <div className="row-inline" style={{ gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
+              {["braco", "perna", "cabeca", "outra"].map((t) => <button key={t} className="cc-aba" onClick={() => { onAdicionar(t); setAddAberto(false); }}>{TIPOS_PARTE[t].icone} {TIPOS_PARTE[t].nome}</button>)}
+            </div>
+          )}
+          <div>{ms.map(renderItem)}</div>
+        </>
+      )}
+    </div>
+  );
+}
+
 function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas, fichasAbertas = {}, setFichasAbertas = () => {}, foco = null, onFocoConsumido = () => {} }) {
   const [editando, setEditandoRaw] = useState(null);
   const scrollSalvo = useRef(null);
@@ -8651,13 +8878,63 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   };
   const abrirVantagem = (entidade, vantagem, editavel) => setVantagemCtx({ entidade, vantagem, info: VANTAGENS.find((x) => x.nome === vantagem.nome), editavel });
 
-  if (editando) return <FichaForm inicial={editando === "novo" ? null : editando} rotulos={rotulosProprio} onSalvar={salvarFicha} onCancelar={() => setEditando(null)}
-    entidades={entidades} atualizarCampo={atualizarCampo} registrar={registrar} erroSalvar={erroSalvarFicha} />;
+  const [criandoComposta, setCriandoComposta] = useState(false);
+  const [nomeComposta, setNomeComposta] = useState("");
+  const criarComposta = async () => {
+    const nome = nomeComposta.trim(); if (!nome) return;
+    const grupoId = uid();
+    const novas = PARTES_COMPOSTA.map((p) => ({ ...fichaPadrao(rotulosProprio), id: uid(), nome: `${nome} — ${p.curto}`, dono: identidade.nome, donoUid: usuario?.uid, composta: { grupoId, parte: p.k, nome } }));
+    const ok = await salvar([...entidades, ...novas]);
+    if (ok) { registrar({ desc: `${identidade.nome} criou a criatura composta "${nome}"`, detalhe: "5 partes", total: "Criada", tipoClasse: "hs" }); setNomeComposta(""); setCriandoComposta(false); setEditando(novas[0]); }
+  };
+  const excluirComposta = async (grupo) => {
+    const ids = new Set(grupo.map((m) => m.id));
+    const ok = await salvar(entidades.filter((e) => !ids.has(e.id)));
+    if (ok) registrar({ desc: `${identidade.nome} excluiu a criatura composta "${grupo[0].composta.nome || grupo[0].nome}"`, detalhe: "5 partes", total: "Excluída", tipoClasse: "hd" });
+  };
+  const [compostaParaExcluir, setCompostaParaExcluir] = useState(null);
+  const [parteParaExcluir, setParteParaExcluir] = useState(null);
+  const adicionarParte = async (grupo, tipo) => {
+    const tx = grupo.find((m) => tipoParte(m) === "torax") || grupo[0];
+    const n = grupo.filter((m) => tipoParte(m) === tipo).length + 1;
+    const rotulo = `${TIPOS_PARTE[tipo].nome} ${n}`;
+    const ordem = Math.max(0, ...grupo.map((m) => m.composta.ordem || 0)) + 1;
+    const nome = tx.composta.nome || tx.nome;
+    const nova = { ...fichaPadrao(rotulosProprio), id: uid(), nome: `${nome} — ${rotulo}`, dono: identidade.nome, donoUid: usuario?.uid, composta: { grupoId: tx.composta.grupoId, parte: tipo + "_" + uid(), tipo, rotulo, ordem, nome } };
+    const ok = await salvar([...entidades, nova]);
+    if (ok) { registrar({ desc: `${identidade.nome} adicionou "${rotulo}" a ${nome}`, detalhe: "Nova parte", total: "Adicionada", tipoClasse: "hs" }); setAbertaFicha(nova.id, true); }
+  };
+  const removerParte = async (m) => {
+    const ok = await salvar(entidades.filter((e) => e.id !== m.id));
+    if (ok) registrar({ desc: `${identidade.nome} removeu "${rotuloParte(m)}" de ${m.composta.nome || m.nome}`, detalhe: "Parte removida", total: "Removida", tipoClasse: "hd" });
+  };
+  if (editando) {
+    const gid = editando !== "novo" ? editando.composta?.grupoId : null;
+    const irmas = gid ? membrosDe(entidades, gid) : [];
+    return (
+      <div>
+        {gid && (
+          <div className="cc-abas">
+            {irmas.map((m) => { const d = { icone: TIPOS_PARTE[tipoParte(m)].icone, curto: rotuloParte(m) }; return (
+              <button key={m.id} type="button" className={"cc-aba" + (m.id === editando.id ? " ativa" : "")} onClick={() => { if (m.id !== editando.id && window.confirm("Trocar de parte? O que não foi salvo nesta parte será perdido.")) setEditando(m); }}>{d.icone} {d.curto}</button>
+            ); })}
+          </div>
+        )}
+        <FichaForm key={editando === "novo" ? "novo" : editando.id} inicial={editando === "novo" ? null : editando} rotulos={rotulosProprio} onSalvar={salvarFicha} onCancelar={() => setEditando(null)}
+          entidades={entidades} atualizarCampo={atualizarCampo} registrar={registrar} erroSalvar={erroSalvarFicha} />
+      </div>
+    );
+  }
 
   const podeMarcarOponente = ehMestre;
 
   const idsPastas = new Set(pastas.map((p) => p.id));
-  const semPasta = meus.filter((e) => !e.pasta || !idsPastas.has(e.pasta));
+  const semPasta = meus.filter((e) => !e.composta && (!e.pasta || !idsPastas.has(e.pasta)));
+  const gruposComp = {};
+  meus.forEach((e) => { if (e.composta?.grupoId) (gruposComp[e.composta.grupoId] ||= []); });
+  Object.keys(gruposComp).forEach((g) => { gruposComp[g] = meusTodos.filter((e) => e.composta?.grupoId === g); });
+  const listaGrupos = Object.values(gruposComp).filter((g) => g.length > 0);
+  const engajarComposta = (g) => { const todas = g.every((m) => m.oponente); g.forEach((m) => atualizarCampo(m.id, "oponente", !todas)); registrar({ tipo: "sistema", desc: `${identidade.nome} ${todas ? "tirou do combate" : "engajou no combate"} a criatura "${g[0].composta.nome || g[0].nome}"`, detalhe: "5 partes", total: todas ? "Desengajada" : "Engajada", tipoClasse: todas ? "hw" : "hs" }); };
   const criarPasta = () => {
     const nome = nomeNovaPasta.trim();
     if (!nome || !onSalvarPastas) return;
@@ -8693,7 +8970,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
     onDragLeave: (ev) => { if (!ev.currentTarget.contains(ev.relatedTarget) && alvoDrop === chave) setAlvoDrop(null); },
     onDrop: (ev) => soltarEm(ev, pastaId),
   });
-  const renderItem = (e) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
+  const renderItem = (e) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => (e.composta ? (tipoParte(e) === "torax" ? setCompostaParaExcluir(meusTodos.filter((x) => x.composta?.grupoId === e.composta.grupoId)) : setParteParaExcluir(e)) : excluir(e))} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
     pastas={pastas} onMoverPasta={(id) => atualizarCampo(e.id, "pasta", id || null)} />;
 
   return (
@@ -8701,6 +8978,11 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
       <div className="section-title">Minhas fichas ({ehMestre ? "criaturas e NPCs" : "personagens e invocações"})</div>
       <input type="text" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ marginBottom: 10 }} />
       {meus.length === 0 && pastas.length === 0 && <div className="card empty">Nenhuma ficha encontrada.</div>}
+      {listaGrupos.map((g) => (
+        <PainelComposta key={g[0].composta.grupoId} grupo={g} ehMestre={ehMestre} renderItem={renderItem} setAbertaFicha={setAbertaFicha} onAdicionar={(t) => adicionarParte(g, t)}
+          onEditar={() => setEditando(g.find((m) => tipoParte(m) === "torax") || g[0])} onExcluir={() => setCompostaParaExcluir(g)}
+          onEngajar={() => engajarComposta(g)} onIniciativa={() => onRolarIniciativa(g.find((m) => tipoParte(m) === "torax") || g[0])} />
+      ))}
       {pastas.map((p) => {
         const todos = meusTodos.filter((e) => e.pasta === p.id);
         const visiveis = meus.filter((e) => e.pasta === p.id);
@@ -8729,6 +9011,14 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
       <div className="grid2" style={{ marginBottom: 20 }}>
         <button className="btn btn-accent btn-block" onClick={() => setEditando("novo")}>+ Nova ficha</button>
         {!criandoPasta && <button className="btn btn-ghost btn-block" onClick={() => setCriandoPasta(true)}>+ Nova pasta</button>}
+        {ehMestre && !criandoComposta && <button className="btn btn-ghost btn-block" onClick={() => setCriandoComposta(true)}>🐙 + Criatura composta</button>}
+        {ehMestre && criandoComposta && (
+          <div className="row-inline">
+            <input type="text" autoFocus placeholder="Nome da criatura" value={nomeComposta} onChange={(ev) => setNomeComposta(ev.target.value)} onKeyDown={(ev) => { if (ev.key === "Enter") criarComposta(); if (ev.key === "Escape") { setCriandoComposta(false); setNomeComposta(""); } }} />
+            <button className="small-btn" onClick={criarComposta} title="Criar">✓</button>
+            <button className="small-btn" onClick={() => { setCriandoComposta(false); setNomeComposta(""); }} title="Cancelar">×</button>
+          </div>
+        )}
         {criandoPasta && (
           <div className="row-inline">
             <input type="text" autoFocus placeholder="Nome da pasta" value={nomeNovaPasta} onChange={(ev) => setNomeNovaPasta(ev.target.value)} onKeyDown={(ev) => { if (ev.key === "Enter") criarPasta(); if (ev.key === "Escape") { setCriandoPasta(false); setNomeNovaPasta(""); } }} />
@@ -8746,6 +9036,16 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
         </>
       )}
 
+      {parteParaExcluir && (
+        <ConfirmModal titulo="Remover parte" textoConfirmar="Remover parte"
+          mensagem={`Remover "${rotuloParte(parteParaExcluir)}" de ${parteParaExcluir.composta.nome || parteParaExcluir.nome}? A ficha dessa parte é apagada.`}
+          onConfirmar={() => { removerParte(parteParaExcluir); setParteParaExcluir(null); }} onCancelar={() => setParteParaExcluir(null)} />
+      )}
+      {compostaParaExcluir && (
+        <ConfirmModal titulo="Excluir criatura composta" textoConfirmar="Excluir criatura"
+          mensagem={`Excluir "${compostaParaExcluir[0].composta.nome || compostaParaExcluir[0].nome}" e as 5 fichas das partes? Não dá para desfazer.`}
+          onConfirmar={() => { excluirComposta(compostaParaExcluir); setCompostaParaExcluir(null); }} onCancelar={() => setCompostaParaExcluir(null)} />
+      )}
       {pastaParaExcluir && (
         <ConfirmModal titulo="Excluir pasta" textoConfirmar="Excluir pasta"
           mensagem={`Excluir a pasta "${pastaParaExcluir.nome}"? As fichas dentro dela não são apagadas, só voltam para "Sem pasta".`}
@@ -9154,7 +9454,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
       <div className="stat-group">
         <div className="stat-group-label">Atributos</div>
         <div className="cartoes-stat">
-          {ATRIBUTOS.map((a) => <CartaoStat key={a.k} rotulo={a.l} valor={attr(e, a.k)} onClick={() => abrirStat("atributo", a.k, a.l)} />)}
+          {atributosDaFicha(e).map((a) => <CartaoStat key={a.k} rotulo={a.l} valor={attr(e, a.k)} onClick={() => abrirStat("atributo", a.k, a.l)} />)}
         </div>
       </div>
 
@@ -9383,7 +9683,7 @@ function EscolherAlvoOutros({ ataque, origem, entidades, onConfirmar, onCancelar
         <label className="label">Quem recebe o efeito?</label>
         <SearchableSelect listaCheia value={id} onChange={(e) => setId(e.target.value)} style={{ marginBottom: 12 }}>
           <option value="">Selecione…</option>
-          {entidades.filter((x) => x.id !== origem.id).map((x) => <option key={x.id} value={x.id}>{x.nome}</option>)}
+          {opcoesEntidades(entidades.filter((x) => x.id !== origem.id))}
         </SearchableSelect>
         <div className="grid2">
           <button className="btn btn-ghost" onClick={onCancelar}>Cancelar</button>
