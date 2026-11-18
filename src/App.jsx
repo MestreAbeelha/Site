@@ -5618,7 +5618,7 @@ export default function MesaMM3() {
         if (imovel && !cond["Imóvel"]) { cond["Imóvel"] = 1; imovelAuto = true; }
         else if (!imovel && cond["Imóvel"] && imovelAuto) { delete cond["Imóvel"]; imovelAuto = false; }
         const c0 = m.composta;
-        const comp = m !== tx ? { atributos: tx.atributos || {}, periciaPontos: tx.periciaPontos || {}, vantagens: tx.vantagens || [] } : null;
+        const comp = m !== tx ? { atributos: { ...(tx.atributos || {}), vigor: m.atributos?.vigor || 0 }, periciaPontos: tx.periciaPontos || {}, vantagens: tx.vantagens || [] } : null;
         const nomeNovo = (m.nome || "").replace(/ — Tórax$/, " — Núcleo");
         const mudou = JSON.stringify(cond) !== JSON.stringify(m.condicoes || {}) || incapAuto !== !!c0.incapAuto || imovelAuto !== !!c0.imovelAuto
           || JSON.stringify(espelho) !== JSON.stringify(c0.espelho || {}) || c0.mov !== mov || c0.espNen !== nen || c0.espVar !== espVar || c0.nenMax !== nenMax
@@ -8595,13 +8595,13 @@ function FichaForm({ autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidad
       </div>
 
       </section>
-      {!ehParteSecundaria(f) && <section className="ed-sec">
+      <section className="ed-sec">
       <div className="section-title">Atributos (máx. {maxAtr}, mín. -2)</div>
       <div className="ed-attr-grid" style={{ marginBottom: 10 }}>
-        {atributosDaFicha(f).map((a) => <div key={a.k} className="ed-attr"><label className="label">{a.l}</label><input type="number" min={-2} max={maxAtr} value={f.atributos[a.k]} onChange={(e) => updAtributo(a.k, Number(e.target.value))} /></div>)}
+        {(ehParteSecundaria(f) ? ATRIBUTOS.filter((a) => a.k === "vigor") : ATRIBUTOS).map((a) => <div key={a.k} className="ed-attr"><label className="label">{a.l}</label><input type="number" min={-2} max={maxAtr} value={f.atributos[a.k]} onChange={(e) => updAtributo(a.k, Number(e.target.value))} /></div>)}
       </div>
 
-      </section>}
+      </section>
       <section className="ed-sec">
       <div className="section-title">Bônus de Ataque</div>
       <div className="grid2" style={{ marginBottom: 10 }}>
@@ -9508,7 +9508,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
       <div className="stat-group">
         <div className="stat-group-label">Atributos</div>
         <div className="cartoes-stat">
-          {(ehParteSecundaria(e) ? [] : ATRIBUTOS).map((a) => <CartaoStat key={a.k} rotulo={a.l} valor={attr(e, a.k)} onClick={() => abrirStat("atributo", a.k, a.l)} />)}
+          {(ehParteSecundaria(e) ? ATRIBUTOS.filter((x) => x.k === "vigor") : ATRIBUTOS).map((a) => <CartaoStat key={a.k} rotulo={a.l} valor={attr(e, a.k)} onClick={() => abrirStat("atributo", a.k, a.l)} />)}
         </div>
       </div>
 
