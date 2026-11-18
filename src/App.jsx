@@ -821,6 +821,7 @@ const GlobalStyle = () => (
     .mm3 .cc-meio > .cc-torax { flex:1.3; }
     .mm3 .cc-torax { min-height:130px; justify-content:center; border-width:2px; background:#222637; }
     .mm3 .cc-tile { position:relative; display:flex; flex-direction:column; gap:3px; align-items:stretch; text-align:left; padding:9px 10px; border-radius:12px; border:1px solid #3a3f50; background:#1d202a; color:var(--text); cursor:pointer; min-height:78px; transition:transform .12s, border-color .12s; }
+    .mm3 .cc-sel { border-color:var(--accent) !important; box-shadow:0 0 0 1px var(--accent) inset; }
     .mm3 .cc-tile:hover { transform:translateY(-1px); border-color:var(--accent); }
     .mm3 .cc-nome { font-weight:600; font-size:.9rem; } .mm3 .cc-nivel { font-size:.7rem; opacity:.6; }
     .mm3 .cc-pv { height:7px; border-radius:4px; background:#0f1117; overflow:hidden; display:block; }
@@ -879,20 +880,20 @@ const ATRIBUTOS = [
 ];
 /* ---------- Criatura Composta: cada parte do corpo é uma ficha ligada às outras pelo grupoId ---------- */
 const PARTES_COMPOSTA = [
-  { k: "torax", nome: "Tórax / Cabeça", curto: "Tórax", icone: "🫀" },
+  { k: "torax", nome: "Núcleo", curto: "Núcleo", icone: "🫀" },
   { k: "bracoE", nome: "Braço Esquerdo", curto: "Braço E", icone: "🦾" },
   { k: "bracoD", nome: "Braço Direito", curto: "Braço D", icone: "🦾" },
   { k: "pernaE", nome: "Perna Esquerda", curto: "Perna E", icone: "🦵" },
   { k: "pernaD", nome: "Perna Direita", curto: "Perna D", icone: "🦵" },
 ];
-const TIPOS_PARTE = { torax: { nome: "Tórax", icone: "🫀" }, braco: { nome: "Braço", icone: "🦾" }, perna: { nome: "Perna", icone: "🦵" }, cabeca: { nome: "Cabeça", icone: "🗣️" }, outra: { nome: "Parte", icone: "🔹" } };
+const TIPOS_PARTE = { torax: { nome: "Núcleo", icone: "🫀" }, nucleo: { nome: "Núcleo", icone: "🫀" }, braco: { nome: "Braço", icone: "🦾" }, perna: { nome: "Perna", icone: "🦵" }, cabeca: { nome: "Cabeça", icone: "🗣️" }, outra: { nome: "Parte", icone: "🔹" } };
 const tipoParte = (m) => { const p = m?.composta?.parte || ""; return m?.composta?.tipo || (p === "torax" ? "torax" : /^braco/.test(p) ? "braco" : /^perna/.test(p) ? "perna" : "outra"); };
 const rotuloParte = (m) => m?.composta?.rotulo || PARTES_COMPOSTA.find((p) => p.k === m?.composta?.parte)?.curto || m?.nome || "";
 const ordemParte = (m) => { const i = PARTES_COMPOSTA.findIndex((p) => p.k === m?.composta?.parte); return i >= 0 ? i : 100 + (m?.composta?.ordem || 0); };
 const ordenarPartes = (ms) => [...ms].sort((x, y) => ordemParte(x) - ordemParte(y));
 const membrosDe = (entidades, gid) => ordenarPartes((entidades || []).filter((x) => x.composta?.grupoId === gid));
 const PERICIAS_DA_PARTE = ["Atletismo", "Acrobacia"];
-const somaPericiasPP = (e) => Object.entries(e?.periciaPontos || {}).reduce((s, [k, v]) => s + (ehParteSecundaria(e) && !PERICIAS_DA_PARTE.includes(k) ? 0 : (v || 0)), 0);
+const somaPericiasPP = (e) => Object.values(e?.periciaPontos || {}).reduce((s, v) => s + (v || 0), 0);
 function opcoesEntidades(lista) {
   const out = []; const vistos = new Set();
   lista.forEach((o) => {
@@ -1336,7 +1337,7 @@ function limiarCritico(ent, ataqueId) {
 }
 
 /* ---------- helpers de valores derivados ---------- */
-function attrBase(ent, key) { if (ent?.composta && ent.composta.parte !== "torax" && ["presenca", "prontidao", "inteligencia"].includes(key)) return ent.composta.attrsTx?.[key] || 0; return (ent && ent.atributos && ent.atributos[key]) || 0; }
+function attrBase(ent, key) { return (ent && ent.atributos && ent.atributos[key]) || 0; }
 function reducaoAtributoTemp(ent, key) {
   return (ent?.duracoes || []).filter((d) => d.tipo === "atributo" && d.chave === key).reduce((t, d) => t + (d.valor || 0), 0);
 }
@@ -2296,7 +2297,7 @@ function pontosObjetoGastos(ent, objetoId) {
   return (ent?.ataques || []).reduce((s, a) => s + (objetoDaHabilidade(a, ent)?.id === objetoId ? ppAtaque(a, ent) : 0), 0);
 }
 function custoAtributos(ent) {
-  const nv = Math.max(1, ent?.nivel || 1);
+  const nv = Math.max(1, ent?.composta?.nivelNucleo || ent?.nivel || 1);
   return Object.values(ent?.atributos || {}).reduce((s, v) => { v = v || 0; return s + (v > nv ? 2 * nv + 3 * (v - nv) : 2 * v); }, 0);
 }
 function danoConfig0(efeito, origem) { const c = danoPorGrauConfigurado(origem); return c != null ? c : efeito.graduacao || 0; }
@@ -3926,8 +3927,21 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       </label>
     );
   };
+  /* Interpor-se: quem se interpõe vira o alvo do ataque (só ataque com acerto, nunca área nem percepção) e gasta uma reação */
+  const [interporId, setInterporId] = useState("");
+  const ladoDe = (e) => (e.rotulo === "Criatura" ? "criatura" : "jogador"); // NPCs ficam do lado de personagens e invocações
+  const maxReacoes = (e) => 1 + (temVantagem(e, "Reativo") ? 1 : 0);
+  const podeInterpor = ehAtaque && !isArea && ["corpo", "distancia"].includes(contexto.ataque?.tipoAcerto) && !!ataqueAcertoR && ataqueAcertoR !== "auto" && ataqueAcertoR.sucesso && !!oponente;
+  const candidatosInterpor = podeInterpor ? entidades.filter((e) => e.id !== origemAtual.id && e.id !== oponente.id && ladoDe(e) === ladoDe(oponente) && temVantagem(e, "Interpor-se")) : [];
+  const interpositor = interporId ? entidades.find((e) => e.id === interporId) : null;
+  const alvoEfetivo = podeInterpor && interpositor ? interpositor : oponente;
+  const alternarInterpor = (cand, marcado) => {
+    atualizarCampo(cand.id, "reacoesGastas", Math.max(0, (cand.reacoesGastas || 0) + (marcado ? 1 : -1)));
+    setInterporId(marcado ? cand.id : "");
+    registrar({ tipo: "rolagem", desc: marcado ? `${cand.nome} se interpõe no lugar de ${oponente.nome}` : `${cand.nome} desiste de se interpor`, detalhe: marcado ? "Gasta uma reação; sofre os efeitos do ataque no lugar do alvo" : "Reação devolvida", total: marcado ? "Interpor-se" : "—", tipoClasse: "hs" });
+  };
   const rolarEfeito = (efeito, alvoParam, keyOverride) => {
-    const alvo = alvoParam || oponente;
+    const alvo = alvoParam || alvoEfetivo;
     const key = keyOverride || (isArea ? `${alvo.id}:${efeito.id}` : efeito.id);
     // Crítico (natural 20, ou limiar de ameaça reduzido por Crítico Aprimorado) soma +5 na CD
     // de TODOS os efeitos desse ataque — não só no dano. Área não tem rolagem de acerto, então
@@ -4371,6 +4385,16 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                   </label>
                 )}
 
+                {candidatosInterpor.map((cand) => {
+                  const marcado = interporId === cand.id;
+                  const semReacao = (cand.reacoesGastas || 0) >= maxReacoes(cand);
+                  return (
+                    <label key={cand.id} className="checkbox-row" style={{ marginBottom: 12, opacity: !marcado && (semReacao || (interporId && !marcado) || Object.keys(efeitosR).length > 0) ? 0.5 : 1 }}>
+                      <input type="checkbox" checked={marcado} disabled={Object.keys(efeitosR).length > 0 || (!marcado && (semReacao || !!interporId))} onChange={(e) => alternarInterpor(cand, e.target.checked)} />
+                      Interpor-se {cand.nome}{semReacao && !marcado ? " (sem reação)" : ""}
+                    </label>
+                  );
+                })}
                 {(!temDividido || !usarDividido) && (ataqueAcertoR === "auto" || (ataqueAcertoR && ataqueAcertoR.sucesso)) && (contexto.ataque.efeitos || []).filter((efeito) => efeito.categoria !== "Mover Objetos" && !UTIL_CATS.includes(efeito.categoria) && !falhouTeste(efeito)).map((efeito) => {
                   const res = efeitosR[efeito.id];
                   return (
@@ -4380,7 +4404,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                         <div className="efeito-card ok"><div className="efeito-f">{efeito.texto || "(sem descrição)"}</div></div>
                       ) : (
                         <>
-                          {!res && !limStatus(efeito, (id) => efeitosR[id]) && renderProtecaoLimitada(efeito, oponente, efeito.id)}
+                          {!res && !limStatus(efeito, (id) => efeitosR[id]) && renderProtecaoLimitada(efeito, alvoEfetivo, efeito.id)}
                           {!res && (limStatus(efeito, (id) => efeitosR[id]) ? avisoLim(limStatus(efeito, (id) => efeitosR[id])) : <button className="btn btn-ghost btn-block" onClick={() => rolarEfeito(efeito)}>⚄ Rolar Resistência</button>)}
                           {res && <ResultadoCard r={res.r} efeito={montarEfeitoCard(efeito, res)} />}
                         </>
@@ -5502,7 +5526,7 @@ export default function MesaMM3() {
       const tx = toraxDe(antes, entidades);
       if (sobra > 0 && tx && tx.id !== antes.id) {
         dano = dano - sobra;
-        registrar({ tipo: "rolagem", desc: `${antes.nome} não aguenta o dano`, detalhe: `${sobra} de dano passam para ${tx.nome}`, total: `${sobra} → Tórax`, tipoClasse: "hw" });
+        registrar({ tipo: "rolagem", desc: `${antes.nome} não aguenta o dano`, detalhe: `${sobra} de dano passam para ${tx.nome}`, total: `${sobra} → Núcleo`, tipoClasse: "hw" });
         aplicarDano(tx.id, sobra);
       }
     }
@@ -5594,13 +5618,14 @@ export default function MesaMM3() {
         if (imovel && !cond["Imóvel"]) { cond["Imóvel"] = 1; imovelAuto = true; }
         else if (!imovel && cond["Imóvel"] && imovelAuto) { delete cond["Imóvel"]; imovelAuto = false; }
         const c0 = m.composta;
-        const attrsTx = { presenca: tx.atributos?.presenca || 0, prontidao: tx.atributos?.prontidao || 0, inteligencia: tx.atributos?.inteligencia || 0 };
-        const ppNovo = m !== tx ? { ...(tx.periciaPontos || {}), Atletismo: m.periciaPontos?.Atletismo || 0, Acrobacia: m.periciaPontos?.Acrobacia || 0 } : null;
+        const comp = m !== tx ? { atributos: tx.atributos || {}, periciaPontos: tx.periciaPontos || {}, vantagens: tx.vantagens || [] } : null;
+        const nomeNovo = (m.nome || "").replace(/ — Tórax$/, " — Núcleo");
         const mudou = JSON.stringify(cond) !== JSON.stringify(m.condicoes || {}) || incapAuto !== !!c0.incapAuto || imovelAuto !== !!c0.imovelAuto
           || JSON.stringify(espelho) !== JSON.stringify(c0.espelho || {}) || c0.mov !== mov || c0.espNen !== nen || c0.espVar !== espVar || c0.nenMax !== nenMax
           || (m.nenAtual || 0) !== nen || JSON.stringify(m.variaveis || []) !== espVar || m.tipoNen !== tx.tipoNen
-          || (m !== tx && (JSON.stringify(c0.attrsTx || {}) !== JSON.stringify(attrsTx) || JSON.stringify(m.periciaPontos || {}) !== JSON.stringify(ppNovo)));
-        if (mudou) atualizarCampo(m.id, "*", (e) => ({ ...e, condicoes: cond, nenAtual: nen, variaveis: vars, tipoNen: tx.tipoNen, ...(ppNovo ? { periciaPontos: ppNovo } : {}), composta: { ...e.composta, espelho, incapAuto, imovelAuto, mov, espNen: nen, espVar, nenMax, attrsTx } }));
+          || nomeNovo !== m.nome || c0.nivelNucleo !== tx.nivel
+          || (comp && (JSON.stringify(m.atributos || {}) !== JSON.stringify(comp.atributos) || JSON.stringify(m.periciaPontos || {}) !== JSON.stringify(comp.periciaPontos) || JSON.stringify(m.vantagens || []) !== JSON.stringify(comp.vantagens)));
+        if (mudou) atualizarCampo(m.id, "*", (e) => ({ ...e, condicoes: cond, nenAtual: nen, variaveis: vars, tipoNen: tx.tipoNen, nome: nomeNovo, ...(comp || {}), composta: { ...e.composta, espelho, incapAuto, imovelAuto, mov, espNen: nen, espVar, nenMax, nivelNucleo: tx.nivel } }));
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -5640,6 +5665,7 @@ export default function MesaMM3() {
      aplicou (Cuidado, Nosso Alvo) e as durações do tipo "início" desse mesmo dono do turno. */
   const limparTurnoFlags = (entidadeId) => {
     atualizarCampo(entidadeId, "defendendo", false);
+    atualizarCampo(entidadeId, "reacoesGastas", 0);
     setEntidades((atual) => {
       const nova = atual.map((e) => {
         const em = e.efeitosManobra || [];
@@ -5874,6 +5900,16 @@ export default function MesaMM3() {
     (entidades || []).forEach((en) => { if (naOrdem.has(en.id) && !en.oponente) atualizarCampo(en.id, "oponente", true); });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [iniciativa.ordem, entidades, identidade?.papel]);
+  const tirarDaIniciativa = async (ids) => {
+    const s = new Set(ids);
+    const velha = iniciativa.ordem || [];
+    if (!velha.some((o) => s.has(o.entidadeId))) return;
+    const atualId = velha[iniciativa.turnoAtual]?.entidadeId;
+    const ordem = velha.filter((o) => !s.has(o.entidadeId));
+    let turnoAtual = ordem.findIndex((o) => o.entidadeId === atualId);
+    if (turnoAtual < 0) turnoAtual = Math.max(0, Math.min(iniciativa.turnoAtual || 0, ordem.length - 1));
+    await salvarIniciativa({ ...iniciativa, ordem, turnoAtual });
+  };
   const avancarTurno = async () => {
     const ordem = iniciativa.ordem || [];
     if (ordem.length === 0) return;
@@ -5924,7 +5960,7 @@ export default function MesaMM3() {
         <div className="split-wrap">
           <div className="split-col col-fichas">
             <FichasTab entidades={entidades} salvar={salvarEntidades} identidade={identidade} usuario={usuario} registrar={registrar}
-              onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa}
+              onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa} onTirarDaIniciativa={tirarDaIniciativa}
               pastas={pastas} onSalvarPastas={salvarPastas} fichasAbertas={fichasAbertas} setFichasAbertas={setFichasAbertas} foco={focoFicha} onFocoConsumido={() => setFocoFicha(null)} />
           </div>
           <div className="split-col col-lateral">
@@ -8328,7 +8364,7 @@ function PainelFicha({ f }) {
       <div className="dash-bloco">
         <div className="dash-titulo">Atributos</div>
         <div className="dash-duplo">
-          <Radar itens={atributosDaFicha(f).map((a) => ({ l: a.l, v: attrBase(f, a.k) }))} max={radarMax} />
+          <Radar itens={ATRIBUTOS.map((a) => ({ l: a.l, v: attrBase(f, a.k) }))} max={radarMax} />
           <div className="dash-lista">
             <div className="dash-linha">PP em atributos: <b>{ppAtr}</b>. Máximo por atributo no nível {f.nivel || 1}: <b>{radarMax}</b>.</div>
             <div className="dash-linha">Vida máx. <b>{pvMax}</b> = (5 + Vigor) × nível · Nen máx. <b>{nenMax}</b> = (3 + Prontidão) × nível.</div>
@@ -8410,7 +8446,7 @@ function fichaPadrao(rotulos) {
   };
 }
 
-function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualizarCampo, registrar, erroSalvar, nivelFixo }) {
+function FichaForm({ autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidades, atualizarCampo, registrar, erroSalvar, nivelFixo }) {
   const [f, setF] = useState(() => {
     const base = fichaPadrao(rotulos);
     if (!inicial) return base;
@@ -8438,6 +8474,17 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
     upd("ataques", jaTem ? f.ataques.filter((a) => a.fundamento !== fund.id) : [...f.ataques, construirFundamento(fund)]);
   };
 
+  // criatura composta: salva sozinho (e ao trocar de parte), sem precisar apertar Salvar
+  const fRef = useRef(f); const sujo = useRef(false); const primeiro = useRef(true);
+  fRef.current = f;
+  useEffect(() => {
+    if (!autoSalvar) return;
+    if (primeiro.current) { primeiro.current = false; return; }
+    sujo.current = true;
+    const t = setTimeout(() => { autoSalvar(fRef.current); sujo.current = false; }, 500);
+    return () => clearTimeout(t);
+  }, [f]);
+  useEffect(() => () => { if (autoSalvar && sujo.current) autoSalvar(fRef.current); }, []);
   const upd = (k, v) => setF((s) => ({ ...s, [k]: v }));
   const maxAtr = atributoMax(f.nivel);
   const updAtributo = (k, v) => setF((s) => ({ ...s, atributos: { ...s.atributos, [k]: Math.max(-2, Math.min(atributoMax(s.nivel), v)) } }));
@@ -8548,13 +8595,13 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       </div>
 
       </section>
-      <section className="ed-sec">
+      {!ehParteSecundaria(f) && <section className="ed-sec">
       <div className="section-title">Atributos (máx. {maxAtr}, mín. -2)</div>
       <div className="ed-attr-grid" style={{ marginBottom: 10 }}>
         {atributosDaFicha(f).map((a) => <div key={a.k} className="ed-attr"><label className="label">{a.l}</label><input type="number" min={-2} max={maxAtr} value={f.atributos[a.k]} onChange={(e) => updAtributo(a.k, Number(e.target.value))} /></div>)}
       </div>
 
-      </section>
+      </section>}
       <section className="ed-sec">
       <div className="section-title">Bônus de Ataque</div>
       <div className="grid2" style={{ marginBottom: 10 }}>
@@ -8575,10 +8622,10 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       </div>
 
       </section>
-      <section className="ed-sec">
+      {!ehParteSecundaria(f) && <section className="ed-sec">
       <div className="section-title">Perícias (máx. {maxPer} ponto(s) cada)</div>
       <div className="pericias-grid" style={{ marginBottom: 10 }}>
-        {(ehParteSecundaria(f) ? PERICIAS.filter((p) => PERICIAS_DA_PARTE.includes(p.nome)) : PERICIAS).map((p) => (
+        {PERICIAS.map((p) => (
           <div className="pe-row" key={p.nome}>
             <span>{p.nome}</span>
             <input type="number" min={0} max={maxPer} value={f.periciaPontos[p.nome]} onChange={(e) => updPericia(p.nome, Number(e.target.value))} />
@@ -8587,8 +8634,8 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
         ))}
       </div>
 
-      </section>
-      <section className="ed-sec">
+      </section>}
+      {!ehParteSecundaria(f) && <section className="ed-sec">
       <div className="section-title">Vantagens</div>
       {(f.vantagens || []).map((v, i) => {
         const info = VANTAGENS.find((x) => x.nome === v.nome);
@@ -8636,7 +8683,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
       })}
       <button className="btn btn-ghost btn-sm" onClick={addVantagem}>+ Vantagem</button>
 
-      </section>
+      </section>}
       <section className="ed-sec">
       <div className="section-title">Pontos de Poder</div>
       <div className={"pp-box" + (excedido ? " excedido" : "")}>
@@ -8731,7 +8778,7 @@ function FichaForm({ inicial, rotulos, onSalvar, onCancelar, entidades, atualiza
 }
 
 /* ---------- Criatura Composta: painel do grupo ---------- */
-function PainelComposta({ grupo, ehMestre, renderItem, setAbertaFicha, onEditar, onExcluir, onEngajar, onIniciativa, onAdicionar }) {
+function PainelComposta({ grupo, ehMestre, renderItem, parteAbertaId, onParteAberta, onEditar, onExcluir, onEngajar, onIniciativa, onAdicionar }) {
   const [aberto, setAberto] = useState(true);
   const [addAberto, setAddAberto] = useState(false);
   const ms = ordenarPartes(grupo);
@@ -8739,10 +8786,7 @@ function PainelComposta({ grupo, ehMestre, renderItem, setAbertaFicha, onEditar,
   const nomeCriatura = tx.composta.nome || tx.nome;
   const engajada = grupo.every((m) => m.oponente);
   const alguma = grupo.some((m) => m.oponente);
-  const abrirParte = (m) => {
-    setAbertaFicha(m.id, true);
-    setTimeout(() => document.getElementById("ficha-" + m.id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 120);
-  };
+  const abrirParte = (m) => onParteAberta(parteAbertaId === m.id ? null : m.id);
   const Tile = ({ m }) => {
     const t = tipoParte(m);
     const pvMax = pvMaxCalc(m); const pv = m.pvAtual || 0;
@@ -8750,12 +8794,12 @@ function PainelComposta({ grupo, ehMestre, renderItem, setAbertaFicha, onEditar,
     const inc = pv <= 0 || !!m.condicoes?.["Incapacitado"] || !!m.condicoes?.["Morrendo"];
     const conds = Object.keys(m.condicoes || {}).filter((c) => (m.condicoes[c] || 0) > 0);
     return (
-      <button type="button" className={"cc-tile" + (t === "torax" ? " cc-torax" : "") + (inc ? " cc-inc" : "") + (pct <= 25 && !inc ? " cc-baixa" : "")} onClick={() => abrirParte(m)} title={"Abrir " + rotuloParte(m)}>
+      <button type="button" className={"cc-tile" + (t === "torax" ? " cc-torax" : "") + (parteAbertaId === m.id ? " cc-sel" : "") + (inc ? " cc-inc" : "") + (pct <= 25 && !inc ? " cc-baixa" : "")} onClick={() => abrirParte(m)} title={"Abrir " + rotuloParte(m)}>
         <span className="cc-nome">{TIPOS_PARTE[t].icone} {rotuloParte(m)}</span>
         <span className="cc-nivel">Nv {m.nivel || 1}</span>
         <span className="cc-pv"><i style={{ width: pct + "%" }} /></span>
         <span className="cc-pvn">{pv} / {pvMax} PV</span>
-        {inc && <span className="cc-selo">{t === "torax" ? "CAÍDA" : "INCAPACITADA"}</span>}
+        {inc && <span className="cc-selo">{t === "torax" ? "CAÍDO" : "INCAPACITADA"}</span>}
         {conds.length > 0 && <span className="cc-conds">{conds.slice(0, 3).join(" · ")}{conds.length > 3 ? " +" + (conds.length - 3) : ""}</span>}
       </button>
     );
@@ -8766,7 +8810,7 @@ function PainelComposta({ grupo, ehMestre, renderItem, setAbertaFicha, onEditar,
   bracos.forEach((m) => { const p = m.composta.parte; if (p === "bracoE") esq.push(m); else if (p === "bracoD") dir.push(m); else (alt++ % 2 === 0 ? esq : dir).push(m); });
   const cabecas = ms.filter((m) => tipoParte(m) === "cabeca");
   const pernas = ms.filter((m) => tipoParte(m) === "perna");
-  const outras = ms.filter((m) => tipoParte(m) === "outra");
+  const outras = ms.filter((m) => tipoParte(m) === "outra" || tipoParte(m) === "nucleo");
   return (
     <div className={"subcard2 cc-painel" + (alguma ? " cc-engajada" : "")} style={{ marginBottom: 12 }}>
       <div className="row-inline" style={{ alignItems: "center", gap: 10 }}>
@@ -8793,7 +8837,7 @@ function PainelComposta({ grupo, ehMestre, renderItem, setAbertaFicha, onEditar,
           </div>
           {ehMestre && (
             <div className="row-inline" style={{ gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-              <button className="btn btn-accent btn-sm" onClick={onIniciativa}>🎲 Iniciativa (Tórax)</button>
+              <button className="btn btn-accent btn-sm" onClick={onIniciativa}>🎲 Iniciativa (Núcleo)</button>
               <button className={"btn btn-sm " + (engajada ? "btn-danger" : "btn-ghost")} onClick={onEngajar}>{engajada ? "Desengajar tudo" : "Engajar tudo"}</button>
               <button className="btn btn-ghost btn-sm" onClick={onEditar}>✏️ Editar partes</button>
               <button className="btn btn-ghost btn-sm" onClick={() => setAddAberto(!addAberto)}>➕ Parte</button>
@@ -8802,25 +8846,28 @@ function PainelComposta({ grupo, ehMestre, renderItem, setAbertaFicha, onEditar,
           )}
           {ehMestre && addAberto && (
             <div className="row-inline" style={{ gap: 6, flexWrap: "wrap", marginBottom: 8 }}>
-              {["braco", "perna", "cabeca", "outra"].map((t) => <button key={t} className="cc-aba" onClick={() => { onAdicionar(t); setAddAberto(false); }}>{TIPOS_PARTE[t].icone} {TIPOS_PARTE[t].nome}</button>)}
+              {["braco", "perna", "cabeca", "nucleo", "outra"].map((t) => <button key={t} className="cc-aba" onClick={() => { onAdicionar(t); setAddAberto(false); }}>{TIPOS_PARTE[t].icone} {TIPOS_PARTE[t].nome}</button>)}
             </div>
           )}
-          <div>{ms.map(renderItem)}</div>
+          <div>{ms.filter((m) => m.id === parteAbertaId).map((m) => renderItem(m, true))}</div>
         </>
       )}
     </div>
   );
 }
 
-function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas, fichasAbertas = {}, setFichasAbertas = () => {}, foco = null, onFocoConsumido = () => {} }) {
+const SCROLL_FICHAS = { v: null };
+function FichasTab({ onTirarDaIniciativa = () => {}, entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas, fichasAbertas = {}, setFichasAbertas = () => {}, foco = null, onFocoConsumido = () => {} }) {
   const [editando, setEditandoRaw] = useState(null);
-  const scrollSalvo = useRef(null);
-  // ao abrir o formulário guarda a rolagem; ao fechar (salvar/cancelar) a lista volta ao mesmo ponto, com as fichas ainda abertas
-  const setEditando = (v) => { if (v && !editando) scrollSalvo.current = { y: window.scrollY, col: document.querySelector(".col-fichas")?.scrollTop || 0 }; setEditandoRaw(v); };
+  // ao abrir o formulário guarda a rolagem (fora do componente: sobrevive a remontagens); ao fechar a lista volta ao mesmo ponto
+  const setEditando = (v) => { if (v && !editando && !SCROLL_FICHAS.v) SCROLL_FICHAS.v = { y: window.scrollY, col: document.querySelector(".col-fichas")?.scrollTop || 0 }; if (!v && !SCROLL_FICHAS.v) SCROLL_FICHAS.v = null; setEditandoRaw(v); };
   useEffect(() => {
-    if (editando || !scrollSalvo.current) return;
-    const { y, col } = scrollSalvo.current; scrollSalvo.current = null;
-    requestAnimationFrame(() => { window.scrollTo(0, y); const c = document.querySelector(".col-fichas"); if (c) c.scrollTop = col; });
+    if (editando || !SCROLL_FICHAS.v) return;
+    const { y, col } = SCROLL_FICHAS.v;
+    const aplicar = () => { window.scrollTo(0, y); const c = document.querySelector(".col-fichas"); if (c) c.scrollTop = col; };
+    const ts = [0, 60, 200, 500].map((ms) => setTimeout(aplicar, ms));
+    const fim = setTimeout(() => { SCROLL_FICHAS.v = null; }, 520);
+    return () => { ts.forEach(clearTimeout); clearTimeout(fim); };
   }, [editando]);
   const [pastasAbertas, setPastasAbertas] = useState({});
   const setAbertaFicha = (id, v) => setFichasAbertas((m) => ({ ...m, [id]: v }));
@@ -8831,13 +8878,14 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   const [alvoDrop, setAlvoDrop] = useState(null);
   const [busca, setBusca] = useState("");
   const [vantagemCtx, setVantagemCtx] = useState(null);
+  const [partesAbertas, setPartesAbertas] = useState({}); // grupoId -> id da parte com a ficha aberta (uma por vez)
   const ehMestre = identidade.papel === "mestre";
   // duplo clique na iniciativa: abre a ficha (e a pasta dela) e leva a tela até ela
   useEffect(() => {
     if (!foco) return;
     const alvo = entidades.find((x) => x.id === foco.id);
     if (!alvo) { onFocoConsumido(); return; }
-    setFichasAbertas((m) => ({ ...m, [alvo.id]: true }));
+    if (alvo.composta) setPartesAbertas((x) => ({ ...x, [alvo.composta.grupoId]: alvo.id })); else setFichasAbertas((m) => ({ ...m, [alvo.id]: true }));
     if (alvo.pasta) setPastasAbertas((x) => ({ ...x, [alvo.pasta]: true }));
     setBusca("");
     const t = setTimeout(() => { document.getElementById("ficha-" + alvo.id)?.scrollIntoView({ behavior: "smooth", block: "start" }); onFocoConsumido(); }, 150);
@@ -8854,7 +8902,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   const [erroSalvarFicha, setErroSalvarFicha] = useState(null);
   const salvarFicha = async (f) => {
     const criando = !f.id;
-    const nova = criando ? [...entidades, { ...f, id: uid(), dono: identidade.nome, donoUid: usuario?.uid }] : entidades.map((e) => (e.id === f.id ? { ...f } : e));
+    const nova = criando ? [...entidades, { ...f, id: uid(), dono: identidade.nome, donoUid: usuario?.uid }] : entidades.map((e) => (e.id === f.id ? (f.composta ? { ...f, composta: e.composta, condicoes: e.condicoes } : { ...f }) : e));
     const ok = await salvar(nova);
     if (!ok) {
       // NÃO fecha o formulário se a gravação falhou (sem permissão, sem internet, etc.) —
@@ -8896,16 +8944,21 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   const [parteParaExcluir, setParteParaExcluir] = useState(null);
   const adicionarParte = async (grupo, tipo) => {
     const tx = grupo.find((m) => tipoParte(m) === "torax") || grupo[0];
-    const n = grupo.filter((m) => tipoParte(m) === tipo).length + 1;
+    const n = grupo.filter((m) => tipoParte(m) === tipo || (tipo === "nucleo" && tipoParte(m) === "torax")).length + 1;
     const rotulo = `${TIPOS_PARTE[tipo].nome} ${n}`;
     const ordem = Math.max(0, ...grupo.map((m) => m.composta.ordem || 0)) + 1;
     const nome = tx.composta.nome || tx.nome;
     const nova = { ...fichaPadrao(rotulosProprio), id: uid(), nome: `${nome} — ${rotulo}`, dono: identidade.nome, donoUid: usuario?.uid, composta: { grupoId: tx.composta.grupoId, parte: tipo + "_" + uid(), tipo, rotulo, ordem, nome } };
     const ok = await salvar([...entidades, nova]);
-    if (ok) { registrar({ desc: `${identidade.nome} adicionou "${rotulo}" a ${nome}`, detalhe: "Nova parte", total: "Adicionada", tipoClasse: "hs" }); setAbertaFicha(nova.id, true); }
+    if (ok) { registrar({ desc: `${identidade.nome} adicionou "${rotulo}" a ${nome}`, detalhe: "Nova parte", total: "Adicionada", tipoClasse: "hs" }); setPartesAbertas((x) => ({ ...x, [tx.composta.grupoId]: nova.id })); }
   };
   const removerParte = async (m) => {
-    const ok = await salvar(entidades.filter((e) => e.id !== m.id));
+    let nova = entidades.filter((e) => e.id !== m.id);
+    if (tipoParte(m) === "torax") { // outro núcleo assume o lugar do principal
+      const prox = membrosDe(nova, m.composta.grupoId).find((x) => tipoParte(x) === "nucleo");
+      if (prox) nova = nova.map((e) => (e.id === prox.id ? { ...e, composta: { ...e.composta, parte: "torax", tipo: "torax" } } : e));
+    }
+    const ok = await salvar(nova);
     if (ok) registrar({ desc: `${identidade.nome} removeu "${rotuloParte(m)}" de ${m.composta.nome || m.nome}`, detalhe: "Parte removida", total: "Removida", tipoClasse: "hd" });
   };
   if (editando) {
@@ -8916,11 +8969,11 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
         {gid && (
           <div className="cc-abas">
             {irmas.map((m) => { const d = { icone: TIPOS_PARTE[tipoParte(m)].icone, curto: rotuloParte(m) }; return (
-              <button key={m.id} type="button" className={"cc-aba" + (m.id === editando.id ? " ativa" : "")} onClick={() => { if (m.id !== editando.id && window.confirm("Trocar de parte? O que não foi salvo nesta parte será perdido.")) setEditando(m); }}>{d.icone} {d.curto}</button>
+              <button key={m.id} type="button" className={"cc-aba" + (m.id === editando.id ? " ativa" : "")} onClick={() => { if (m.id !== editando.id) setEditando(m); }}>{d.icone} {d.curto}</button>
             ); })}
           </div>
         )}
-        <FichaForm key={editando === "novo" ? "novo" : editando.id} inicial={editando === "novo" ? null : editando} rotulos={rotulosProprio} onSalvar={salvarFicha} onCancelar={() => setEditando(null)}
+        <FichaForm key={editando === "novo" ? "novo" : editando.id} autoSalvar={gid ? (f) => atualizarCampo(f.id, "*", (e) => ({ ...e, ...f, composta: e.composta, condicoes: e.condicoes })) : null} inicial={editando === "novo" ? null : editando} rotulos={rotulosProprio} onSalvar={salvarFicha} onCancelar={() => setEditando(null)}
           entidades={entidades} atualizarCampo={atualizarCampo} registrar={registrar} erroSalvar={erroSalvarFicha} />
       </div>
     );
@@ -8934,7 +8987,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
   meus.forEach((e) => { if (e.composta?.grupoId) (gruposComp[e.composta.grupoId] ||= []); });
   Object.keys(gruposComp).forEach((g) => { gruposComp[g] = meusTodos.filter((e) => e.composta?.grupoId === g); });
   const listaGrupos = Object.values(gruposComp).filter((g) => g.length > 0);
-  const engajarComposta = (g) => { const todas = g.every((m) => m.oponente); g.forEach((m) => atualizarCampo(m.id, "oponente", !todas)); registrar({ tipo: "sistema", desc: `${identidade.nome} ${todas ? "tirou do combate" : "engajou no combate"} a criatura "${g[0].composta.nome || g[0].nome}"`, detalhe: "5 partes", total: todas ? "Desengajada" : "Engajada", tipoClasse: todas ? "hw" : "hs" }); };
+  const engajarComposta = (g) => { const todas = g.every((m) => m.oponente); if (todas) onTirarDaIniciativa(g.map((m) => m.id)); g.forEach((m) => atualizarCampo(m.id, "oponente", !todas)); registrar({ tipo: "sistema", desc: `${identidade.nome} ${todas ? "tirou do combate" : "engajou no combate"} a criatura "${g[0].composta.nome || g[0].nome}"`, detalhe: "5 partes", total: todas ? "Desengajada" : "Engajada", tipoClasse: todas ? "hw" : "hs" }); };
   const criarPasta = () => {
     const nome = nomeNovaPasta.trim();
     if (!nome || !onSalvarPastas) return;
@@ -8951,6 +9004,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
     const fs = meusTodos.filter((e) => e.pasta === p.id);
     if (!fs.length) return;
     const todasEngajadas = fs.every((e) => e.oponente);
+    if (todasEngajadas) onTirarDaIniciativa(fs.map((e) => e.id));
     fs.forEach((e) => atualizarCampo(e.id, "oponente", !todasEngajadas));
     registrar({ tipo: "sistema", desc: `${identidade.nome} ${todasEngajadas ? "tirou do combate" : "engajou no combate"} a pasta "${p.nome}"`, detalhe: `${fs.length} ficha(s)`, total: todasEngajadas ? "Desengajadas" : "Engajadas", tipoClasse: todasEngajadas ? "hw" : "hd" });
   };
@@ -8970,7 +9024,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
     onDragLeave: (ev) => { if (!ev.currentTarget.contains(ev.relatedTarget) && alvoDrop === chave) setAlvoDrop(null); },
     onDrop: (ev) => soltarEm(ev, pastaId),
   });
-  const renderItem = (e) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => (e.composta ? (tipoParte(e) === "torax" ? setCompostaParaExcluir(meusTodos.filter((x) => x.composta?.grupoId === e.composta.grupoId)) : setParteParaExcluir(e)) : excluir(e))} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
+  const renderItem = (e, forcar) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={forcar ? true : !!fichasAbertas[e.id]} onAbertoExt={(v) => { if (!forcar) setAbertaFicha(e.id, v); }} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => (e.composta ? (tipoParte(e) === "torax" && !meusTodos.some((x) => x.composta?.grupoId === e.composta.grupoId && tipoParte(x) === "nucleo") ? window.alert("O núcleo não pode ser removido enquanto for o único. Para apagar tudo, use \"Excluir criatura\".") : setParteParaExcluir(e)) : excluir(e))} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
     pastas={pastas} onMoverPasta={(id) => atualizarCampo(e.id, "pasta", id || null)} />;
 
   return (
@@ -8979,7 +9033,7 @@ function FichasTab({ entidades, salvar, identidade, usuario, registrar, onAbrirR
       <input type="text" placeholder="Buscar por nome…" value={busca} onChange={(e) => setBusca(e.target.value)} style={{ marginBottom: 10 }} />
       {meus.length === 0 && pastas.length === 0 && <div className="card empty">Nenhuma ficha encontrada.</div>}
       {listaGrupos.map((g) => (
-        <PainelComposta key={g[0].composta.grupoId} grupo={g} ehMestre={ehMestre} renderItem={renderItem} setAbertaFicha={setAbertaFicha} onAdicionar={(t) => adicionarParte(g, t)}
+        <PainelComposta key={g[0].composta.grupoId} grupo={g} ehMestre={ehMestre} renderItem={renderItem} parteAbertaId={partesAbertas[g[0].composta.grupoId] || null} onParteAberta={(id) => setPartesAbertas((x) => ({ ...x, [g[0].composta.grupoId]: id }))} onAdicionar={(t) => adicionarParte(g, t)}
           onEditar={() => setEditando(g.find((m) => tipoParte(m) === "torax") || g[0])} onExcluir={() => setCompostaParaExcluir(g)}
           onEngajar={() => engajarComposta(g)} onIniciativa={() => onRolarIniciativa(g.find((m) => tipoParte(m) === "torax") || g[0])} />
       ))}
@@ -9454,7 +9508,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
       <div className="stat-group">
         <div className="stat-group-label">Atributos</div>
         <div className="cartoes-stat">
-          {atributosDaFicha(e).map((a) => <CartaoStat key={a.k} rotulo={a.l} valor={attr(e, a.k)} onClick={() => abrirStat("atributo", a.k, a.l)} />)}
+          {(ehParteSecundaria(e) ? [] : ATRIBUTOS).map((a) => <CartaoStat key={a.k} rotulo={a.l} valor={attr(e, a.k)} onClick={() => abrirStat("atributo", a.k, a.l)} />)}
         </div>
       </div>
 
@@ -9521,7 +9575,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
           </div>
           {secoes.acoes && (
             <div className="hab-grid">
-              {ACOES_PADRAO.map((a) => <CartaoAcao key={a.id} a={a} onClick={() => abrirAcao(a)} />)}
+              {ACOES_PADRAO.filter((a) => !(e.composta && tipoParte(e) !== "perna" && a.tag === "Ação de Movimento")).map((a) => <CartaoAcao key={a.id} a={a} onClick={() => abrirAcao(a)} />)}
               <CartaoAcao a={{ id: "agarrao", nome: "Manter Agarrão", tag: "Ação Livre" }} onClick={manterAgarrao} rotuloExtra={rap.carente ? "Grátis (Carente)" : null} titulo={rap.carente ? "Carente: manter o agarrão não gasta ação livre" : "Gasta uma ação livre"} />
             </div>
           )}
@@ -9542,7 +9596,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
         </div>
       )}
 
-      <div className="stat-group">
+      {!ehParteSecundaria(e) && <div className="stat-group">
         <div className="acoes-header secao-titulo" onClick={() => toggleSecao("pericias")}>
           <div className="stat-group-label">Perícias</div>
           <span className={"arrow" + (secoes.pericias ? " open" : "")}>▶</span>
@@ -9552,7 +9606,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
             {PERICIAS.map((p) => <StatChip key={p.nome} label={p.nome} value={bonusPericia(e, p.nome)} onClick={() => abrirStat("pericia", p.nome, p.nome)} />)}
           </div>
         )}
-      </div>
+      </div>}
 
       {(e.vantagens || []).length > 0 && (
         <div className="stat-group">
