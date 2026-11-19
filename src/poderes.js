@@ -51,7 +51,7 @@ export const EFEITOS = [
   E("invocar", "Invocar", 3, "padrao", "perto", "sustentado", "conjurador"),
   E("leitura_mental", "Leitura Mental", 2, "padrao", "percepcao", "sustentado", "manipulador", { implementado: true }),
   E("metamorfose", "Metamorfose", 5, "livre", "pessoal", "sustentado", "modelador"),
-  E("membros_extras", "Membros Extras", 4, "nenhuma", "pessoal", "sustentado", "modelador"),
+  E("membros_extras", "Membros Extras", 4, "livre", "pessoal", "sustentado", "modelador"),
   E("mover_objetos", "Mover Objetos", 3, "padrao", "perto", "sustentado", "manipulador", { implementado: true }),
   E("movimento", "Movimento", 3, "livre", "pessoal", "sustentado", "coringa"),
   E("nulificar", "Nulificar", 6, "padrao", "perto", "sustentado", "manipulador", { implementado: true }),
@@ -127,7 +127,7 @@ export const FALHAS = [
   M("efeito_colateral", "Efeito Colateral", "g", -2, { opcoes: [-2, -3, -4, -4, -6, -8] }), // grau 1/2/3 e dobrado se automático
   M("exigir_teste", "Exigir Teste", "g", -1, { mult: true }),         // -1 base; cada +1 de CD soma -1
   M("limitado", "Limitado", "g", -1, { opcoes: [-1, -2, -3, -4, -5], mult: true }),
-  M("incontrolavel", "Incontrolável", "g", -3, { opcoes: [-3, -6] }),
+  M("incontrolavel", "Incontrolável", "g", -2, { opcoes: [-2, -3] }),
   M("perceptivel", "Perceptível", "f", -1),
   M("ponto_fraco", "Ponto Fraco", "g", -4),
   M("retroalimentacao", "Retroalimentação", "g", -3),
@@ -153,7 +153,7 @@ export const EXCLUSIVOS = {
   imunidade: [M("metade_efeito", "Metade do Efeito", "g", -2)],
   metamorfose: [M("ficha_adicional", "Ficha Adicional", "g", 2, { mult: true }), M("equipamento_incorporado", "Equipamento Incorporado", "f", 1), M("imitacao", "Imitação", "g", 5, { tipo: "especialista" }), M("vida_independente", "Vida Independente", "g", 10),
     M("aleatoria", "Aleatória", "g", -1), M("reversao_forcada", "Reversão Forçada", "g", -3), M("forma_instavel", "Forma Instável", "g", -2), M("instinto_forma", "Instinto da Forma", "g", -1), M("itens_perdidos", "Itens Perdidos", "f", -1)],
-  invocar: [M("alcance_invocar", "Alcance", "f", 1, { mult: true }), M("ativo", "Ativo", "g", 1), M("horda", "Horda", "g", 2, { mult: true }), M("invocar_objeto", "Invocar Objeto", "g", 1), M("invocar_veiculo", "Invocar Veículo", "g", 1),
+  invocar: [M("alcance_invocar", "Alcance", "f", 1, { mult: true }), M("ativo", "Ativo", "g", 1), M("horda", "Horda", "g", 2, { mult: true }), M("invocar_objeto", "Invocar Objeto", "g", 1), M("preso_corpo", "Preso ao Corpo", "g", 2), M("invocar_veiculo", "Invocar Veículo", "g", 1),
     M("persistente_inv", "Persistente", "g", 2, { opcoes: [2, 4] }), M("atitude", "Atitude", "g", -2, { opcoes: [-2, -5], exige: "ativo" })],
   leitura_mental: [M("cumulativo_lm", "Cumulativo", "g", 2), M("ligacao_sensorial", "Ligação Sensorial", "g", 1)],
   mover_objetos: [M("camuflagem_mo", "Camuflagem", "g", 1), M("dano_mo", "Dano", "g", 2), M("dividido_mo", "Dividido", "g", 1), M("impulso", "Impulso", "g", 2), M("preciso_mo", "Preciso", "f", 2),
@@ -255,7 +255,7 @@ function resolverMod(it) {
  * Retorna { total, bruto, efeitos:[...], ajustesNen:[...], fixos:[...], avisos:[], erros:[] }
  */
 // Efeitos com limite de graduação fixo (múltiplo do nível); Sobrecarregado não ultrapassa
-export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, invocar: 1, membros_extras: 1, variavel: 1, encolhimento: 0.5, crescimento: 0.5, metamorfose: 1, velocidade: 2, voo: 2 };
+export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, membros_extras: 1, variavel: 1, encolhimento: 0.5, crescimento: 0.5, metamorfose: 1, velocidade: 2, voo: 2 };
 export const limiteFixoDe = (id, nivel) => (LIMITE_FIXO[id] ? Math.max(1, Math.floor(LIMITE_FIXO[id] * nivel)) : null);
 export function calcularHabilidade(ctx, hab) {
   const { nivel = 1, tipoNen = null } = ctx;
@@ -278,6 +278,7 @@ export function calcularHabilidade(ctx, hab) {
       const falta = ef.grad - Math.max(nivel, ef.limiteBase || 0);
       if (falta > 0) mods.push(resolverMod({ id: "sobrecarregado", vezes: falta, derivado: true }));
     }
+    if (mods.some((m) => m.id === "preso_corpo") && !mods.some((m) => m.id === "invocar_objeto")) erros.push("Invocar: Preso ao Corpo exige o extra Invocar Objeto.");
     const tiposEf = new Set([tipoEf, ...mods.map((m) => m.tipo).filter(Boolean)]);
     tiposEf.forEach((t) => tiposHab.add(t));
     // ajustes por graduação de Nen (uma vez por efeito)
@@ -389,7 +390,7 @@ export const REGRAS = {
   efeito_colateral: () => "Efeito Colateral: ao usar, você recebe a condição indicada.",
   exigir_teste: () => "Exigir Teste: precisa passar num teste para usar; falhar anula o uso.",
   limitado: () => "Limitado: condição restritiva (ver nota).",
-  incontrolavel: (n, v) => (v ?? -3) <= -6 ? "Incontrolável (sem teste): sempre foge do controle; o mestre decide." : "Incontrolável: ao usar, teste de Vontade CD 10 + graduação; falhar = o mestre decide o efeito (automático).",
+  incontrolavel: (n, v) => (v ?? -2) <= -3 ? "Incontrolável (sem teste): sempre foge do controle; o mestre decide." : "Incontrolável: ao usar, teste de Vontade CD 10 + graduação; falhar = o mestre decide o efeito (automático).",
   perceptivel: () => "Perceptível: o efeito é muito visível/audível.",
   ponto_fraco: () => "Ponto Fraco: o efeito tem uma fraqueza que anula o poder quando atingida.",
   retroalimentacao: () => "Retroalimentação: você também sofre o efeito (lembrete automático no registro).",
@@ -417,7 +418,7 @@ Object.assign(REGRAS, {
   continuo_criar: () => "Contínuo: os objetos permanecem sem sustentar.", dimensional: () => "Dimensional: cria uma dimensão de bolso.", estacionario: () => "Estacionário: o objeto não pode ser movido.", impenetravel: (n) => `Impenetrável ${n}: +${n} de resistência.`, proporcional: () => "Proporcional: resistência baseada no volume.",
   mudar_velocidade: () => "Mudar a Velocidade: chega parado.", portal: () => "Portal: abre um portal sustentado.",
   horda: (n) => `Horda ${n}: ${2 ** (n || 1)} criaturas com a fração dos pontos.`, ativo: () => "Ativo: a criatura age com ação completa.", atitude: () => "Atitude: a criatura pode desobedecer.",
-  alcance_invocar: (n) => `Alcance ${n}: invoca mais longe.`, persistente_inv: () => "Persistente: a criatura permanece sem sustentar.",
+  alcance_invocar: (n) => `Alcance ${n}: invoca mais longe.`, preso_corpo: () => "Preso ao Corpo: o objeto não pode ser desarmado.", persistente_inv: () => "Persistente: a criatura permanece sem sustentar.",
   quase_material: () => "Quase Material: a ilusão causa/sofre efeitos físicos limitados.",
   metade_efeito: () => "Metade do Efeito: imunidade apenas a metade do efeito.",
   rapida: () => "Rápida: comunicação sem ação.", seletiva_com: () => "Seletiva: escolhe quem escuta.", sutil_com: () => "Sutil: difícil de perceber.", unilateral: () => "Unilateral: só você fala.",
@@ -534,7 +535,7 @@ export const DESC_MOD = {
   efeito_colateral: "Ao usar, você sofre uma condição. Grau 1: −2/g; grau 2: −3/g; grau 3 (paralisado, nulificado): −4/g. Automático (sem teste) dobra o valor.",
   exigir_teste: "Para usar, você passa num teste de perícia: CD 10 + bônus base da perícia, −1/g; cada +1 de CD soma −1/g. Falhar perde o efeito.",
   limitado: "Uma restrição combinada com o mestre (ex.: só de dia). −1 a −5/g, conforme o tamanho da restrição.",
-  incontrolavel: "O efeito pode fugir ao seu controle: teste de Vontade (CD 10 + graduação) para controlá-lo; na opção −6/g não há teste e o mestre decide.",
+  incontrolavel: "O efeito pode fugir ao seu controle: teste de Vontade (CD 10 + graduação) para controlá-lo; na opção −3/g não há teste e o mestre decide.",
   perceptivel: "O efeito é muito visível/audível. −1 fixo.",
   ponto_fraco: "O poder tem uma fraqueza: quem notá-la (Investigação contra sua Enganação) vê o texto do ponto fraco. −4/g.",
   retroalimentacao: "Você também sofre o efeito (ou parte dele) ao usá-lo. −3/g.",
@@ -590,6 +591,7 @@ export const DESC_MOD = {
   horda: "Em vez de uma criatura, invoca 2 por vez (dobra a cada vez), dividindo os pontos entre elas. +2/g.",
   invocar_objeto: "Invoca um objeto em vez de uma criatura (5 pontos por graduação). +1/g. Cria uma barra de PP própria na ficha: nas outras habilidades, marque a opção \"(nome) com Invocar Objeto\" para gastar os PP delas dessa barra.",
   invocar_veiculo: "Invoca um veículo. +1/g.",
+  preso_corpo: "O objeto invocado não pode ser retirado de você (não pode ser desarmado). +2/g.",
   persistente_inv: "A invocação permanece sem sustentar: com metade da vida (+2/g) ou com a vida completa (+4/g).",
   atitude: "A invocação pode desobedecer: amistosa (−2/g) ou inamistosa (−5/g). Exige o extra Ativo.",
   cumulativo_lm: "Leituras repetidas no mesmo alvo somam seus graus. +2/g.",
