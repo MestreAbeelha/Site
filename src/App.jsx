@@ -837,6 +837,9 @@ const GlobalStyle = () => (
     .mm3 .cc-aba { padding:7px 12px; border-radius:999px; border:1px solid #3a3f50; background:#1d202a; color:var(--text); cursor:pointer; font-size:.85rem; }
     .mm3 .cc-aba.ativa { background:var(--accent); color:#111; border-color:var(--accent); font-weight:600; }
     @media (max-width:520px) { .mm3 .cc-mapa { gap:6px; } .mm3 .cc-tile { padding:7px 8px; } }
+    .mm3 .hab-wrap { display:flex; flex-direction:column; gap:4px; }
+    .mm3 .hab-travada { opacity:0.5; filter:grayscale(0.6); cursor:not-allowed; }
+    .mm3 .hab-conceder { align-self:stretch; }
 `}</style>
 );
 
@@ -912,7 +915,8 @@ const toraxDe = (e, entidades) => (ehParteSecundaria(e) ? (entidades || []).find
 const metrosDe = (t) => parseFloat(String(t).replace(",", ".")) || 0;
 const ehParteSecundaria = (e) => !!e?.composta && e.composta.parte !== "torax";
 const atributosDaFicha = (e) => (ehParteSecundaria(e) ? ATRIBUTOS.filter((a) => !ATRS_SO_TORAX.includes(a.k)) : ATRIBUTOS);
-const ATRIBUTOS_DANO = ATRIBUTOS.filter((a) => ["forca", "destreza", "presenca", "inteligencia"].includes(a.k));
+const attrBaseDano = (k) => (k === "destreza" ? "agilidade" : k);
+const ATRIBUTOS_DANO = ATRIBUTOS.filter((a) => ["forca", "agilidade", "presenca", "inteligencia"].includes(a.k));
 const ATRIBUTOS_VAZIOS = ATRIBUTOS.reduce((acc, a) => ({ ...acc, [a.k]: 0 }), {});
 
 const PERICIAS = [
@@ -997,7 +1001,7 @@ const VANTAGENS = [
   { nome: "Avaliação", desc: "Escolha um alvo que possa perceber e faça um teste de Intuição como uma ação livre, oposto pelo teste de Enganação do alvo. Se você vencer, peça ao mestre o atributo que deseja descobrir com exatidão ou o tipo de Nen do alvo. A cada grau de sucesso adicional, você descobre um atributo a mais do alvo ou o tipo de Nen caso não tenha sido escolhido anteriormente. Se perder o teste oposto, você não descobre nada.", graduacaoMax: 1 },
   { nome: "Bem Informado", desc: "Quando encontrar um indivíduo ou organização pela primeira vez, você pode fazer um teste das perícias Investigação ou Persuasão para ver se seu personagem já ouviu alguma coisa sobre o alvo. Use as diretrizes para obter informações na descrição da perícia Investigação para determinar o nível de informação que você obtém. Você recebe apenas um teste por alvo na primeira vez que o encontrar." },
   { nome: "Benefício", desc: "Você possui um benefício, escolha entre uma das 6 opções. Graduações adicionais nessa vantagem permite você escolher o benefício adicional.\nAmbidestria: você é igualmente apto com as duas mãos, e não sofre penalidades de circunstância por usar sua mão inepta." },
-  { nome: "Crítico Aprimorado", desc: "Escolha uma habilidade sua que faça jogada de ataque, ou uma perícia (ao editar esta vantagem). O crítico é uma dobrada de 6-6 a 10-10; cada graduação inclui mais uma dobrada baixa: 1 graduação = 5-5, 2 = 4-4, 3 = 3-3, 4 = 2-2 também são críticos (e deixam de ser falha crítica). Em habilidade, a rolagem de ataque passa a considerar crítico. Em perícia, todo teste com ela cujos dados forem uma dobrada dentro do crítico soma +5 no resultado (não é sucesso automático).", graduacaoMax: 4, pedeHabilidade: true },
+  { nome: "Crítico Aprimorado", desc: "Escolha uma habilidade sua que faça jogada de ataque, ou uma perícia (ao editar esta vantagem). O crítico é uma dobrada de 6-6 a 10-10; com esta vantagem, as dobradas 5-5, 4-4, 3-3 e 2-2 também são críticos (e deixam de ser falha crítica). Em habilidade, a rolagem de ataque passa a considerar crítico. Em perícia, todo teste com ela cujos dados forem uma dobrada dentro do crítico soma +5 no resultado (não é sucesso automático).", graduacaoMax: 1, pedeHabilidade: true },
   { nome: "De Pé", desc: "Você passa de caído para de pé sem custo de ação sem a necessidade de um teste da perícia Acrobacia.", graduacaoMax: 1 },
   { nome: "Defesa Aprimorada", desc: "Quando usa a ação defender-se e rolar um teste de resistência e tirar um resultado abaixo de 10 nos dados (2d10), o resultado se torna a 10.", graduacaoMax: 1 },
   { nome: "Derrubar Aprimorado", desc: "Quando acerta um ataque desarmado, você pode fazer um teste de derrubar imediatamente contra o alvo como uma ação livre. Seu ataque desarmado causa dano normal e conta como o teste de ataque inicial exigido para derrubar seu oponente.", graduacaoMax: 1 },
@@ -1012,7 +1016,7 @@ const VANTAGENS = [
   { nome: "Fascinar", desc: "Uma de suas perícias de interação é tão eficaz que você pode capturar e prender a atenção de outras pessoas com ela. Escolha Enganação, Intimidação ou Persuasão ao adquirir esta vantagem. Use uma ação livre e faça um teste de perícia de interação contra um teste oposto de seu alvo (Intuição ou a defesa Vontade). Caso seja bem-sucedido, o alvo fica em transe. Você pode manter o efeito com uma ação livre por rodada, concedendo ao alvo um novo teste de salvamento. O efeito termina quando você para de atuar, quando o alvo resistir com sucesso, ou caso qualquer outro perigo imediato se apresente. Você pode comprar esta vantagem mais de uma vez; a cada nova compra, ela se aplica a uma perícia diferente.", graduacaoMax: 3 },
   { nome: "Ferramentas Improvisadas", desc: "Você pode inventar dispositivos temporários. Com uma ação de descanso, você pode criar um dispositivo, os pontos de poder que esse dispositivo pode ter, é igual a quantidade de pontos que você gastou nessa vantagem. Ao montar o seu dispositivo faça um teste de Tecnologia CD 10 + Custo do dispositivo, ao ser bem sucedido você pode usar esse dispositivo como se fosse um efeito de poder seu, mas ao utilizá-lo, ele descarrega, se desfaz ou é destruído.", graduacaoMax: 999 },
   { nome: "Finta Ágil", desc: "Você pode usar seu bônus de Acrobacia ou suas graduações de movimento no lugar de Enganação para fintar e realizar truques em combate como se o seu bônus de Acrobacia ou suas graduações de velocidade fossem o seu bônus de Enganação. Seu adversário se opõe a essa tentativa com Acrobacia ou Intuição (o que for melhor).", graduacaoMax: 1 },
-  { nome: "Imobilizar Aprimorado", desc: "Quando você agarra, é difícil escapar. Oponentes agarrados sofrem uma penalidade de −2 em testes para escapar. Com duas graduações nessa vantagem, ela se torna -5.", graduacaoMax: 2 },
+  { nome: "Imobilizar Aprimorado", desc: "Quando você agarra, é difícil escapar. A CD para escapar do seu agarrão aumenta em +1. Com duas graduações nessa vantagem, aumenta em +2.", graduacaoMax: 2 },
   { nome: "Inimigo Favorito", desc: "Você tem um tipo especial de oponente que estudou ou contra o qual é especialmente eficaz. Pode ser um tipo de criatura, uma profissão ou qualquer outra categoria que o mestre aprove. Categorias especialmente amplas como humanos ou vilões não são permitidas. Você ganha um bônus de circunstância de +2 em testes de ataque, Enganação, Intimidação, Intuição e Percepção ao lidar com seu Inimigo Favorito. Você só pode ter 1 inimigo favorito, mas sempre que aumentar o seu nível, você pode mudá-lo.", graduacaoMax: 1, mecanica: { modo: "condicional", bonus: 2, alvos: ["ataque", "Enganação", "Intimidação", "Intuição", "Percepção"], pedeTexto: true } },
   { nome: "Interpor-se", desc: "Quando um aliado dentro do alcance de sua velocidade normal for acertado por um ataque, você pode escolher se colocar entre o atacante e seu aliado como uma reação, tornando-se o alvo do ataque no lugar dele. O ataque acerta você em vez de seu aliado, e você sofre os efeitos normalmente. Você não pode usar esta vantagem contra efeitos de área ou contra ataques de percepção à distância, apenas contra aqueles que exigem um teste de ataque.", graduacaoMax: 1 },
   { nome: "Luta no Chão", desc: "Você não sofre penalidade de circunstância em testes de ataque por estar caído, e oponentes adjacentes não ganham o bônus de circunstância de costume para ataques corpo-a-corpo contra você.", graduacaoMax: 1 },
@@ -1245,7 +1249,7 @@ const CONDICOES_LISTA = [
   { nome: "Prendendo a Respiração", desc: "Imune a poderes de olfato; pode prender a respiração por 1 + Vigor rodadas." },
   { nome: "Surdo", desc: "Perde o sentido Audição." },
   { nome: "Sangrando", desc: "-2 em Resistência e perde 10% da vida máxima por turno até tratamento CD 10 ou cura.", efeito: { resistencia: -2 }, grupoSemAcumulo: true },
-  { nome: "Sufocando", desc: "No início do turno, teste de Fortitude CD 10; cada teste passado aumenta a CD em +5. Falhar deixa Fatigado; falhar de novo, Exausto; falhar mais uma vez, Morrendo." },
+  { nome: "Sufocando", desc: "No início do turno, teste de Fortitude CD 10; a cada teste a CD aumenta em +5. Falhar deixa Fatigado; falhar de novo, Exausto; falhar mais uma vez, Morrendo." },
   { nome: "Tonto", desc: "Perde a ação livre." },
   { nome: "Vulnerável", desc: "Aparar e Esquiva pela metade (a CD para acertá-lo é cortada pela metade).", efeito: { aparar: "metade", esquiva: "metade" } },
   { nome: "Zetsu", desc: "Não pode usar habilidades de nenhum tipo de Nen." },
@@ -1323,7 +1327,7 @@ function migrarFalhasLegado(a) {
 function limiarCriticoPericia(ent, nomePericia) { // limiar de dobrada (6 = 6-6 ou mais); 99 = sem Crítico Aprimorado
   const v = (ent?.vantagens || []).find((x) => x.nome === "Crítico Aprimorado" && x.alvoId === `pericia:${nomePericia}`);
   if (!v) return 99;
-  return limiarDobra(v.graduacoes || 1);
+  return 2; // Crítico Aprimorado: 1 graduação, crítico de 2-2 a 10-10
 }
 function bonusCriticoPericia(ent, nomePericia, dado) { return nomePericia && valorDobrada(dado) >= limiarCriticoPericia(ent, nomePericia) ? 5 : 0; }
 function melhorPericiaDe(ent, nomes) {
@@ -1333,7 +1337,7 @@ function limiarCritico(ent, ataqueId) {
   if (!ataqueId) return 6;
   const v = (ent?.vantagens || []).find((x) => x.nome === "Crítico Aprimorado" && x.alvoId === ataqueId);
   if (!v) return 6;
-  return limiarDobra(v.graduacoes || 1);
+  return 2; // Crítico Aprimorado: 1 graduação, crítico de 2-2 a 10-10
 }
 
 /* ---------- helpers de valores derivados ---------- */
@@ -1836,7 +1840,7 @@ function aplicarUsoMods(ent, ataque, atualizarCampo, registrar) {
     log(`${ent.nome} se cansa ao usar "${nome}"`, "Cansativo", nivel >= 2 ? "Exausto" : "Fatigado (ou Exausto se já estava)");
   });
   ms.filter((m) => m.id === "incontrolavel").forEach((m) => {
-    if ((Number(m.valor) || -3) <= -6) return; // sem teste: nenhuma mensagem no histórico
+    if ((Number(m.valor) || -2) <= -3) return; // sem teste: nenhuma mensagem no histórico
     const g = Math.max(0, Number(m.item?.graduacao ?? m.item?.graduacaoNulificar) || 0);
     const cd = 10 + g, dado = rolarD20(), bonus = salvBonus(ent, "Vontade"), r = montarTeste(dado, bonus, cd);
     log(`${ent.nome} tenta controlar "${nome}" (Vontade)`, `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? "Controlou" : "Perdeu o controle — o mestre decide o efeito", r.sucesso ? "hs" : "hd");
@@ -1993,6 +1997,7 @@ function vantagensCondicionaisPara(ent, chave) {
   return (ent?.vantagens || []).map((v) => ({ v, info: VANTAGENS.find((x) => x.nome === v.nome) }))
     .filter(({ info }) => info && info.mecanica && info.mecanica.modo === "condicional" && (info.mecanica.alvos || []).includes(chave));
 }
+function bonusImobilizar(agarrador) { const v = (agarrador?.vantagens || []).find((x) => x.nome === "Imobilizar Aprimorado"); return v ? Math.min(2, Math.max(1, v.graduacoes || 1)) : 0; } // +1 / +2 na CD para escapar
 function temVantagem(ent, nome) { return (ent?.vantagens || []).some((v) => v.nome === nome); }
 
 function bonusPericia(ent, nomePericia) {
@@ -2020,7 +2025,7 @@ function statDefesa(ent, key, cru = false) {
   if ((key === "aparar" || key === "esquiva") && ent.lubridiando && !condicaoAtiva(ent, "Indefeso")) {
     let bonusEng = bonusPericia(ent, "Enganação");
     if (condicaoAtiva(ent, "Vulnerável")) bonusEng = Math.floor(bonusEng / 2);
-    total = 10 + bonusEng;
+    return bonusEng; // Ludibriar: a defesa vira 10 + Enganação (cdDefesa soma o 10); nada mais da ficha entra
   } else {
     let base = 0;
     if (key === "aparar") base = attr(ent, "luta");
@@ -2060,7 +2065,7 @@ function bonusBrutal(ent, ataque, efeito) {
   const attrs = new Set();
   if (ataque?.tipoAcerto === "corpo") attrs.add("luta");
   if (ataque?.tipoAcerto === "distancia") attrs.add("destreza");
-  if (efeito?.baseadoAtivo !== false && efeito?.atributoBase) attrs.add(efeito.atributoBase);
+  if (efeito?.baseadoAtivo !== false && efeito?.atributoBase) attrs.add(attrBaseDano(efeito.atributoBase));
   let total = 0;
   instanciasPassivasAtivas(ent).forEach(({ ataque: a, inst }) => {
     if (a?.equipamento && itemQuebrado(a)) return;
@@ -2137,12 +2142,14 @@ function nenMaxCalc(ent) { if (ehParteSecundaria(ent) && ent.composta.nenMax != 
 function deslocamentoTexto(ent) { return ent?.composta?.mov || deslocamentoTextoBase(ent); }
 function deslocamentoTextoBase(ent) {
   const g = Math.max(-2, Math.min(24, attr(ent, "agilidade") + modificadoresPassivos(ent).deslocamentos.base));
-  return DESLOC_TABELA[g + 2];
+  const t = DESLOC_TABELA[g + 2];
+  if (["Impedido", "Caído", "Exausto", "Fatigado"].some((n) => condicaoAtiva(ent, n))) return `${+(metrosDe(t) / 2).toFixed(2)}m`; // Impedido: metade do deslocamento
+  return t;
 }
 function pontosPoderMax(ent) {
   const ehInv = ent?.rotulo === "Invocação"; // Invocação: 10 pontos por nível (= graduação de Invocar)
   const base = ehInv ? 10 : 25;
-  const complic = Math.max(0, Math.min(2, ent?.complicacoes?.pontos || 0));
+  const complic = 0;
   const extra = Math.round(Number(ent?.config?.pontosExtra) || 0); // Configuração da ficha: +/- pontos de poder
   return Math.max(0, base + (Math.max(1, ent?.nivel || 1) - 1) * (ehInv ? 10 : 15) + complic + extra);
 }
@@ -2154,7 +2161,7 @@ const nenEngine = (n) => (n && n !== "Nenhum" ? String(n).toLowerCase() : null);
 const ACAO_ENGINE_PARA_NOME = { padrao: "Ação Padrão", livre: "Ação Livre", movimento: "Ação de Movimento", reacao: "Reação", nenhuma: "Nenhuma" };
 function gradParaCusto(ef, ent) {
   if (ef.categoria === "Nulificar") return ef.graduacaoNulificar || 0;
-  if (ef.categoria === "Dano" && ef.baseadoAtivo) return Math.max(0, attr(ent, ef.atributoBase) + (ef.graduacao || 0)); // sem graduação extra: dano do atributo (base +0, mas extras/falhas incidem)
+  if (ef.categoria === "Dano" && ef.baseadoAtivo) return Math.max(0, attr(ent, attrBaseDano(ef.atributoBase)) + (ef.graduacao || 0)); // sem graduação extra: dano do atributo (base +0, mas extras/falhas incidem)
   return ef.graduacao || 0;
 }
 /** extras/falhas de um efeito: os adicionados no construtor (ef.mods) + os que já vêm dos editores antigos (checkboxes) */
@@ -2222,7 +2229,7 @@ function modsDoPassivo(inst, a) {
     Efeitos de limite fixo (Voo, Velocidade etc.) não passam do próprio limite. */
 function faltaSobrecarga(idCat, grad, ef, ent) {
   if (LIMITE_FIXO[idCat]) return 0;
-  const danoAttr = ef?.categoria === "Dano" && ef.baseadoAtivo ? Math.max(0, attr(ent, ef.atributoBase)) : 0;
+  const danoAttr = ef?.categoria === "Dano" && ef.baseadoAtivo ? Math.max(0, attr(ent, attrBaseDano(ef.atributoBase))) : 0;
   return Math.max(0, grad - Math.max(Math.max(1, ent?.nivel || 1), danoAttr));
 }
 function sobrecargaAuto(idCat, grad, ef, ent, mods) {
@@ -2244,7 +2251,7 @@ function calcularCustoAtaque(a, ent) {
       }
       idxAtivo.push(efs.length);
       sobrecargaAuto(id, gradParaCusto(ef, ent), ef, ent, mods);
-      efs.push({ id, grad: gradParaCusto(ef, ent), limiteBase: ef.categoria === "Dano" && ef.baseadoAtivo ? Math.max(0, attr(ent, ef.atributoBase)) : 0, base: CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef), gratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), gradGratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0) ? Math.max(0, attr(ent, ef.atributoBase)) : 0, semLimite: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), tipo: ef.nen || undefined, mods });
+      efs.push({ id, grad: gradParaCusto(ef, ent), limiteBase: ef.categoria === "Dano" && ef.baseadoAtivo ? Math.max(0, attr(ent, attrBaseDano(ef.atributoBase))) : 0, base: CUSTO_BASE_EFEITO_UTIL[ef.categoria]?.(ef), gratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), gradGratis: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0) ? Math.max(0, attr(ent, attrBaseDano(ef.atributoBase))) : 0, semLimite: ef.categoria === "Dano" && !!ef.baseadoAtivo && !((ef.graduacao || 0) > 0), tipo: ef.nen || undefined, mods });
     });
   }
   passivosDe(a).forEach((inst) => {
@@ -2289,6 +2296,10 @@ function objetosInvocados(ent) {
   return out;
 }
 /** objeto (barra) de onde a habilidade gasta os PP, ou null se ela gasta dos PP da ficha */
+/** Habilidade que invoca objeto (a que pode ser concedida) */
+const ehHabilidadeObjeto = (a) => a?.tipo !== "passiva" && (a?.efeitos || []).some((ef) => ef.categoria === "Invocar" && contaMod(ef, "invocar_objeto") > 0);
+const habilidadeEstaAtiva = (a) => (a?.tipo === "passiva" ? passivaEstaAtiva(a) : !!a?.sustentando);
+const presoAoCorpo = (a) => (a?.efeitos || []).some((ef) => ef.categoria === "Invocar" && contaMod(ef, "invocar_objeto") > 0 && contaMod(ef, "preso_corpo") > 0);
 function objetoDaHabilidade(a, ent) {
   if (!a?.invocarObjetoId || a.equipamento || a.invocarObjetoId === a.id) return null;
   return objetosInvocados(ent).find((o) => o.id === a.invocarObjetoId) || null;
@@ -2871,7 +2882,7 @@ function textoNulificar(graus) {
 /* Dano Baseado Em: graduação = atributo do atacante (ao vivo) + dano adicional. Sem a opção, é o campo normal. */
 function graduacaoEfetiva(efeito, ent) {
   if (efeito?.categoria === "Dano" && efeito.baseadoAtivo && efeito.atributoBase) {
-    return Math.max(0, attr(ent, efeito.atributoBase) + (efeito.graduacao || 0));
+    return Math.max(0, attr(ent, attrBaseDano(efeito.atributoBase)) + (efeito.graduacao || 0));
   }
   return efeito?.graduacao || 0;
 }
@@ -3737,7 +3748,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       const nivelAtacante = Math.max(1, origemAtual.nivel || 1);
       const sobrecarga = (efeito.mods || []).filter((m) => m.id === "sobrecarregado").reduce((t, m) => t + (m.vezes || 1), 0);
       const danoConfig = danoPorGrauConfigurado(origemAtual);
-      const graduacaoDano = danoConfig != null ? danoConfig : efeito.semLimiteNivel ? (efeito.graduacao || 0) : efeito.graduacao || 0; // Sobrecarregado é automático: graduação acima do nível já paga o extra
+      const graduacaoDano = danoConfig != null ? danoConfig : (sobrecarga > 0 ? (efeito.graduacao || 0) : Math.min(efeito.graduacao || 0, nivelAtacante)); // dano por grau de falha limitado ao nível, salvo Sobrecarregado explícito
       const danoPreReducao = r.sucesso ? 0 : graduacaoDano * Math.abs(r.graus);
       const passivosAlvo = modificadoresPassivos(alvo);
       let pen = somaVezes(efeito.mods, "penetrante") * PENETRANTE_POR_VEZ; // Penetrante: ignora parte da redução de dano
@@ -4037,7 +4048,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const todosEfeitosResolvidos = efeitosPendentesAgarrar.every((ef) => !!efeitosR[ef.id] || limStatus(ef, (id) => efeitosR[id])?.estado === "bloqueado");
   const rolarAgarrao = () => {
     if (!oponente) return;
-    const bAt = melhorDe(origemAtual, ["Atletismo"]);
+    const bAt = melhorDe(origemAtual, temVantagem(origemAtual, "Agarrar Preciso") ? ["Atletismo", "Acrobacia"] : ["Atletismo"]);
     const bDef = melhorDe(oponente, ["Atletismo"]);
     const dAt = rolarD20(), dDef = rolarD20();
     const totalAt = dAt + bAt, totalDef = dDef + bDef;
@@ -4049,7 +4060,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       const nomeCondicao = graus >= 2 ? "Amarrado" : "Agarrado";
       const atuaisAlvo = { ...(oponente.condicoes || {}) };
       atuaisAlvo[nomeCondicao] = (atuaisAlvo[nomeCondicao] || 0) + 1;
-      atualizarCampo(oponente.id, "condicoes", atuaisAlvo);
+      if (nomeCondicao === "Amarrado" && temVantagem(origemAtual, "Estrangular")) { atuaisAlvo.Sufocando = atuaisAlvo.Sufocando || 1; atualizarCampo(oponente.id, "estranguladoPor", origemAtual.id); }
+      atualizarCampo(oponente.id, "agarradoPor", origemAtual.id); atualizarCampo(oponente.id, "agarradoCD", totalAt); atualizarCampo(oponente.id, "condicoes", atuaisAlvo);
       if (!temVantagem(origemAtual, "Agarrar Aprimorado")) {
         const atuaisOrigem = { ...(origemAtual.condicoes || {}) };
         atuaisOrigem["Vulnerável"] = (atuaisOrigem["Vulnerável"] || 0) + 1;
@@ -4614,7 +4626,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
 
   const [oponenteId, setOponenteId] = useState("");
   const [oponentesMulti, setOponentesMulti] = useState({});
-  const [cd, setCd] = useState(acao.cdPadrao || 15);
+  const [cdManual, setCd] = useState(acao.cdPadrao || 15);
+  // Escapar: a CD é o total do teste de agarrão que prendeu o alvo (+1/+2 com Imobilizar Aprimorado do agarrador); não editável
+  const cdEscapar = acao.id === "escapar" && origemAtual.agarradoCD != null ? origemAtual.agarradoCD + bonusImobilizar(entidades.find((x) => x.id === origemAtual.agarradoPor)) : null;
+  const cd = cdEscapar != null ? cdEscapar : cdManual;
   const [periciaEscolhida, setPericiaEscolhida] = useState(acao.pericia || (acao.periciaEscolha ? acao.periciaEscolha[0] : ""));
   const [chaveAjuda, setChaveAjuda] = useState("");
   const [aliadoId, setAliadoId] = useState("");
@@ -4714,9 +4729,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   };
   const rolarOpostoContestado = () => {
     if (!oponente) return;
-    const bAt0 = melhorDe(origemAtual, acao.periciaOposta) + bonusDescansoAcaoValor + (acao.id === "agarrar" ? modificadoresPassivos(origemAtual).agarrar : 0), bDef = melhorDe(oponente, acao.periciaOposta);
+    const periciasAt = acao.id === "agarrar" && temVantagem(origemAtual, "Agarrar Preciso") ? ["Atletismo", "Acrobacia"] : acao.periciaOposta;
+    const bAt0 = melhorDe(origemAtual, periciasAt) + bonusDescansoAcaoValor + (acao.id === "agarrar" ? modificadoresPassivos(origemAtual).agarrar : 0), bDef = melhorDe(oponente, acao.periciaOposta);
     const dAt = rolarD20(), dDef = rolarD20();
-    critNota = bonusCriticoPericia(origemAtual, melhorPericiaDe(origemAtual, acao.periciaOposta), dAt);
+    critNota = bonusCriticoPericia(origemAtual, melhorPericiaDe(origemAtual, periciasAt), dAt);
     const bAt = bAt0 + critNota;
     const totalAt = dAt + bAt, totalDef = dDef + bDef;
     const diff = totalAt - totalDef, vitoria = diff > 0;
@@ -4728,7 +4744,8 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
         const nomeCondicao = graus >= 2 ? "Amarrado" : "Agarrado";
         const atuaisAlvo = { ...(oponente.condicoes || {}) };
         atuaisAlvo[nomeCondicao] = (atuaisAlvo[nomeCondicao] || 0) + 1;
-        atualizarCampo(oponente.id, "condicoes", atuaisAlvo);
+        if (nomeCondicao === "Amarrado" && temVantagem(origemAtual, "Estrangular")) { atuaisAlvo.Sufocando = atuaisAlvo.Sufocando || 1; atualizarCampo(oponente.id, "estranguladoPor", origemAtual.id); }
+        atualizarCampo(oponente.id, "agarradoPor", origemAtual.id); atualizarCampo(oponente.id, "agarradoCD", totalAt); atualizarCampo(oponente.id, "condicoes", atuaisAlvo);
         if (!temVantagem(origemAtual, "Agarrar Aprimorado")) {
           const atuaisOrigem = { ...(origemAtual.condicoes || {}) };
           atuaisOrigem["Vulnerável"] = (atuaisOrigem["Vulnerável"] || 0) + 1;
@@ -4775,6 +4792,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   const habQuebrar = habsQuebrar.find((a) => a.id === habQuebrarId) || null;
   const efDanoQuebrar = habQuebrar ? (habQuebrar.efeitos || []).find((ef) => ef.categoria === "Dano") : null;
   const itemAlvo = equipamentosAlvo.find((a) => a.id === itemAlvoId) || null;
+  const desarmarBloqueado = acao.resolvedor === "desarmar" && !!itemAlvo && presoAoCorpo(itemAlvo);
   const rolarQuebrar = () => {
     if (!oponente || !itemAlvo) return;
     const ajudaBonus = consumirAjuda(origemAtual, "ataque");
@@ -4849,7 +4867,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
       let mudou = false;
       if (atuais["Agarrado"]) { delete atuais["Agarrado"]; mudou = true; }
       if (atuais["Amarrado"]) { delete atuais["Amarrado"]; mudou = true; }
-      if (mudou) atualizarCampo(origemAtual.id, "condicoes", atuais);
+      if (mudou) { atualizarCampo(origemAtual.id, "agarradoCD", null); atualizarCampo(origemAtual.id, "agarradoPor", null); } if (mudou) atualizarCampo(origemAtual.id, "condicoes", atuais);
     }
     registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa ${acao.nome} (${periciaUsada === "inteligencia" ? "Inteligência" : periciaUsada})`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods([...(periciaUsada === "inteligencia" ? notasCondicoesGerais(origemAtual) : notasPericiaEnt(origemAtual, periciaUsada)), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : [])])}`, total: acao.id === "escapar" ? (res.sucesso ? "Escapou! Condição removida" : "Continua preso") : res.grauTexto, tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} testa ${acao.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: Number(cd) || 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: acao.id === "escapar" ? (res.sucesso ? "Escapou!" : "Continua preso") : res.grauTexto });
@@ -5056,7 +5074,17 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
               </>
             )}
 
-            {oponente && !r1 && (acao.resolvedor !== "ataqueObjeto" || itemAlvo) && (
+            {acao.resolvedor === "desarmar" && oponente && objetosAlvo.length > 0 && (
+              <>
+                <label className="label">Item do alvo</label>
+                <SearchableSelect value={itemAlvoId} onChange={(e) => { setItemAlvoId(e.target.value); setR1(null); setR2(null); }} style={{ marginBottom: 12 }}>
+                  <option value="">Outro item</option>
+                  {objetosAlvo.map((o) => <option key={o.id} value={o.id}>{o.nome || "(sem nome)"}{presoAoCorpo(o) ? " (preso ao corpo)" : ""}</option>)}
+                </SearchableSelect>
+                {desarmarBloqueado && <div className="field-note">Esse objeto está preso ao corpo e não pode ser desarmado.</div>}
+              </>
+            )}
+            {oponente && !r1 && !desarmarBloqueado && (acao.resolvedor !== "ataqueObjeto" || itemAlvo) && (
               <button className="btn btn-accent btn-block" style={{ marginBottom: 12 }}
                 onClick={acao.resolvedor === "desarmar" ? rolarAtaqueDesarmar : acao.resolvedor === "ataqueObjeto" ? rolarQuebrar : rolarAtaqueOposto}>
                 ⚄ Rolar Ataque{acao.penalidade ? ` (${acao.penalidade})` : ""}
@@ -5137,7 +5165,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
               </SearchableSelect></>
             )}
             <label className="label">CD</label>
-            <input type="number" value={cd} onChange={(e) => setCd(e.target.value)} style={{ marginBottom: 12 }} />
+            <input type="number" value={cd} readOnly={cdEscapar != null} disabled={cdEscapar != null} onChange={(e) => setCd(e.target.value)} style={{ marginBottom: 12 }} />
             {!r1 && <button className="btn btn-accent btn-block" onClick={rolarSimplesAcao}>⚄ Rolar {periciaUsada === "inteligencia" ? "Inteligência" : periciaUsada}</button>}
             {r1 && <div className="subcard"><ResultadoCard r={r1} /></div>}
           </>
@@ -5352,6 +5380,7 @@ export default function MesaMM3() {
   const [historico, setHistorico] = useState([]);
   const [iniciativa, setIniciativa] = useState(INICIATIVA_VAZIA);
   const [modalCtx, setModalCtx] = useState(null);
+  const [pfCtx, setPfCtx] = useState(null);
   const [acaoCtx, setAcaoCtx] = useState(null);
   const [abaDireita, setAbaDireita] = useState("iniciativa");
   const [fichasAbertas, setFichasAbertas] = useState({}); // fichas expandidas (fica aqui para não fechar ao salvar)
@@ -5656,6 +5685,54 @@ export default function MesaMM3() {
     const agora = Date.now();
     await escreverCompartilhado("pontoFraco", [...base.filter((e) => e && agora - (e.ts || 0) < 60000), ...eventos].slice(-30));
   }, [escreverCompartilhado]);
+  /* Conceder Objeto: a habilidade com Invocar Objeto (e as que gastam dele) vai para outra ficha; no dono original ficam travadas.
+     Quem recebeu pode passar adiante (as cópias saem dele) e destino = dono devolve o objeto. */
+  const concederObjeto = (donoId, objId, destinoId) => {
+    const dono = entidades.find((x) => x.id === donoId);
+    const obj = dono?.ataques?.find((x) => x.id === objId);
+    if (!dono || !obj) return;
+    const grupo = (dono.ataques || []).filter((x) => x.id === objId || x.invocarObjetoId === objId);
+    const ids = new Set(grupo.map((x) => x.id));
+    const ehCopiaDoDono = (x) => x.concedidoDe?.donoId === donoId && ids.has(x.id);
+    const atual = obj.concedidoA || null;
+    const devolver = destinoId === donoId;
+    // tira as cópias de quem tinha (e de quem vai receber, para não duplicar)
+    [atual, devolver ? null : destinoId].filter(Boolean).forEach((hid) => {
+      if (entidades.some((x) => x.id === hid)) atualizarCampo(hid, "ataques", (lista) => (lista || []).filter((x) => !ehCopiaDoDono(x)));
+    });
+    if (!devolver) {
+      const copias = grupo.map((g) => { const { concedidoA, concedidoAtiva, ...base } = g; return { ...base, concedidoDe: { donoId, donoNome: dono.nome, habId: g.id } }; });
+      atualizarCampo(destinoId, "ataques", (lista) => [...(lista || []).filter((x) => !ehCopiaDoDono(x)), ...copias]);
+    }
+    const ativaAgora = habilidadeEstaAtiva(obj);
+    atualizarCampo(donoId, "ataques", (lista) => (lista || []).map((x) => (ids.has(x.id) ? { ...x, concedidoA: devolver ? null : destinoId, concedidoAtiva: devolver ? false : ativaAgora } : x)));
+    const dest = entidades.find((x) => x.id === destinoId);
+    registrar({ tipo: "rolagem", desc: devolver ? `${dono.nome} recolhe "${obj.nome || "objeto"}"` : `${dono.nome} concede "${obj.nome || "objeto"}" a ${dest?.nome || "outra ficha"}`, detalhe: `${grupo.length} habilidade(s)`, total: devolver ? "Recolhido" : "Concedido", tipoClasse: "hs" });
+  };
+  // objeto volta sozinho se a habilidade foi desativada ou se quem recebeu sumiu (só o mestre sincroniza)
+  useEffect(() => {
+    if (identidade?.papel !== "mestre") return;
+    entidades.forEach((dono) => (dono.ataques || []).forEach((a) => {
+      if (!a.concedidoA || !ehHabilidadeObjeto(a)) return;
+      const sumiu = !entidades.some((x) => x.id === a.concedidoA);
+      const desativada = a.concedidoAtiva && !habilidadeEstaAtiva(a);
+      if (sumiu || desativada) concederObjeto(dono.id, a.id, dono.id);
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entidades, identidade]);
+  // Estrangular: o Sufocando só dura enquanto o alvo continua Amarrado
+  useEffect(() => {
+    if (identidade?.papel !== "mestre") return;
+    entidades.forEach((e) => {
+      if (!e.estranguladoPor || e.condicoes?.Amarrado) return;
+      atualizarCampo(e.id, "*", (x) => {
+        const { estranguladoPor, sufocoPassou, sufocoFalhou, sufocoMorrendo, ...resto } = x;
+        const c = { ...(resto.condicoes || {}) }; delete c.Sufocando;
+        return { ...resto, condicoes: c };
+      });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entidades, identidade]);
   const salvarPastas = async (novas) => {
     setPastas(novas);
     if (usuario) await setPersonal(usuario.uid, { pastas: novas });
@@ -5817,14 +5894,14 @@ export default function MesaMM3() {
     // Explosão acaba no começo do turno e deixa Fatigado
     const teveExplosao = (ent.ataques || []).some((a) => a.tipo === "passiva" && passivosDe(a).some((p) => p.explosaoLigada));
     if (teveExplosao) log(`A Explosão de ${ent.nome} acabou`, "Fica Fatigado", "Fatigado", "hw");
-    // Sufocando: Fortitude no começo do turno (CD 10, +5 a cada teste passado). Falhas: Fatigado → Exausto → Morrendo.
+    // Sufocando: Fortitude no começo do turno (CD 10, +5 a cada teste). Falhas: Fatigado → Exausto → Morrendo.
     let sufoco = null;
     if (condicaoAtiva(ent, "Sufocando")) {
       const passou = ent.sufocoPassou || 0, falhou = ent.sufocoFalhou || 0;
-      const cd = 10 + 5 * passou, dado = rolarD20(), bonus = salvBonus(ent, "Fortitude"), r = montarTeste(dado, bonus, cd);
+      const cd = 10 + 5 * (passou + falhou), dado = rolarD20(), bonus = salvBonus(ent, "Fortitude"), r = montarTeste(dado, bonus, cd);
       const efeito = r.sucesso ? null : (falhou === 0 ? "Fatigado" : falhou === 1 ? "Exausto" : "Morrendo");
       sufoco = { passou: passou + (r.sucesso ? 1 : 0), falhou: falhou + (r.sucesso ? 0 : 1), efeito };
-      log(`${ent.nome} testa Sufocando (Fortitude)`, `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? `Passou — próxima CD ${cd + 5}` : `Falhou — fica ${efeito}`, r.sucesso ? "hs" : "hd");
+      log(`${ent.nome} testa Sufocando (Fortitude)`, `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? `Passou — próxima CD ${cd + 5}` : `Falhou — fica ${efeito} (próxima CD ${cd + 5})`, r.sucesso ? "hs" : "hd");
     }
     // Morrendo: contador desce e abre o teste de morte
     const morrendo = condicaoAtiva(ent, "Morrendo") && ((pvSim - danoTotal) <= 0 || !!ent.sufocoMorrendo);
@@ -5959,8 +6036,8 @@ export default function MesaMM3() {
       <div className="wrap">
         <div className="split-wrap">
           <div className="split-col col-fichas">
-            <FichasTab entidades={entidades} salvar={salvarEntidades} identidade={identidade} usuario={usuario} registrar={registrar}
-              onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa} onTirarDaIniciativa={tirarDaIniciativa}
+            <FichasTab onAbrirPontoFraco={(o, h) => setPfCtx({ origem: o, ataque: h })} entidades={entidades} salvar={salvarEntidades} identidade={identidade} usuario={usuario} registrar={registrar}
+              onAbrirRolagem={setModalCtx} onAbrirAcao={setAcaoCtx} atualizarCampo={atualizarCampo} onRolarIniciativa={rolarIniciativa} onTirarDaIniciativa={tirarDaIniciativa} onConcederObjeto={concederObjeto}
               pastas={pastas} onSalvarPastas={salvarPastas} fichasAbertas={fichasAbertas} setFichasAbertas={setFichasAbertas} foco={focoFicha} onFocoConsumido={() => setFocoFicha(null)} />
           </div>
           <div className="split-col col-lateral">
@@ -5979,6 +6056,7 @@ export default function MesaMM3() {
           </div>
         </div>
       </div>
+      {pfCtx && <PontoFracoJanela origem={entidades.find((x) => x.id === pfCtx.origem.id) || pfCtx.origem} entidades={entidades} pf={pfCtx.ataque.pontoFraco} nomeHabilidade={pfCtx.ataque.nome} onFechar={() => setPfCtx(null)} registrar={registrar} animar={dispararAnimacao} enviarPontoFraco={enviarPontoFraco} />}
       {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} enviarPontoFraco={enviarPontoFraco} iniciativa={iniciativa} />}
       {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} onAbrirRolagem={setModalCtx} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} iniciativa={iniciativa} />}
       {avisosPF.length > 0 && (
@@ -6118,7 +6196,7 @@ function EfeitoForm({ efeito, onMudar, onCriarArremesso }) {
       {efeito.categoria === "Dano" && (
         <>
           <label className="label">Atributo do dano (obrigatório)</label>
-          <SearchableSelect value={efeito.atributoBase || ""} onChange={(e) => onMudar({ ...efeito, atributoBase: e.target.value, baseadoAtivo: true })} style={{ marginBottom: 6 }}>
+          <SearchableSelect value={attrBaseDano(efeito.atributoBase) || ""} onChange={(e) => onMudar({ ...efeito, atributoBase: e.target.value, baseadoAtivo: true })} style={{ marginBottom: 6 }}>
             <option value="">Selecione o atributo…</option>
             {ATRIBUTOS_DANO.map((a) => <option key={a.k} value={a.k}>{a.l}</option>)}
           </SearchableSelect>
@@ -6771,6 +6849,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
       const base = EFEITO_CAT_POR_ID[idCat]?.alcance;
       return !!ativo && ["distancia", "percepcao"].includes(alcanceDoEfeito(base, mods.map((x) => ({ ...x, valor: x.valor ?? MOD_POR_ID[x.id]?.v }))));
     }
+    if (m.id === "preso_corpo") return mods.some((x) => x.id === "invocar_objeto") && !mods.some((x) => x.id === "preso_corpo");
     return m.mult || m.id === "limitado" || !mods.some((x) => x.id === m.id);
   };
   const excl = new Set([...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
@@ -8466,7 +8545,6 @@ function FichaForm({ autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidad
     };
   });
   const [erro, setErro] = useState("");
-  const [complicOpen, setComplicOpen] = useState(false);
   const [fundamentosOpen, setFundamentosOpen] = useState(false);
   const [ajFotoAberto, setAjFotoAberto] = useState(false);
   const toggleFundamento = (fund) => {
@@ -8703,21 +8781,6 @@ function FichaForm({ autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidad
 
       </section>
       <section className="ed-sec">
-      <div className="section-title colapsavel" onClick={() => setComplicOpen((s) => !s)} style={{ cursor: "pointer" }}>
-        Complicações {complicOpen ? "▾" : "▸"}
-      </div>
-      {complicOpen && (
-        <div style={{ marginBottom: 10 }}>
-          <label className="label">Descreva as complicações do personagem</label>
-          <textarea rows={4} value={f.complicacoes?.texto || ""} onChange={(e) => upd("complicacoes", { ...(f.complicacoes || {}), texto: e.target.value })} style={{ marginBottom: 8 }} />
-          <label className="label">Pontos de Poder extras concedidos por complicações (máx. 2)</label>
-          <input type="number" min={0} max={2} value={f.complicacoes?.pontos || 0}
-            onChange={(e) => upd("complicacoes", { ...(f.complicacoes || {}), pontos: Math.max(0, Math.min(2, Number(e.target.value))) })} />
-        </div>
-      )}
-
-      </section>
-      <section className="ed-sec">
       <div className="section-title">Inventário</div>
       <InventarioEditor itens={f.inventario} onMudar={(v) => upd("inventario", v)} vazio="Nenhum item." />
       </section>
@@ -8857,7 +8920,7 @@ function PainelComposta({ grupo, ehMestre, renderItem, parteAbertaId, onParteAbe
 }
 
 const SCROLL_FICHAS = { v: null };
-function FichasTab({ onTirarDaIniciativa = () => {}, entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas, fichasAbertas = {}, setFichasAbertas = () => {}, foco = null, onFocoConsumido = () => {} }) {
+function FichasTab({ onAbrirPontoFraco = () => {}, onConcederObjeto = () => {}, onTirarDaIniciativa = () => {}, entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas, fichasAbertas = {}, setFichasAbertas = () => {}, foco = null, onFocoConsumido = () => {} }) {
   const [editando, setEditandoRaw] = useState(null);
   // ao abrir o formulário guarda a rolagem (fora do componente: sobrevive a remontagens); ao fechar a lista volta ao mesmo ponto
   const setEditando = (v) => { if (v && !editando && !SCROLL_FICHAS.v) SCROLL_FICHAS.v = { y: window.scrollY, col: document.querySelector(".col-fichas")?.scrollTop || 0 }; if (!v && !SCROLL_FICHAS.v) SCROLL_FICHAS.v = null; setEditandoRaw(v); };
@@ -9024,7 +9087,7 @@ function FichasTab({ onTirarDaIniciativa = () => {}, entidades, salvar, identida
     onDragLeave: (ev) => { if (!ev.currentTarget.contains(ev.relatedTarget) && alvoDrop === chave) setAlvoDrop(null); },
     onDrop: (ev) => soltarEm(ev, pastaId),
   });
-  const renderItem = (e, forcar) => <EntidadeItem key={e.id} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={forcar ? true : !!fichasAbertas[e.id]} onAbertoExt={(v) => { if (!forcar) setAbertaFicha(e.id, v); }} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => (e.composta ? (tipoParte(e) === "torax" && !meusTodos.some((x) => x.composta?.grupoId === e.composta.grupoId && tipoParte(x) === "nucleo") ? window.alert("O núcleo não pode ser removido enquanto for o único. Para apagar tudo, use \"Excluir criatura\".") : setParteParaExcluir(e)) : excluir(e))} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
+  const renderItem = (e, forcar) => <EntidadeItem key={e.id} onAbrirPontoFraco={onAbrirPontoFraco} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={forcar ? true : !!fichasAbertas[e.id]} onAbertoExt={(v) => { if (!forcar) setAbertaFicha(e.id, v); }} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => (e.composta ? (tipoParte(e) === "torax" && !meusTodos.some((x) => x.composta?.grupoId === e.composta.grupoId && tipoParte(x) === "nucleo") ? window.alert("O núcleo não pode ser removido enquanto for o único. Para apagar tudo, use \"Excluir criatura\".") : setParteParaExcluir(e)) : excluir(e))} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} onConcederObjeto={onConcederObjeto} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
     pastas={pastas} onMoverPasta={(id) => atualizarCampo(e.id, "pasta", id || null)} />;
 
   return (
@@ -9054,13 +9117,13 @@ function FichasTab({ onTirarDaIniciativa = () => {}, entidades, salvar, identida
             </div>
             {aberta && (visiveis.length === 0
               ? <div className="field-note">Pasta vazia. Arraste uma ficha (com ela fechada) para cá.</div>
-              : <div style={{ marginTop: 8 }}>{visiveis.map(renderItem)}</div>)}
+              : <div style={{ marginTop: 8 }}>{visiveis.map((x) => renderItem(x))}</div>)}
           </div>
         );
       })}
       <div {...zonaDrop("__fora", null)} style={{ borderRadius: 8, minHeight: arrastandoId && pastas.length > 0 ? 56 : 0, marginBottom: 6, ...(alvoDrop === "__fora" ? { outline: "2px dashed var(--accent)", background: "var(--accent-soft)" } : {}) }}>
         {pastas.length > 0 && (semPasta.length > 0 || arrastandoId) && <div className="stat-group-label" style={{ marginBottom: 6 }}>Sem pasta{arrastandoId ? " — solte aqui para tirar da pasta" : ""}</div>}
-        {semPasta.map(renderItem)}
+        {semPasta.map((x) => renderItem(x))}
       </div>
       <div className="grid2" style={{ marginBottom: 20 }}>
         <button className="btn btn-accent btn-block" onClick={() => setEditando("novo")}>+ Nova ficha</button>
@@ -9086,7 +9149,7 @@ function FichasTab({ onTirarDaIniciativa = () => {}, entidades, salvar, identida
         <>
           <div className="section-title">Outras fichas na mesa</div>
           {outros.length === 0 && <div className="card empty">Ninguém mais cadastrou fichas ainda.</div>}
-          {outros.map((e) => <EntidadeItem key={e.id} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} />)}
+          {outros.map((e) => <EntidadeItem key={e.id} onAbrirPontoFraco={onAbrirPontoFraco} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} onConcederObjeto={onConcederObjeto} />)}
         </>
       )}
 
@@ -9149,7 +9212,33 @@ function StatChip({ label, value, onClick }) {
   return <button className="stat-chip" onClick={onClick}>{label} <b>{value >= 0 ? "+" : ""}{value}</b></button>;
 }
 
-function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta, abertoExt, onAbertoExt }) {
+function ModalConcederObjeto({ ent, hab, entidades, onConfirmar, onFechar }) {
+  const copia = !!hab.concedidoDe;
+  const donoId = copia ? hab.concedidoDe.donoId : ent.id;
+  const dono = entidades.find((x) => x.id === donoId);
+  const atualId = copia ? ent.id : (hab.concedidoA || null);
+  const lista = entidades.filter((x) => x.oponente && x.id !== ent.id && x.id !== atualId);
+  const [destino, setDestino] = useState("");
+  const podeRecolher = !!dono && (copia || !!hab.concedidoA);
+  return (
+    <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) onFechar(); }}>
+      <div className="modal-box" style={{ maxWidth: 420 }}>
+        <div className="modal-head"><span className="mt">Conceder Objeto</span><button className="modal-close" onClick={onFechar}>×</button></div>
+        <label className="label">Fichas engajadas</label>
+        <SearchableSelect listaCheia value={destino} onChange={(ev) => setDestino(ev.target.value)} style={{ marginBottom: 12 }}>
+          <option value="">Selecione…</option>
+          {opcoesEntidades(lista)}
+        </SearchableSelect>
+        {lista.length === 0 && <div className="field-note">Nenhuma ficha engajada.</div>}
+        <div className="grid2">
+          {podeRecolher ? <button className="btn btn-ghost" onClick={() => onConfirmar(donoId)}>Devolver a {copia ? dono.nome : "mim"}</button> : <button className="btn btn-ghost" onClick={onFechar}>Cancelar</button>}
+          <button className="btn btn-accent" disabled={!destino} onClick={() => onConfirmar(destino)}>Conceder</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+function EntidadeItem({ onAbrirPontoFraco, onConcederObjeto, onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta, abertoExt, onAbertoExt }) {
   const [abertoLocal, setAbertoLocal] = useState(false);
   const aberto = abertoExt !== undefined ? !!abertoExt : abertoLocal; // estado levantado: sobrevive ao salvar a ficha e à troca de aba
   const setAberto = (v) => { const novo = typeof v === "function" ? v(aberto) : v; if (onAbertoExt) onAbertoExt(novo); else setAbertoLocal(novo); };
@@ -9175,6 +9264,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
     if (novoAtivo) { gastarAcao(onAtualizarCampo, e.id, acaoDaHabilidade(ataque)); ativarColaterais(e, ataque, onAtualizarCampo, registrar); aplicarUsoMods(e, ataque, onAtualizarCampo, registrar); } else desativarColaterais(e, ataque, onAtualizarCampo);
   };
   const [pendenteOutros, setPendenteOutros] = useState(null);
+  const [concedendo, setConcedendo] = useState(null);
   const [configAberta, setConfigAberta] = useState(false);
   const alternarPassiva = (ataque, alvoOutrosId) => {
     if (!onAtualizarCampo) return;
@@ -9218,6 +9308,7 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
       usarDesgastante(e, ataque, onAtualizarCampo, registrar, null);
     }
     aplicarTogglePassiva(ataque, novoAtivo, alvoOutrosId);
+    if (novoAtivo && ataque.pontoFraco?.ativo && onAbrirPontoFraco) onAbrirPontoFraco(e, ataque);
   };
   const abrirAcao = (acao) => onAbrirAcao({ origem: e, acao });
   const pvMax = pvMaxCalc(e), nenMax = nenMaxCalc(e);
@@ -9473,10 +9564,13 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
                 const ativa = passiva ? passivaEstaAtiva(a) : !!(a.sustentado && a.sustentando);
                 const k = chaveAcaoDeNome(acaoDaHabilidade(a));
                 const corAcao = ACOES_TIPOS.find((t) => t.k === k)?.cor || "var(--muted)";
+                const travada = !!a.concedidoA;
+                const podeConceder = editavel && ehHabilidadeObjeto(a);
                 return (
-                  <button key={a.id} type="button" className={"hab-card" + (passiva ? " passiva" : "") + (ativa ? " ativo" : "") + (itemQuebrado(a) ? " item-quebrado" : "")}
-                    disabled={passiva && !editavel} onClick={() => (passiva ? (editavel ? alternarPassiva(a) : null) : abrirAtaque(a))}
-                    title={passiva ? (editavel ? (ativa ? "Clique para desativar" : "Clique para ativar") : "") : "Clique para usar"}>
+                  <div key={a.id} className="hab-wrap">
+                  <button type="button" className={"hab-card" + (passiva ? " passiva" : "") + (ativa ? " ativo" : "") + (itemQuebrado(a) ? " item-quebrado" : "") + (travada ? " hab-travada" : "")}
+                    disabled={travada || (passiva && !editavel)} onClick={() => (passiva ? (editavel ? alternarPassiva(a) : null) : abrirAtaque(a))}
+                    title={travada ? "Objeto concedido a outra ficha" : passiva ? (editavel ? (ativa ? "Clique para desativar" : "Clique para ativar") : "") : "Clique para usar"}>
                     {a.imagem ? <div className="hab-img-wrap"><ImgAj className="hab-img" src={a.imagem} aj={a.imagemAj} /></div> : <div className="hab-faixa" />}
                     <div className="hab-corpo">
                       <div className="hab-nome">{a.nome || "(sem nome)"}</div>
@@ -9488,9 +9582,13 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
                         {Number(a.custoVida) > 0 && <span className="hab-tag vida">{a.custoVida} PV</span>}
                         {a.sustentado && <span className="hab-tag">Sustentada{a.acaoSustentar && a.acaoSustentar !== "Nenhuma" ? ` · ${rotuloAcaoCurto(a.acaoSustentar)}` : ""}</span>}
                         {itemQuebrado(a) && <span className="hab-tag vida">Quebrado</span>}
+                        {travada && <span className="hab-tag vida">🔒 Com {(entidades || []).find((x) => x.id === a.concedidoA)?.nome || "outra ficha"}</span>}
+                        {a.concedidoDe && <span className="hab-tag">Concedido por {a.concedidoDe.donoNome}</span>}
                       </div>
                     </div>
                   </button>
+                  {podeConceder && <button type="button" className="btn btn-ghost btn-sm hab-conceder" onClick={() => setConcedendo(a)}>🎁 Conceder Objeto</button>}
+                  </div>
                 );
               })}
             </div>
@@ -9692,6 +9790,10 @@ function EntidadeItem({ onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcl
           onConfirmar={confirmarExclusao} onCancelar={() => setConfirmandoExclusao(false)} />
       )}
       {configAberta && <ConfigFicha ent={e} onSalvar={(cfg) => { onAtualizarCampo(e.id, "config", cfg); setConfigAberta(false); }} onFechar={() => setConfigAberta(false)} />}
+      {concedendo && onConcederObjeto && (
+        <ModalConcederObjeto ent={e} hab={concedendo} entidades={entidades || []} onFechar={() => setConcedendo(null)}
+          onConfirmar={(destino) => { const h = concedendo; setConcedendo(null); onConcederObjeto(h.concedidoDe ? h.concedidoDe.donoId : e.id, h.id, destino); }} />
+      )}
       {pendenteOutros && (
         <EscolherAlvoOutros ataque={pendenteOutros} origem={e} entidades={entidades || []}
           onConfirmar={(id) => { const a = pendenteOutros; setPendenteOutros(null); alternarPassiva(a, id); }}
