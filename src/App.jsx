@@ -910,7 +910,7 @@ function opcoesEntidades(lista) {
 }
 const ATRS_SO_TORAX = ["presenca", "prontidao", "inteligencia"];
 const CONDICOES_MENTAIS = ["Atordoado", "Compelido", "Controlado", "Tonto", "Transe", "Nulificado", "Amarrado"];
-const MANOBRAS_SO_TORAX = ["fintar", "desmoralizar"];
+const MANOBRAS_SO_TORAX = ["fintar", "desmoralizar", "fascinar", "avaliar"];
 const toraxDe = (e, entidades) => (ehParteSecundaria(e) ? (entidades || []).find((x) => x.composta?.grupoId === e.composta.grupoId && x.composta.parte === "torax") || e : e);
 const metrosDe = (t) => parseFloat(String(t).replace(",", ".")) || 0;
 const ehParteSecundaria = (e) => !!e?.composta && e.composta.parte !== "torax";
@@ -989,32 +989,29 @@ const VANTAGENS = [
   { nome: "Agarrar Rápido", desc: "Quando acerta um ataque desarmado, você pode fazer um teste de agarrar imediatamente contra o alvo como uma ação livre. Seu ataque desarmado causa dano normal e conta como o teste de ataque inicial exigido para agarrar seu oponente.", graduacaoMax: 1 },
   { nome: "Agarrar Preciso", desc: "Você pode usar Acrobacia no lugar de Atletismo para agarrar.", graduacaoMax: 1 },
   { nome: "Ambiente Favorito", desc: "Você é especialmente adaptado para lutar em determinado ambiente. Quando estiver no seu ambiente favorito, você ganha um bônus de circunstância de +2 em testes de ataque, esquiva ou aparar (escolha) e duas perícias a sua escolha.", mecanica: { modo: "toggle", bonus: 2, alvos: ["ataque"], escolheDefesa: true, escolhePericias: 2 }, graduacaoMax: 1 },
-  { nome: "Armação", desc: "Você pode transferir os benefícios do uso de uma perícia de interação em combate para um ou mais companheiros. Por exemplo, você pode fintar e deixar seu alvo vulnerável contra um ou mais aliados em seu(s) próximo(s) ataque(s), em vez de deixá-lo vulnerável contra você. Cada graduação nesta vantagem permite que você transfira o benefício para mais um aliado." },
-  { nome: "Assustar", desc: "Você pode usar Intimidação no lugar de Enganação para fintar em combate. Os alvos resistem com Intuição, Intimidação ou Vontade.", graduacaoMax: 1 },
+  { nome: "Armação", desc: "Depois de um Fintar ou Desmoralizar bem-sucedido, você pode passar o efeito para aliados em vez de guardá-lo para si. Cada graduação permite incluir mais um aliado. Quem recebe o efeito o aproveita contra o alvo; você deixa de se beneficiar dele." },
+  { nome: "Assustar", desc: "Você pode usar Intimidação no lugar de Enganação para fintar. O alvo resiste com o maior bônus entre Intuição, Intimidação e Vontade.", graduacaoMax: 1 },
   { nome: "Ataque Acurado", desc: "Quando faz um ataque acurado, você pode aceitar uma penalidade de até −5 no CD do ataque e somar o mesmo número no bônus de ataque.", graduacaoMax: 1 },
   { nome: "Ataque Defensivo", desc: "Quando faz um ataque defensivo, você pode aceitar uma penalidade de até −5 no bônus de ataque e somar o mesmo número em suas duas defesas ativas (Esquiva e Aparar).", graduacaoMax: 1 },
   { nome: "Ataque Dominó", desc: "Ao zerar os pontos de vida de uma criatura com um ataque que use uma jogada de ataque, você pode dar um ataque adicional neste turno sem custo de ação. Com duas graduações, você também pode se mover no seu deslocamento sem custo de ação neste turno.", graduacaoMax: 2 },
   { nome: "Ataque Imprudente", desc: "Quando faz um ataque imprudente, você pode aceitar uma penalidade de até −5 em suas defesas ativas (Esquiva ou Aparar) e somar o mesmo número (até +5) no bônus de ataque.", graduacaoMax: 1 },
   { nome: "Ataque Poderoso", desc: "Quando faz um ataque poderoso, você pode aceitar uma penalidade de até −5 no bônus de ataque e somar o mesmo número (até +5) no modificador de efeito do ataque.", graduacaoMax: 1 },
-  { nome: "Ataque Preciso", desc: "Quando faz ataques corpo-a-corpo ou à distância, você ignora as penalidades no teste de ataque devido a cobertura ou camuflagem (escolha um), embora cobertura total ainda o impeça de realizar ataques. Com duas graduações você pode ignorar cobertura e camuflagem.", graduacaoMax: 2 },
   { nome: "Atraente", desc: "Você é bonito, o que concede um bônus de +2 em testes de Enganação e de Persuasão para enganar, seduzir ou mudar a atitude de qualquer um que possa ser atraído por você. Com 2 graduações, aumenta o bônus para +5.", graduacaoMax: 2, mecanica: { modo: "condicional", bonusTabela: { 1: 2, 2: 5 }, alvos: ["Enganação", "Persuasão"] } },
-  { nome: "Avaliação", desc: "Escolha um alvo que possa perceber e faça um teste de Intuição como uma ação livre, oposto pelo teste de Enganação do alvo. Se você vencer, peça ao mestre o atributo que deseja descobrir com exatidão ou o tipo de Nen do alvo. A cada grau de sucesso adicional, você descobre um atributo a mais do alvo ou o tipo de Nen caso não tenha sido escolhido anteriormente. Se perder o teste oposto, você não descobre nada.", graduacaoMax: 1 },
-  { nome: "Bem Informado", desc: "Quando encontrar um indivíduo ou organização pela primeira vez, você pode fazer um teste das perícias Investigação ou Persuasão para ver se seu personagem já ouviu alguma coisa sobre o alvo. Use as diretrizes para obter informações na descrição da perícia Investigação para determinar o nível de informação que você obtém. Você recebe apenas um teste por alvo na primeira vez que o encontrar." },
+  { nome: "Avaliação", desc: "Teste de Intuição contra a Enganação do alvo. Se vencer, revela o tipo de Nen e o maior atributo dele; a cada 2 pontos de diferença, revela mais um atributo.", graduacaoMax: 1 },
   { nome: "Benefício", desc: "Você possui um benefício, escolha entre uma das 6 opções. Graduações adicionais nessa vantagem permite você escolher o benefício adicional.\nAmbidestria: você é igualmente apto com as duas mãos, e não sofre penalidades de circunstância por usar sua mão inepta." },
   { nome: "Crítico Aprimorado", desc: "Escolha uma habilidade sua que faça jogada de ataque, ou uma perícia (ao editar esta vantagem). O crítico é uma dobrada de 6-6 a 10-10; com esta vantagem, as dobradas 5-5, 4-4, 3-3 e 2-2 também são críticos (e deixam de ser falha crítica). Em habilidade, a rolagem de ataque passa a considerar crítico. Em perícia, todo teste com ela cujos dados forem uma dobrada dentro do crítico soma +5 no resultado (não é sucesso automático).", graduacaoMax: 1, pedeHabilidade: true },
   { nome: "De Pé", desc: "Você passa de caído para de pé sem custo de ação sem a necessidade de um teste da perícia Acrobacia.", graduacaoMax: 1 },
   { nome: "Defesa Aprimorada", desc: "Quando usa a ação defender-se e rolar um teste de resistência e tirar um resultado abaixo de 10 nos dados (2d10), o resultado se torna a 10.", graduacaoMax: 1 },
-  { nome: "Derrubar Aprimorado", desc: "Quando acerta um ataque desarmado, você pode fazer um teste de derrubar imediatamente contra o alvo como uma ação livre. Seu ataque desarmado causa dano normal e conta como o teste de ataque inicial exigido para derrubar seu oponente.", graduacaoMax: 1 },
-  { nome: "Desarmar Aprimorado", desc: "Você não sofre penalidades em seu teste de ataque para desarmar um oponente e ao segurar a arma, pode dar um ataque com ela como uma ação livre no oponente desarmado.", graduacaoMax: 1 },
-  { nome: "Destemido", desc: "Você é imune a todos os efeitos de medo. Na prática, isto é o efeito Imunidade a Medo.", graduacaoMax: 1 },
-  { nome: "Empatia com Animais", desc: "Você recebe um bônus de +5 em perícias de interação para falar com animais, bestas ou criaturas não verbais. Você pode usar Prontidão no lugar de Presença em perícias de interação contra elas.", graduacaoMax: 1 },
+  { nome: "Derrubar Aprimorado", desc: "Ao acertar um ataque, você pode tentar derrubar o alvo imediatamente, sem custo de ação e sem novo teste de ataque.", graduacaoMax: 1 },
+  { nome: "Desarmar Aprimorado", desc: "Você não sofre penalidade ao desarmar. Ao desarmar com sucesso, pode pegar o item para você.", graduacaoMax: 1 },
+  { nome: "Empatia com Animais", desc: "Em perícias de interação com animais, bestas ou criaturas não verbais, você soma +2 e usa Prontidão no lugar do atributo habitual da perícia.", graduacaoMax: 1 },
   { nome: "Equipamento", desc: "Você tem 5 pontos por graduação nesta vantagem para gastar em equipamento. Isso inclui veículos e quartel-general.", graduacaoMax: 999 },
   { nome: "Esconder-se à Plena Vista", desc: "Você pode se esconder sem necessidade de um teste de Enganação ou de Intimidação e sem qualquer tipo de distração, e sem penalidade no seu teste de Furtividade. Você ainda precisa ter algum tipo de cobertura ou camuflagem ao alcance de sua velocidade normal para se esconder.", graduacaoMax: 1 },
   { nome: "Esquiva Fabulosa", desc: "Você não fica vulnerável quando surpreso ou de outra maneira pego desatento. Você ainda fica vulnerável devido a efeitos que limitam sua mobilidade.", graduacaoMax: 1 },
   { nome: "Estrangular", desc: "Se você for bem-sucedido em agarrar e imobilizar um oponente, você pode estrangulá-lo, fazendo seu oponente começar a sufocar enquanto você o imobiliza.", graduacaoMax: 1 },
   { nome: "Evasão", desc: "Você tem um bônus de circunstância de +2 em testes de salvamento de Esquiva para evitar efeitos de área. Se tiver 2 graduações nesta vantagem, seu bônus de circunstância aumenta para +5.", graduacaoMax: 2 },
-  { nome: "Fascinar", desc: "Uma de suas perícias de interação é tão eficaz que você pode capturar e prender a atenção de outras pessoas com ela. Escolha Enganação, Intimidação ou Persuasão ao adquirir esta vantagem. Use uma ação livre e faça um teste de perícia de interação contra um teste oposto de seu alvo (Intuição ou a defesa Vontade). Caso seja bem-sucedido, o alvo fica em transe. Você pode manter o efeito com uma ação livre por rodada, concedendo ao alvo um novo teste de salvamento. O efeito termina quando você para de atuar, quando o alvo resistir com sucesso, ou caso qualquer outro perigo imediato se apresente. Você pode comprar esta vantagem mais de uma vez; a cada nova compra, ela se aplica a uma perícia diferente.", graduacaoMax: 3 },
-  { nome: "Ferramentas Improvisadas", desc: "Você pode inventar dispositivos temporários. Com uma ação de descanso, você pode criar um dispositivo, os pontos de poder que esse dispositivo pode ter, é igual a quantidade de pontos que você gastou nessa vantagem. Ao montar o seu dispositivo faça um teste de Tecnologia CD 10 + Custo do dispositivo, ao ser bem sucedido você pode usar esse dispositivo como se fosse um efeito de poder seu, mas ao utilizá-lo, ele descarrega, se desfaz ou é destruído.", graduacaoMax: 999 },
+  { nome: "Fascinar", desc: "Prende a atenção de um alvo com a perícia de interação escolhida (Enganação, Intimidação ou Persuasão). Se vencer o maior bônus entre Intuição e Vontade do alvo, ele fica em Transe. Sofrer dano interrompe o efeito.", mecanica: { modo: "info", escolhePericias: 1, periciasPermitidas: ["Enganação", "Intimidação", "Persuasão"] }, unica: true, graduacaoMax: 1 },
+  { nome: "Ferramentas Improvisadas", desc: "Libera a ação de descanso Improvisar Ferramenta, que cria um dispositivo temporário usando o construtor de habilidades. Você tem 5 pontos de poder por graduação para gastar nele, e um teste de Tecnologia contra CD 5 + custo do dispositivo o torna utilizável.", graduacaoMax: 999 },
   { nome: "Finta Ágil", desc: "Você pode usar seu bônus de Acrobacia ou suas graduações de movimento no lugar de Enganação para fintar e realizar truques em combate como se o seu bônus de Acrobacia ou suas graduações de velocidade fossem o seu bônus de Enganação. Seu adversário se opõe a essa tentativa com Acrobacia ou Intuição (o que for melhor).", graduacaoMax: 1 },
   { nome: "Imobilizar Aprimorado", desc: "Quando você agarra, é difícil escapar. A CD para escapar do seu agarrão aumenta em +1. Com duas graduações nessa vantagem, aumenta em +2.", graduacaoMax: 2 },
   { nome: "Inimigo Favorito", desc: "Você tem um tipo especial de oponente que estudou ou contra o qual é especialmente eficaz. Pode ser um tipo de criatura, uma profissão ou qualquer outra categoria que o mestre aprove. Categorias especialmente amplas como humanos ou vilões não são permitidas. Você ganha um bônus de circunstância de +2 em testes de ataque, Enganação, Intimidação, Intuição e Percepção ao lidar com seu Inimigo Favorito. Você só pode ter 1 inimigo favorito, mas sempre que aumentar o seu nível, você pode mudá-lo.", graduacaoMax: 1, mecanica: { modo: "condicional", bonus: 2, alvos: ["ataque", "Enganação", "Intimidação", "Intuição", "Percepção"], pedeTexto: true } },
@@ -1022,15 +1019,15 @@ const VANTAGENS = [
   { nome: "Luta no Chão", desc: "Você não sofre penalidade de circunstância em testes de ataque por estar caído, e oponentes adjacentes não ganham o bônus de circunstância de costume para ataques corpo-a-corpo contra você.", graduacaoMax: 1 },
   { nome: "Mira Aprimorada", desc: "Com uma ação livre, você pode ganhar +2 na sua próxima jogada de ataque.", graduacaoMax: 1 },
   { nome: "Parceiro", desc: "Você tem outro personagem que atua como seu parceiro e ajudante. Crie o parceiro como um personagem independente com (graduações na vantagem x 5) pontos de poder, limitado pelo nível de poder da série. O total de pontos de poder de um parceiro deve ser menor que o seu. Seu parceiro é um personagem do mestre, mas é automaticamente prestativo e leal a você. Caso seu parceiro morra, você recupera os pontos de poder investidos na vantagem no próximo nível." },
-  { nome: "Prender Arma", desc: "Quando usa a ação defender-se e você se defende com sucesso de um ataque corpo-a-corpo com arma, você pode tentar desarmar seu oponente de imediato, como uma reação. A tentativa de desarme é feita normalmente, incluindo a oportunidade que o atacante ganha para desarmar você.", graduacaoMax: 1 },
+  { nome: "Prender Arma", desc: "Ao se defender com sucesso usando Defender-se, você pode gastar uma reação para tentar desarmar o atacante, sem precisar de teste de ataque.", graduacaoMax: 1 },
   { nome: "Quebrar Aprimorado", desc: "Você não sofre penalidades em testes de ataque para acertar um objeto segurado por outro personagem.", graduacaoMax: 1 },
-  { nome: "Quebrar Arma", desc: "Quando usa a ação defender-se e você se defende com sucesso de um ataque corpo-a-corpo com arma, você pode fazer um ataque contra a arma do atacante de imediato como uma reação. Isso exige um teste de ataque e causa dano normal à arma, caso acerte.", graduacaoMax: 1 },
+  { nome: "Quebrar Arma", desc: "Ao se defender com sucesso usando Defender-se, você pode gastar uma reação para tentar quebrar a arma do atacante.", graduacaoMax: 1 },
   { nome: "Reativo", desc: "Você pode gastar uma ação livre no seu turno, para ter uma reação adicional até o começo do seu próximo turno.", graduacaoMax: 1 },
   { nome: "Redirecionar", desc: "Se você for bem-sucedido em ludibriar um oponente, pode redirecionar um ataque contra você que tenha falhado para outro alvo como uma reação. O novo alvo deve estar adjacente a você e dentro do alcance do ataque. O atacante faz um novo teste de ataque com os mesmos modificadores contra o novo alvo.", graduacaoMax: 1 },
   { nome: "Tolerância Maior", desc: "Você tem um bônus de +5 em testes para evitar ficar fatigado e em testes para prender a respiração, para evitar dano devido à fome ou à sede, para evitar dano de ambientes quentes ou frios e para resistir à sufocação e ao afogamento.", graduacaoMax: 1 },
   { nome: "Tontear", desc: "Você pode fazer um teste de Enganação ou de Intimidação (escolha qual perícia ao comprar esta vantagem) para fazer com que seu oponente hesite em combate. Faça um teste de perícia como uma ação padrão contra o teste de salvamento do alvo (a mesma perícia, Intuição ou a defesa Vontade, o que tiver bônus mais alto). Se você vencer, seu alvo fica Tonto (capaz de realizar apenas uma ação padrão) até o fim da sua próxima rodada. A habilidade para deixar alguém Tonto com Enganação e com Intimidação são vantagens diferentes; compre duas graduações desta vantagem para ser capaz de fazer as duas coisas.", graduacaoMax: 2 },
   { nome: "Trabalho em Equipe", desc: "+5 de circunstância ao ajudar em um teste de equipe ou na ação Auxílio.", graduacaoMax: 1 },
-  { nome: "Zombar", desc: "Usa uma perícia de interação (ação livre) para irritar o alvo, impondo penalidade em seus próximos testes.", graduacaoMax: 1 },
+  { nome: "Zombar", desc: "Você pode usar Enganação no lugar de Intimidação para desmoralizar. O alvo resiste com o maior bônus entre Enganação, Intuição e Vontade.", graduacaoMax: 1 },
 ];
 function bonusDeGraduacao(info, graduacoes) {
   if (!info?.mecanica) return 0;
@@ -1091,6 +1088,10 @@ const MANOBRAS = [
     desc: "Teste de Intimidação (ação livre) oposto pelo melhor entre Intimidação e Vontade do alvo. Se vencer, o alvo fica Prejudicado até o início do seu próximo turno." },
   { id: "fintar", nome: "Fintar", tag: "Ação Livre", resolvedor: "oposicaoCondicao", pericia: "Enganação", condicao: "Vulnerável",
     desc: "Teste de Enganação (ação livre) oposto pelo melhor entre Enganação e Vontade do alvo. Se vencer, o alvo fica Vulnerável contra seu próximo ataque, até o fim do seu próximo turno." },
+  { id: "fascinar", nome: "Fascinar", tag: "Ação Livre", resolvedor: "oposicaoCondicao", condicao: "Transe", vantagem: "Fascinar",
+    desc: "Teste da perícia de Fascinar oposto pelo melhor entre Intuição e Vontade do alvo. Se vencer, o alvo fica em Transe até sofrer dano." },
+  { id: "avaliar", nome: "Avaliar", tag: "Ação Livre", resolvedor: "avaliacao", vantagem: "Avaliação",
+    desc: "Teste de Intuição oposto pela Enganação do alvo. Se vencer, revela o tipo de Nen e o maior atributo; a cada 2 pontos de diferença, mais um atributo." },
   { id: "encontrao", nome: "Encontrão", tag: "Ação Padrão", resolvedor: "encontrao",
     desc: "Ao usar todo o deslocamento em linha reta antes de atacar, ganha +1 de bônus no ataque para cada graduação que se moveu. Se errar, o alvo pode reagir com Agarrar, Derrubar ou Desarmar em você." },
   { id: "lubridiar", nome: "Lubridiar", tag: "Reação", resolvedor: "lubridiar",
@@ -1278,8 +1279,10 @@ function temPercepcaoCegas(ent) {
 function calcModCondicoes(ent) {
   const mod = { testesGerais: 0, fortitude: 0, vontade: 0, resistencia: 0, apararAj: [], esquivaAj: [] };
   const grupo = { fortitude: 0, vontade: 0, resistencia: 0 }; // Machucado (Aflição) e Sangrando: só vale a pior penalidade de cada teste
-  Object.entries(ent?.condicoes || {}).forEach(([nome, qtd]) => {
+  Object.entries(ent?.condicoes || {}).forEach(([nome, qtd0]) => {
     if (nome === "Cego" && CEGO_IGNORADO.has(ent?.id)) return;
+    const qtd = (qtd0 || 1) - (ent?._ocultas?.[nome] || 0); // _ocultas: condições de Fintar/Desmoralizar que não valem contra quem está interagindo
+    if (qtd <= 0) return;
     const item = CONDICOES_LISTA.find((c) => c.nome === nome);
     const efeito = item?.efeito;
     if (!efeito) return;
@@ -1998,6 +2001,8 @@ function vantagensCondicionaisPara(ent, chave) {
     .filter(({ info }) => info && info.mecanica && info.mecanica.modo === "condicional" && (info.mecanica.alvos || []).includes(chave));
 }
 function bonusImobilizar(agarrador) { const v = (agarrador?.vantagens || []).find((x) => x.nome === "Imobilizar Aprimorado"); return v ? Math.min(2, Math.max(1, v.graduacoes || 1)) : 0; } // +1 / +2 na CD para escapar
+const PERICIAS_INTERACAO = ["Enganação", "Intimidação", "Persuasão"];
+const ladoAliado = (e) => (e?.rotulo === "Criatura" ? "criatura" : "jogador"); // jogadores, invocações e NPCs são aliados; criatura só de criatura
 function temVantagem(ent, nome) { return (ent?.vantagens || []).some((v) => v.nome === nome); }
 
 function bonusPericia(ent, nomePericia) {
@@ -2008,7 +2013,37 @@ function bonusPericia(ent, nomePericia) {
   if (!p) return 0;
   const passivos = modificadoresPassivos(ent);
   const bonusPassivo = (nomeReal === "Furtividade" ? passivos.furtividade : 0) + (passivos.periciasBonus?.[nomeReal] || 0);
-  return attr(ent, p.atributo) + ((ent.periciaPontos && ent.periciaPontos[nomeReal]) || 0) + bonusVantagemToggle(ent, nomeReal) + calcModCondicoes(ent).testesGerais + bonusPassivo;
+  const empatia = !!ent._empatia && PERICIAS_INTERACAO.includes(nomeReal); // Empatia com Animais: Prontidão no lugar do atributo e +2
+  return (empatia ? attr(ent, "prontidao") + 2 : attr(ent, p.atributo)) + ((ent.periciaPontos && ent.periciaPontos[nomeReal]) || 0) + bonusVantagemToggle(ent, nomeReal) + calcModCondicoes(ent).testesGerais + bonusPassivo;
+}
+function periciasAtaqueManobra(ent, acao) {
+  if (acao.id === "fintar") return ["Enganação", ...(temVantagem(ent, "Assustar") ? ["Intimidação"] : []), ...(temVantagem(ent, "Finta Ágil") ? ["Acrobacia"] : [])];
+  if (acao.id === "desmoralizar") return ["Intimidação", ...(temVantagem(ent, "Zombar") ? ["Enganação"] : [])];
+  if (acao.id === "fascinar") return [(ent?.vantagens || []).find((v) => v.nome === "Fascinar")?.periciasEscolhidas?.[0] || "Persuasão"];
+  return [acao.pericia];
+}
+function periciasResistManobra(ent, acao) { // o alvo resiste com o maior bônus entre estas (e a defesa Vontade)
+  if (acao.id === "fintar") return ["Enganação", ...(temVantagem(ent, "Assustar") ? ["Intuição", "Intimidação"] : [])];
+  if (acao.id === "desmoralizar") return ["Intimidação", ...(temVantagem(ent, "Zombar") ? ["Enganação", "Intuição"] : [])];
+  if (acao.id === "fascinar") return ["Intuição"];
+  return [acao.pericia];
+}
+function avaliarAtributos(alvo, n) {
+  const dmg = new Set();
+  (alvo?.ataques || []).forEach((a) => (a.efeitos || []).forEach((ef) => { if (ef.categoria === "Dano" && ef.baseadoAtivo !== false && ef.atributoBase) dmg.add(attrBaseDano(ef.atributoBase)); }));
+  let resto = ATRIBUTOS.map((a) => ({ k: a.k, l: a.l, v: attr(alvo, a.k) }));
+  const escolhe = (maior) => {
+    const alvoV = maior ? Math.max(...resto.map((c) => c.v)) : Math.min(...resto.map((c) => c.v));
+    let emp = resto.filter((c) => c.v === alvoV);
+    const pref = emp.filter((c) => (maior ? dmg.has(c.k) : ["luta", "destreza", "prontidao", "vigor"].includes(c.k)));
+    if (pref.length) emp = pref;
+    const c = emp[Math.floor(Math.random() * emp.length)];
+    resto = resto.filter((x) => x !== c);
+    return c;
+  };
+  const out = [];
+  for (let i = 0; i < n && resto.length; i++) out.push(escolhe(i !== 1)); // 1º maior, 2º menor, depois os maiores que sobraram
+  return out;
 }
 function melhorDe(ent, nomesPericias) {
   return Math.max(...nomesPericias.map((n) => bonusPericia(ent, n)));
@@ -2049,7 +2084,8 @@ function statDefesa(ent, key, cru = false) {
 }
 /* CD pra acertar Aparar/Esquiva: 10 + bônus. Vulnerável (e afins) = a CD inteira pela metade;
    Indefeso (e afins) = CD 1. (statDefesa continua devolvendo só o bônus, usado nos testes de quem defende.) */
-function cdDefesa(ent, key) {
+function cdDefesa(ent0, key, atacanteId) {
+  const ent = entVistoPor(ent0, atacanteId);
   if (key !== "aparar" && key !== "esquiva") return 10 + statDefesa(ent, key);
   const mods = calcModCondicoes(ent);
   const aj = key === "aparar" ? mods.apararAj : mods.esquivaAj;
@@ -2279,7 +2315,7 @@ function ppAtaque(a, ent) {
   return a.pp || 0;
 }
 function custoAtaque(a, ent) {
-  if (a.equipamento) return 0;
+  if (a.equipamento || a.ferramentaImprov) return 0; // ferramenta improvisada: paga pelo limite da vantagem, não pelos PP da ficha
   if (ent && objetoDaHabilidade(a, ent)) return 0; // gasta da barra do objeto invocado, não dos PP da ficha
   return ppAtaque(a, ent);
 }
@@ -2297,7 +2333,7 @@ function objetosInvocados(ent) {
 }
 /** objeto (barra) de onde a habilidade gasta os PP, ou null se ela gasta dos PP da ficha */
 /** Habilidade que invoca objeto (a que pode ser concedida) */
-const ehHabilidadeObjeto = (a) => a?.tipo !== "passiva" && (a?.efeitos || []).some((ef) => ef.categoria === "Invocar" && contaMod(ef, "invocar_objeto") > 0);
+const ehHabilidadeObjeto = (a) => !!a?.equipamento || a?.tipo !== "passiva" && (a?.efeitos || []).some((ef) => ef.categoria === "Invocar" && contaMod(ef, "invocar_objeto") > 0);
 const habilidadeEstaAtiva = (a) => (a?.tipo === "passiva" ? passivaEstaAtiva(a) : !!a?.sustentando);
 const presoAoCorpo = (a) => (a?.efeitos || []).some((ef) => ef.categoria === "Invocar" && contaMod(ef, "invocar_objeto") > 0 && contaMod(ef, "preso_corpo") > 0);
 function objetoDaHabilidade(a, ent) {
@@ -2324,7 +2360,7 @@ function pontosEquipamentoMax(ent) {
   return eq ? (eq.graduacoes || 1) * 5 : 0;
 }
 function pontosEquipamentoGastos(ent) {
-  return (ent?.ataques || []).reduce((s, a) => s + (a.equipamento ? ppAtaque(a, ent) : 0), 0);
+  return (ent?.ataques || []).reduce((s, a) => s + (a.equipamento && !a.concedidoDe ? ppAtaque(a, ent) : 0), 0);
 }
 function itemQuebrado(a) { return !!a?.equipamento && (a.pvItemMax || 0) > 0 && (a.pvItemAtual ?? a.pvItemMax) <= 0; }
 function atributoMax(nivel) { return (nivel || 1) + 2; }
@@ -2903,13 +2939,23 @@ function ehTurnoDe(iniciativa, id) {
   const ordem = iniciativa?.ordem || [];
   return ordem[iniciativa?.turnoAtual || 0]?.entidadeId === id;
 }
-function aplicarCondicaoTemporaria(atualizarCampo, alvo, nome, quando, turnoDeId, iniciativa) {
+function aplicarCondicaoTemporaria(atualizarCampo, alvo, nome, quando, turnoDeId, iniciativa, beneficiarios) {
   const atuais = { ...(alvo.condicoes || {}) };
   atuais[nome] = (atuais[nome] || 0) + 1;
   atualizarCampo(alvo.id, "condicoes", atuais);
+  const durId = uid();
   atualizarCampo(alvo.id, "duracoes", [...(alvo.duracoes || []), {
-    id: uid(), tipo: "condicao", nome, quando, turnoDeId, pular: quando === "fim" && ehTurnoDe(iniciativa, turnoDeId),
+    id: durId, tipo: "condicao", nome, quando, turnoDeId, pular: quando === "fim" && ehTurnoDe(iniciativa, turnoDeId),
+    ...(beneficiarios ? { beneficiarios } : {}),
   }]);
+  return durId;
+}
+/* Fintar/Desmoralizar valem só contra quem aplicou (ou os aliados escolhidos com Armação): contra os demais, a condição não conta. */
+function entVistoPor(ent, outroId) {
+  if (!ent || !outroId) return ent;
+  const ocultas = {};
+  (ent.duracoes || []).forEach((d) => { if (d.tipo === "condicao" && Array.isArray(d.beneficiarios) && !d.beneficiarios.includes(outroId)) ocultas[d.nome] = (ocultas[d.nome] || 0) + 1; });
+  return Object.keys(ocultas).length ? { ...ent, _ocultas: ocultas } : ent;
 }
 
 /* Variáveis (Munição / Carga) — uma lista por ficha: ent.variaveis = [{ id, nome, tipo, atributo, valor }]. */
@@ -3425,10 +3471,11 @@ function PontoFracoJanela({ origem, entidades, pf, nomeHabilidade, onFechar, reg
 }
 
 /* ---------- modal de rolagem ---------- */
-function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDano, atualizarCampo, enviarPontoFraco, iniciativa }) {
+function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDano, atualizarCampo, enviarPontoFraco, enviarReacaoVantagem, onDomino, iniciativa }) {
   const [escolha, setEscolha] = useState(null);
   const [cdManual, setCdManual] = useState(15);
   const [oponenteId, setOponenteId] = useState("");
+  const [empatia, setEmpatia] = useState(false);
   const [oponentesArea, setOponentesArea] = useState({});
   const [statOponente, setStatOponente] = useState("");
   const [resultado, setResultado] = useState(null);
@@ -3438,6 +3485,9 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const [condMarcadas, setCondMarcadas] = useState({});
   const [agarrarMarcado, setAgarrarMarcado] = useState(false);
   const [agarraoR, setAgarraoR] = useState(null);
+  const [derrubarMarcado, setDerrubarMarcado] = useState(false);
+  const [dominoPend, setDominoPend] = useState(null);
+  const [derrubarR, setDerrubarR] = useState(null);
   const [usarBonusDescanso, setUsarBonusDescanso] = useState(false);
   const [usarBonusTreino, setUsarBonusTreino] = useState(false);
   const [usarMira, setUsarMira] = useState(false);
@@ -3458,7 +3508,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     return r.ok ? null : r.motivo;
   });
 
-  const origemAtual = entidades.find((e) => e.id === contexto.origem.id) || contexto.origem;
+  const origemVista = entVistoPor(entidades.find((e) => e.id === contexto.origem.id) || contexto.origem, oponenteId);
+  const origemAtual = empatia ? { ...origemVista, _empatia: true } : origemVista;
   // Aquecimento: a contagem de quando o modal abriu fica congelada (usar o efeito sobe a contagem para o próximo uso).
   const [aquecSnap] = useState(() => ({ ...(origemAtual.aquecimento || {}) }));
   const oponente = entidades.find((e) => e.id === oponenteId);
@@ -3593,7 +3644,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     }
     const bonusFinal = info.bonus + bonusTreinoValor;
     const dado = rolarD20();
-    const defVal = cdDefesa(oponente, info.defKey);
+    const defVal = cdDefesa(oponente, info.defKey, origemAtual.id);
     const limiar = limiarCritico(origemAtual, contexto.ataque?.id);
     const r = montarTeste(dado, bonusFinal, defVal, limiar);
     setAtaqueAcertoR(r);
@@ -3871,6 +3922,12 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     });
     if (animar) animar({ modo: "cd", nome: alvo.nome, foto: alvo.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus: dados.bonus, total: r.total, cd: dados.cd, sucesso: r.sucesso, ehCrit: r.ehCrit, grauTexto: r.sucesso ? "Resistiu" : "Sofreu efeito" });
     if (efeito.categoria === "Dano" && extra.dano > 0) aplicarDano(alvo.id, extra.dano);
+    if (efeito.categoria === "Dano" && r.sucesso && alvo.defendendo && contexto.ataque?.tipoAcerto === "corpo" && enviarReacaoVantagem) {
+      const vs = [temVantagem(alvo, "Prender Arma") && "prender", temVantagem(alvo, "Quebrar Arma") && "quebrar"].filter(Boolean);
+      if (vs.length) enviarReacaoVantagem({ alvoId: alvo.id, atacanteId: origemAtual.id, atacanteNome: origemAtual.nome, habilidade: contexto.ataque?.nome || "", vantagens: vs });
+    }
+    // Ataque Dominó: zerar os PV com um ataque libera outro ataque da mesma habilidade
+    if (efeito.categoria === "Dano" && extra.dano > 0 && contexto.tipo === "ataque" && ["corpo", "distancia"].includes(contexto.ataque?.tipoAcerto) && temVantagem(origemAtual, "Ataque Dominó") && ((alvo.pvAtual || 0) + (alvo.pvTemp || 0) - extra.dano) <= 0) setDominoPend({ alvoNome: alvo.nome });
     if (efeito.categoria === "Dano") {
       const reb = (efeito.mods || []).find((m) => m.id === "rebote");
       if (reb) {
@@ -3987,7 +4044,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     }
     const bonusFinal = info.bonus + penalidade;
     const dado = rolarD20();
-    const defVal = cdDefesa(alvoMA, info.defKey);
+    const defVal = cdDefesa(alvoMA, info.defKey, origemAtual.id);
     const r = montarTeste(dado, bonusFinal, defVal, limiarCritico(origemAtual, contexto.ataque?.id));
     setMultiAtaques((s) => [...s, { id: idMA, alvo: alvoMA, penalidade, r, efeitosR: {} }]);
     registrar({
@@ -4030,6 +4087,17 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   };
 
   /* ----- agarrar rápido (checkbox em ataques corpo-a-corpo) ----- */
+  const podeDerrubarRapido = ehAtaque && !isArea && contexto.ataque?.tipoAcerto === "corpo" && temVantagem(origemAtual, "Derrubar Aprimorado");
+  const rolarDerrubar = () => {
+    if (!oponente) return;
+    const bAt = melhorDe(origemAtual, ["Acrobacia", "Atletismo"]), bDef = melhorDe(oponente, ["Acrobacia", "Atletismo"]);
+    const dAt = rolarD20(), dDef = rolarD20();
+    const totalAt = dAt + bAt, totalDef = dDef + bDef, vitoria = totalAt > totalDef;
+    setDerrubarR({ dAt, bAt, totalAt, dDef, bDef, totalDef, vitoria });
+    if (vitoria) atualizarCampo(oponente.id, "condicoes", (c) => ({ ...(c || {}), Caído: (c || {}).Caído || 1 }));
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} derruba ${oponente.nome} (Derrubar Aprimorado, sem novo teste de ataque)`, detalhe: `${totalAt} (2d10 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (2d10 ${dDef}${fmtBonus(bDef)})`, total: vitoria ? "Alvo CAIU" : "Alvo resistiu", tipoClasse: vitoria ? "hs" : "hw" });
+    if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
+  };
   const podeAgarrarRapido = ehAtaque && !isArea && contexto.ataque?.tipoAcerto === "corpo" && temVantagem(origemAtual, "Agarrar Rápido");
   /* Limitado a falhar no teste de outro efeito: só rola se o alvo falhou no efeito indicado */
   const limStatus = (efeito, getRes) => {
@@ -4229,6 +4297,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     <div className="modal-backdrop" onClick={(e) => { if (e.target === e.currentTarget) fechar(); }}>
       <div className="modal-box">
         <div className="modal-head"><span className="mt">{contexto.label}</span><button className="modal-close" onClick={fechar}>×</button></div>
+        {contexto.aviso && <div className="efeito-card ok" style={{ marginBottom: 12 }}><div className="efeito-t">{contexto.aviso}</div></div>}
         {ehAtaque && contexto.ataque?.imagem && <div className="hab-img-modal-wrap"><ImgAj className="hab-img-modal" src={contexto.ataque.imagem} aj={contexto.ataque.imagemAj} /></div>}
         {desgastanteR && (
           <div className="subcard2" style={{ marginBottom: 12 }}>
@@ -4347,6 +4416,12 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
               {opcoesEntidades(entidades.filter((e) => e.id !== origemAtual.id && e.oponente))}
             </SearchableSelect>
 
+            {oponente && podeDerrubarRapido && !ataqueAcertoR && (
+              <label className="checkbox-row" style={{ marginBottom: 12 }}>
+                <input type="checkbox" checked={derrubarMarcado} onChange={(e) => setDerrubarMarcado(e.target.checked)} />
+                Derrubar (Derrubar Aprimorado)
+              </label>
+            )}
             {oponente && podeAgarrarRapido && !ataqueAcertoR && (
               <label className="checkbox-row" style={{ marginBottom: 12 }}>
                 <input type="checkbox" checked={agarrarMarcado} onChange={(e) => setAgarrarMarcado(e.target.checked)} />
@@ -4483,6 +4558,22 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                 {agarrarMarcado && ataqueAcertoR && ataqueAcertoR !== "auto" && ataqueAcertoR.sucesso && todosEfeitosResolvidos && !agarraoR && (
                   <button className="btn btn-accent btn-block" onClick={rolarAgarrao} style={{ marginBottom: 12 }}>⚄ Rolar Agarrão (Atletismo)</button>
                 )}
+                {derrubarMarcado && ataqueAcertoR && ataqueAcertoR !== "auto" && ataqueAcertoR.sucesso && !derrubarR && (
+                  <button className="btn btn-accent btn-block" onClick={rolarDerrubar} style={{ marginBottom: 12 }}>⚄ Rolar Derrubar (Acrobacia/Atletismo)</button>
+                )}
+                {derrubarR && (
+                  <div className="subcard">
+                    <div className="versus-row">
+                      <div className="vs-cell"><div className="vsn">{origemAtual.nome}</div><div className="vsv">{derrubarR.totalAt}</div></div>
+                      <div className="vsx">vs</div>
+                      <div className="vs-cell"><div className="vsn">{oponente.nome}</div><div className="vsv">{derrubarR.totalDef}</div></div>
+                    </div>
+                    <div className={"grau-card " + (derrubarR.vitoria ? "success" : "warn")}>
+                      <div className="gl">{derrubarR.vitoria ? "Vitória" : "Sem efeito"}</div>
+                      <div className="gn">{derrubarR.vitoria ? "Caído" : "Resistiu"}</div>
+                    </div>
+                  </div>
+                )}
                 {agarraoR && (
                   <div className="subcard">
                     <div className="versus-row">
@@ -4553,6 +4644,12 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           </div>
         )}
 
+        {!ehAtaque && contexto.tipo === "pericia" && PERICIAS_INTERACAO.includes(contexto.chave) && temVantagem(origemVista, "Empatia com Animais") && !resultado && (
+          <label className="checkbox-row" style={{ marginBottom: 12 }}>
+            <input type="checkbox" checked={empatia} onChange={(e) => setEmpatia(e.target.checked)} />
+            Empatia com Animais
+          </label>
+        )}
         {!ehAtaque && descansoDisponivel && !resultado && (
           <label className="checkbox-row" style={{ marginBottom: 12 }}>
             <input type="checkbox" checked={usarBonusDescanso} onChange={(e) => setUsarBonusDescanso(e.target.checked)} />
@@ -4590,6 +4687,11 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           </>
         )}
 
+        {dominoPend && (
+          <div className="subcard2" style={{ marginTop: 12 }}>
+            <button className="btn btn-accent btn-block" onClick={() => onDomino && onDomino({ ...contexto, semGastoAcao: true, aviso: `Ataque Dominó — ${dominoPend.alvoNome} caiu${(origemAtual.vantagens || []).find((v) => v.nome === "Ataque Dominó")?.graduacoes >= 2 ? " · movimento livre" : ""}`, label: `${origemAtual.nome} · ${contexto.ataque?.nome || "Ataque"} (Ataque Dominó)` })}>⚔ Ataque Dominó</button>
+          </div>
+        )}
         {!ehAtaque && resultado && <div style={{ marginTop: 10 }}><ResultadoCard r={resultado} /><BotaoSorte /></div>}
       </div>
       {pfAberto && <PontoFracoJanela origem={origemAtual} entidades={entidades} pf={contexto.ataque.pontoFraco} nomeHabilidade={contexto.ataque.nome}
@@ -4607,24 +4709,26 @@ const AJUDA_CHAVES = [
 ];
 
 /* ---------- modal de ações padrão ---------- */
-function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar: registrarProp, animar, atualizarCampo, iniciativa }) {
+function AcaoModal({ ctx, concederObjeto, entidades, roster, onFechar, onAbrirRolagem, registrar: registrarProp, animar, atualizarCampo, iniciativa }) {
   const { origem, acao } = ctx;
   // Usar a ação/manobra gasta a ação correspondente (uma vez só por abertura da janela).
   const acaoGastaRef = useRef(false);
   const gastarAcaoDaManobra = () => {
     if (acaoGastaRef.current) return;
     acaoGastaRef.current = true;
-    gastarAcao(atualizarCampo, origem.id, acao.tag, acao.id);
+    gastarAcao(atualizarCampo, origem.id, ctx.tagGasto || acao.tag, acao.id);
   };
   const registrar = (entry) => { registrarProp(entry); gastarAcaoDaManobra(); };
-  const origemAtual = entidades.find((e) => e.id === origem.id) || origem;
+  const [empatia, setEmpatia] = useState(false);
+  const origemBase = entidades.find((e) => e.id === origem.id) || origem;
+  const origemAtual = empatia ? { ...origemBase, _empatia: true } : origemBase;
   const outros = entidades.filter((e) => e.id !== origemAtual.id);
   const oponentesDisponiveis = outros.filter((e) => e.oponente);
   // O roster é uma lista pública enxuta (só id + nome) que existe justamente pra isso: deixar
   // qualquer um escolher um aliado pra ajudar sem precisar ter acesso à ficha completa dele.
   const aliadosDisponiveis = (roster || []).filter((r) => r.id !== origemAtual.id);
 
-  const [oponenteId, setOponenteId] = useState("");
+  const [oponenteId, setOponenteId] = useState(ctx.alvoFixoId || "");
   const [oponentesMulti, setOponentesMulti] = useState({});
   const [cdManual, setCd] = useState(acao.cdPadrao || 15);
   // Escapar: a CD é o total do teste de agarrão que prendeu o alvo (+1/+2 com Imobilizar Aprimorado do agarrador); não editável
@@ -4640,8 +4744,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   const [defesaCuidado, setDefesaCuidado] = useState("esquiva");
   const [gradMassa, setGradMassa] = useState(0);
 
-  const [r1, setR1] = useState(null);
+  const R1_AUTO = { sucesso: true, auto: true, total: 0, dado: 0, bonus: 0, graus: 0 };
+  const [r1, setR1] = useState(ctx.semAtaque ? R1_AUTO : null);
   const [r2, setR2] = useState(null);
+  const [pegarItem, setPegarItem] = useState(false);
   const [r3, setR3] = useState(null);
   const [multiResultados, setMultiResultados] = useState(null);
   const [usarBonusDescansoAcao, setUsarBonusDescansoAcao] = useState(false);
@@ -4655,12 +4761,18 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   const fechar = () => onFechar();
 
   const fintaAgilAtiva = acao.id === "fintar" && temVantagem(origemAtual, "Finta Ágil");
+  const periciasAtMan = periciasAtaqueManobra(origemAtual, acao);
+  const [armacaoPend, setArmacaoPend] = useState(null); // efeitos recém-aplicados que a Armação pode passar adiante
+  const [armacaoSel, setArmacaoSel] = useState({});
+  const [armacaoFeita, setArmacaoFeita] = useState(false);
+  const [avalR, setAvalR] = useState(null);
 
   /* ----- bônus de descanso (exercitar-se / pesquisar / preparar discurso) aplicado a qualquer ação/manobra que use a perícia ----- */
   const periciasRelevantesDescanso =
     acao.resolvedor === "oposto" ? (acao.periciaOposta || []) :
     acao.resolvedor === "simples" ? [acao.pericia || periciaEscolhida] :
-    acao.resolvedor === "oposicaoCondicao" ? (fintaAgilAtiva ? [acao.pericia, "Acrobacia"] : [acao.pericia]) :
+    acao.resolvedor === "oposicaoCondicao" ? periciasAtMan :
+    acao.resolvedor === "avaliacao" ? ["Intuição"] :
     acao.resolvedor === "planoCombate" ? ["Investigação"] :
     acao.resolvedor === "furtividadeMulti" ? ["Furtividade"] :
     acao.resolvedor === "levantamento" ? ["Atletismo"] :
@@ -4720,7 +4832,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const ajudaBonus = consumirAjuda(origemAtual, "ataque");
     const bonus = bonusAtaque(origemAtual, acao.penalidade || 0, ajudaBonus) + (acao.id === "agarrar" ? modificadoresPassivos(origemAtual).agarrar : 0);
     const dado = rolarD20();
-    const cdDef = cdDefesa(oponente, "aparar");
+    const cdDef = cdDefesa(oponente, "aparar", origemAtual.id);
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
@@ -4766,9 +4878,10 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   const rolarAtaqueDesarmar = () => {
     if (!oponente) return;
     const ajudaBonus = consumirAjuda(origemAtual, "ataque");
-    const bonus = bonusAtaque(origemAtual, acao.penalidade || 0, ajudaBonus);
+    const penalDes = acao.id === "desarmar" && temVantagem(origemAtual, "Desarmar Aprimorado") ? 0 : (acao.penalidade || 0); // Desarmar Aprimorado: sem penalidade
+    const bonus = bonusAtaque(origemAtual, penalDes, ajudaBonus);
     const dado = rolarD20();
-    const cdDef = cdDefesa(oponente, "aparar");
+    const cdDef = cdDefesa(oponente, "aparar", origemAtual.id);
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
@@ -4779,6 +4892,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const dado = rolarD20(), bonus = attr(oponente, "forca") + calcModCondicoes(oponente).testesGerais;
     const res = montarTeste(dado, bonus, Number(cd) || 15);
     setR2(res);
+    if (!res.sucesso && pegarItem && itemAlvo && concederObjeto) concederObjeto(oponente.id, itemAlvo.id, origemAtual.id); // Desarmar Aprimorado: pega o item
     registrar({ tipo: "rolagem", desc: `${oponente.nome} resiste ao Desarmar`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods(notasCondicoesGerais(oponente))}`, total: res.sucesso ? "Manteve o item" : "Soltou o item", tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "cd", nome: oponente.nome, foto: oponente.foto, nomeAlvo: origemAtual.nome, fotoAlvo: origemAtual.foto, dado, bonus, total: res.total, cd: Number(cd) || 15, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: res.sucesso ? "Manteve o item" : "Soltou o item" });
   };
@@ -4799,7 +4913,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const penal = itemSegurado ? -2 : 0;
     const bonus = bonusAtaque(origemAtual, penal, ajudaBonus) + (habQuebrar?.tipoAcerto === "distancia" ? attr(origemAtual, "destreza") - attr(origemAtual, "luta") : 0);
     const dado = rolarD20();
-    const cdDef = cdDefesa(oponente, "aparar");
+    const cdDef = cdDefesa(oponente, "aparar", origemAtual.id);
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
@@ -4939,17 +5053,45 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
   /* ----- manobras: desmoralizar / fintar ----- */
   const rolarOposicaoCondicao = () => {
     if (!oponente) return;
-    const bAt0 = (fintaAgilAtiva ? melhorDe(origemAtual, [acao.pericia, "Acrobacia"]) : bonusPericia(origemAtual, acao.pericia)) + bonusDescansoAcaoValor;
-    const bDef = Math.max(bonusPericia(oponente, acao.pericia), statDefesa(oponente, "vontade"));
+    const periDef = periciasResistManobra(origemAtual, acao);
+    const bAt0 = melhorDe(origemAtual, periciasAtMan) + bonusDescansoAcaoValor;
+    const bDef = Math.max(melhorDe(oponente, periDef), statDefesa(oponente, "vontade"));
     const dAt = rolarD20(), dDef = rolarD20();
-    critNota = bonusCriticoPericia(origemAtual, fintaAgilAtiva ? melhorPericiaDe(origemAtual, [acao.pericia, "Acrobacia"]) : acao.pericia, dAt);
+    critNota = bonusCriticoPericia(origemAtual, melhorPericiaDe(origemAtual, periciasAtMan), dAt);
     const bAt = bAt0 + critNota;
     const totalAt = dAt + bAt, totalDef = dDef + bDef;
     const vitoria = totalAt > totalDef;
     setR2({ dAt, bAt, totalAt, dDef, bDef, totalDef, vitoria });
     // Desmoralizar: até o INÍCIO do próximo turno de quem usou. Fintar: até o FIM do próximo turno de quem usou.
-    if (vitoria) (oponente.composta ? membrosDe(entidades, oponente.composta.grupoId) : [oponente]).forEach((m) => aplicarCondicaoTemporaria(atualizarCampo, m, acao.condicao, acao.id === "fintar" ? "fim" : "inicio", origemAtual.id, iniciativa));
-    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa ${acao.nome} em ${oponente.nome}${fintaAgilAtiva ? " (Finta Ágil: Acrobacia/Enganação)" : ""}`, detalhe: `${totalAt} (2d10 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (2d10 ${dDef}${fmtBonus(bDef)})${fmtMods([...notasPericiaEnt(origemAtual, acao.pericia), ...nDescanso(), ...notasPericiaEnt(oponente, acao.pericia).map((t) => `alvo: ${t}`)])}`, total: vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Sem efeito", tipoClasse: vitoria ? "hs" : "hw" });
+    // Só vale contra quem aplicou (ou os aliados escolhidos com Armação). Fascinar: Transe até sofrer dano.
+    const aplicados = [];
+    if (vitoria) {
+      (oponente.composta ? membrosDe(entidades, oponente.composta.grupoId) : [oponente]).forEach((m) => {
+        if (acao.id === "fascinar") atualizarCampo(m.id, "condicoes", (c) => ({ ...(c || {}), Transe: (c || {}).Transe || 1 }));
+        else aplicados.push({ alvoId: m.id, durId: aplicarCondicaoTemporaria(atualizarCampo, m, acao.condicao, acao.id === "fintar" ? "fim" : "inicio", origemAtual.id, iniciativa, [origemAtual.id]) });
+      });
+    }
+    setArmacaoPend(vitoria && aplicados.length && temVantagem(origemAtual, "Armação") ? aplicados : null);
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa ${acao.nome} em ${oponente.nome}${periciasAtMan.length > 1 ? ` (${periciasAtMan.join("/")})` : ""}`, detalhe: `${totalAt} (2d10 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (2d10 ${dDef}${fmtBonus(bDef)})${fmtMods([...periciasAtMan.flatMap((p) => notasPericiaEnt(origemAtual, p)).slice(0, 3), ...nDescanso(), ...periDef.flatMap((p) => notasPericiaEnt(oponente, p)).slice(0, 3).map((t) => `alvo: ${t}`)])}`, total: vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Resistiu", tipoClasse: vitoria ? "hs" : "hw" });
+    if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
+    consumirBonusDescansoAcao();
+  };
+  const passarArmacao = () => {
+    const gradArm = Math.max(1, (origemAtual.vantagens || []).find((v) => v.nome === "Armação")?.graduacoes || 1);
+    const ids = Object.keys(armacaoSel).filter((k) => armacaoSel[k]).slice(0, gradArm);
+    if (!ids.length || !armacaoPend) return;
+    armacaoPend.forEach((p) => atualizarCampo(p.alvoId, "duracoes", (l) => (l || []).map((d) => (d.id === p.durId ? { ...d, beneficiarios: ids } : d))));
+    setArmacaoFeita(true);
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} usa Armação`, detalhe: `${acao.nome} em ${oponente?.nome || "alvo"} agora vale para ${ids.map((id) => entidades.find((x) => x.id === id)?.nome || "?").join(", ")}`, total: "Efeito transferido", tipoClasse: "hs" });
+  };
+  const rolarAvaliacao = () => {
+    if (!oponente) return;
+    const bAt = bonusPericia(origemAtual, "Intuição") + bonusDescansoAcaoValor, bDef = bonusPericia(oponente, "Enganação");
+    const dAt = rolarD20(), dDef = rolarD20();
+    const totalAt = dAt + bAt, totalDef = dDef + bDef, diff = totalAt - totalDef, vitoria = diff > 0;
+    const revelados = vitoria ? avaliarAtributos(oponente, 1 + Math.floor(diff / 2)) : [];
+    setAvalR({ dAt, bAt, totalAt, dDef, bDef, totalDef, vitoria, revelados, nen: vitoria ? (oponente.tipoNen || "Nenhum") : null });
+    registrar({ tipo: "rolagem", desc: `${origemAtual.nome} avalia ${oponente.nome}`, detalhe: `${totalAt} (2d10 ${dAt}${fmtBonus(bAt)}) vs ${totalDef} (2d10 ${dDef}${fmtBonus(bDef)})`, total: vitoria ? "Descobriu informações" : "Nada descoberto", tipoClasse: vitoria ? "hs" : "hw" });
     if (animar) animar({ modo: "oposta", nomeA: origemAtual.nome, fotoA: origemAtual.foto, dadoA: dAt, bonusA: bAt, totalA: totalAt, nomeB: oponente.nome, fotoB: oponente.foto, dadoB: dDef, bonusB: bDef, totalB: totalDef, vencedor: vitoria ? "A" : (totalAt === totalDef ? "empate" : "B") });
     consumirBonusDescansoAcao();
   };
@@ -4971,7 +5113,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
     const ajudaBonus = consumirAjuda(origemAtual, "ataque");
     const bonus = bonusAtaque(origemAtual, 0, ajudaBonus) + (Number(graduacoesMovidas) || 0);
     const dado = rolarD20();
-    const cdDef = cdDefesa(oponente, "aparar");
+    const cdDef = cdDefesa(oponente, "aparar", origemAtual.id);
     const res = montarTeste(dado, bonus, cdDef);
     setR1(res);
     limparMira(origemAtual);
@@ -5038,6 +5180,12 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
         <span className="modal-tag">{acao.tag}</span>
         <div className="modal-desc">{acao.desc}</div>
 
+        {temVantagem(origemBase, "Empatia com Animais") && (periciasRelevantesDescanso || []).some((p) => PERICIAS_INTERACAO.includes(p)) && !resultadoDescansoJaObtido && (
+          <label className="checkbox-row" style={{ marginBottom: 12 }}>
+            <input type="checkbox" checked={empatia} onChange={(e) => setEmpatia(e.target.checked)} />
+            Empatia com Animais
+          </label>
+        )}
         {chaveDescansoAcao && !resultadoDescansoJaObtido && (acao.resolvedor !== "levantamento" || extraMassa > 0) && (
           <label className="checkbox-row" style={{ marginBottom: 12 }}>
             <input type="checkbox" checked={usarBonusDescansoAcao} onChange={(e) => setUsarBonusDescansoAcao(e.target.checked)} />
@@ -5047,21 +5195,23 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
 
         {(acao.resolvedor === "oposto" || acao.resolvedor === "desarmar" || acao.resolvedor === "ataqueObjeto") && (
           <>
+            {!ctx.alvoFixoId && (<>
             <label className="label">Oponente</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setR1(null); setR2(null); setR3(null); setItemAlvoId(""); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
               {opcoesEntidades(oponentesDisponiveis)}
             </SearchableSelect>
+            </>)}
 
             {acao.resolvedor === "ataqueObjeto" && oponente && (
               <>
                 <label className="label">Habilidade usada para quebrar</label>
-                <SearchableSelect value={habQuebrarId} onChange={(e) => { setHabQuebrarId(e.target.value); setR1(null); setR3(null); }} style={{ marginBottom: 12 }}>
+                <SearchableSelect value={habQuebrarId} onChange={(e) => { setHabQuebrarId(e.target.value); setR1(ctx.semAtaque ? R1_AUTO : null); setR3(null); }} style={{ marginBottom: 12 }}>
                   <option value="">Ataque desarmado (Força)</option>
                   {habsQuebrar.map((a) => <option key={a.id} value={a.id}>{a.nome || "(sem nome)"}</option>)}
                 </SearchableSelect>
                 <label className="label">Equipamento do alvo</label>
-                <SearchableSelect value={itemAlvoId} onChange={(e) => { setItemAlvoId(e.target.value); setR1(null); setR3(null); }} style={{ marginBottom: 12 }}>
+                <SearchableSelect value={itemAlvoId} onChange={(e) => { setItemAlvoId(e.target.value); setR1(ctx.semAtaque ? R1_AUTO : null); setR3(null); }} style={{ marginBottom: 12 }}>
                   <option value="">Selecione…</option>
                   {equipamentosAlvo.map((a) => (
                     <option key={a.id} value={a.id}>
@@ -5074,14 +5224,17 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
               </>
             )}
 
-            {acao.resolvedor === "desarmar" && oponente && objetosAlvo.length > 0 && (
+            {acao.resolvedor === "desarmar" && oponente && equipamentosAlvo.length > 0 && (
               <>
                 <label className="label">Item do alvo</label>
-                <SearchableSelect value={itemAlvoId} onChange={(e) => { setItemAlvoId(e.target.value); setR1(null); setR2(null); }} style={{ marginBottom: 12 }}>
+                <SearchableSelect value={itemAlvoId} onChange={(e) => { setItemAlvoId(e.target.value); setR1(ctx.semAtaque ? R1_AUTO : null); setR2(null); }} style={{ marginBottom: 12 }}>
                   <option value="">Outro item</option>
-                  {objetosAlvo.map((o) => <option key={o.id} value={o.id}>{o.nome || "(sem nome)"}{presoAoCorpo(o) ? " (preso ao corpo)" : ""}</option>)}
+                  {equipamentosAlvo.map((o) => <option key={o.id} value={o.id}>{o.nome || "(sem nome)"}{presoAoCorpo(o) ? " (preso ao corpo)" : ""}</option>)}
                 </SearchableSelect>
                 {desarmarBloqueado && <div className="field-note">Esse objeto está preso ao corpo e não pode ser desarmado.</div>}
+                {temVantagem(origemAtual, "Desarmar Aprimorado") && itemAlvo && (
+                  <label className="checkbox-row" style={{ marginBottom: 12 }}><input type="checkbox" checked={pegarItem} onChange={(e) => setPegarItem(e.target.checked)} />Pegar Item</label>
+                )}
               </>
             )}
             {oponente && !r1 && !desarmarBloqueado && (acao.resolvedor !== "ataqueObjeto" || itemAlvo) && (
@@ -5090,7 +5243,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
                 ⚄ Rolar Ataque{acao.penalidade ? ` (${acao.penalidade})` : ""}
               </button>
             )}
-            {r1 && <div className="subcard"><ResultadoCard r={r1} efeito={{ classe: r1.sucesso ? "ok" : "dano", titulo: r1.sucesso ? "Acertou!" : "Errou" }} /></div>}
+            {r1 && !r1.auto && <div className="subcard"><ResultadoCard r={r1} efeito={{ classe: r1.sucesso ? "ok" : "dano", titulo: r1.sucesso ? "Acertou!" : "Errou" }} /></div>}
 
             {acao.resolvedor === "oposto" && r1 && r1.sucesso && !r2 && (
               <button className="btn btn-accent btn-block" onClick={rolarOpostoContestado}>⚄ Rolar teste oposto ({acao.periciaOposta.join("/")})</button>
@@ -5257,7 +5410,7 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
               <option value="">Selecione…</option>
               {opcoesEntidades(oponentesDisponiveis)}
             </SearchableSelect>
-            {oponente && !r2 && <button className="btn btn-accent btn-block" onClick={rolarOposicaoCondicao}>⚄ Rolar {acao.pericia}</button>}
+            {oponente && !r2 && <button className="btn btn-accent btn-block" onClick={rolarOposicaoCondicao}>⚄ Rolar {periciasAtMan.join("/")}</button>}
             {r2 && (
               <div className="subcard">
                 <div className="versus-row">
@@ -5269,6 +5422,40 @@ function AcaoModal({ ctx, entidades, roster, onFechar, onAbrirRolagem, registrar
                   <div className="gl">{r2.vitoria ? "Vitória" : "Sem efeito"}</div>
                   <div className="gn">{r2.vitoria ? `${oponente.nome} fica ${acao.condicao}` : "Alvo resistiu"}</div>
                 </div>
+                {armacaoPend && !armacaoFeita && (
+                  <div style={{ marginTop: 10 }}>
+                    <label className="label">Armação — passar para</label>
+                    {entidades.filter((x) => x.id !== origemAtual.id && ladoAliado(x) === ladoAliado(origemAtual) && !(x.composta && oponente?.composta && x.composta.grupoId === oponente.composta.grupoId)).map((x) => (
+                      <label key={x.id} className="checkbox-row"><input type="checkbox" checked={!!armacaoSel[x.id]} onChange={(ev) => setArmacaoSel((st) => ({ ...st, [x.id]: ev.target.checked }))} />{x.nome}</label>
+                    ))}
+                    <button className="btn btn-accent btn-block" style={{ marginTop: 8 }} disabled={!Object.values(armacaoSel).some(Boolean)} onClick={passarArmacao}>Passar efeito</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+
+        {acao.resolvedor === "avaliacao" && (
+          <>
+            <label className="label">Alvo</label>
+            <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAvalR(null); }} style={{ marginBottom: 12 }}>
+              <option value="">Selecione…</option>
+              {opcoesEntidades(outros)}
+            </SearchableSelect>
+            {oponente && !avalR && <button className="btn btn-accent btn-block" onClick={rolarAvaliacao}>⚄ Rolar Intuição</button>}
+            {avalR && (
+              <div className="subcard">
+                <div className="versus-row">
+                  <div className="vs-cell"><div className="vsn">{origemAtual.nome}</div><div className="vsv">{avalR.totalAt}</div></div>
+                  <div className="vsx">vs</div>
+                  <div className="vs-cell"><div className="vsn">{oponente.nome}</div><div className="vsv">{avalR.totalDef}</div></div>
+                </div>
+                <div className={"grau-card " + (avalR.vitoria ? "success" : "warn")}>
+                  <div className="gl">{avalR.vitoria ? "Vitória" : "Sem efeito"}</div>
+                  <div className="gn">{avalR.vitoria ? `Nen: ${avalR.nen}` : "Nada descoberto"}</div>
+                </div>
+                {avalR.revelados.map((a) => <div key={a.k} className="ro-row"><span>{a.l}</span><b>{a.v}</b></div>)}
               </div>
             )}
           </>
@@ -5380,6 +5567,9 @@ export default function MesaMM3() {
   const [historico, setHistorico] = useState([]);
   const [iniciativa, setIniciativa] = useState(INICIATIVA_VAZIA);
   const [modalCtx, setModalCtx] = useState(null);
+  const [modalKey, setModalKey] = useState(0);
+  const [avisosRV, setAvisosRV] = useState([]);
+  const rvSeenRef = useRef(new Set());
   const [pfCtx, setPfCtx] = useState(null);
   const [acaoCtx, setAcaoCtx] = useState(null);
   const [abaDireita, setAbaDireita] = useState("iniciativa");
@@ -5498,6 +5688,17 @@ export default function MesaMM3() {
       });
       if (meus.length) setAvisosPF((a) => [...a, ...meus]);
     });
+    const unsubRV = ouvirShared("reacaoVantagem", (fila) => {
+      if (!Array.isArray(fila)) return;
+      const agora = Date.now();
+      const novos = fila.filter((ev) => ev && !rvSeenRef.current.has(ev.id) && agora - (ev.ts || 0) < 20000);
+      novos.forEach((ev) => rvSeenRef.current.add(ev.id));
+      const meus = novos.filter((ev) => {
+        const alvo = entidadesRef.current.find((e) => e.id === ev.alvoId);
+        return alvo && (alvo.donoUid ? alvo.donoUid === usuario.uid : alvo.dono === identidade.nome);
+      });
+      if (meus.length) setAvisosRV((a) => [...a, ...meus]);
+    });
     const unsubAnim = ouvirShared("animQueue", (fila) => {
       if (!Array.isArray(fila)) return;
       const agora = Date.now();
@@ -5507,7 +5708,7 @@ export default function MesaMM3() {
         setEventosAnim((atual) => [...atual, ...novos]);
       }
     });
-    return () => { unsubEnt(); unsubRoster(); unsubHist(); unsubIni(); unsubAnim(); unsubPF(); };
+    return () => { unsubEnt(); unsubRoster(); unsubHist(); unsubIni(); unsubAnim(); unsubPF(); unsubRV(); };
   }, [identidade, usuario]);
 
   const escolherIdentidade = async (papel, nome) => {
@@ -5565,7 +5766,8 @@ export default function MesaMM3() {
     }
     if (dano0 > 0 && dano <= 0) return;
     const chaveTurno = chaveTurnoIniciativa(iniciativa);
-    atualizarCampo(entidadeId, "*", (e) => { const d = danoComTemp(e, dano); return { ...e, pvTemp: d.pvTemp, pvAtual: d.pvAtual, ...(dano > 0 ? { ultimoDanoTurno: chaveTurno } : {}) }; });
+    atualizarCampo(entidadeId, "*", (e) => { const d = danoComTemp(e, dano); const cond = dano > 0 && e.condicoes?.Transe ? (({ Transe, ...r }) => r)(e.condicoes) : e.condicoes; // dano interrompe o Transe
+      return { ...e, pvTemp: d.pvTemp, pvAtual: d.pvAtual, condicoes: cond, ...(dano > 0 ? { ultimoDanoTurno: chaveTurno } : {}) }; });
   };
   /* "valor" pode ser uma função (recebe o valor mais recente do campo). O campo especial "*" recebe uma função
      que transforma a ficha inteira. Mirar e Morrendo são tratados em posProcessarEntidade. */
@@ -5684,6 +5886,14 @@ export default function MesaMM3() {
     const base = Array.isArray(filaAtual) ? filaAtual : [];
     const agora = Date.now();
     await escreverCompartilhado("pontoFraco", [...base.filter((e) => e && agora - (e.ts || 0) < 60000), ...eventos].slice(-30));
+  }, [escreverCompartilhado]);
+  /* Prender Arma / Quebrar Arma: avisa o dono de quem se defendeu com sucesso que ele pode gastar a reação. */
+  const enviarReacaoVantagem = useCallback(async (payload) => {
+    const ev = { id: uid(), ts: Date.now(), ...payload };
+    const filaAtual = await getShared("reacaoVantagem");
+    const base = Array.isArray(filaAtual) ? filaAtual : [];
+    const agora = Date.now();
+    await escreverCompartilhado("reacaoVantagem", [...base.filter((e) => e && agora - (e.ts || 0) < 60000), ev].slice(-30));
   }, [escreverCompartilhado]);
   /* Conceder Objeto: a habilidade com Invocar Objeto (e as que gastam dele) vai para outra ficha; no dono original ficam travadas.
      Quem recebeu pode passar adiante (as cópias saem dele) e destino = dono devolve o objeto. */
@@ -5898,7 +6108,7 @@ export default function MesaMM3() {
     let sufoco = null;
     if (condicaoAtiva(ent, "Sufocando")) {
       const passou = ent.sufocoPassou || 0, falhou = ent.sufocoFalhou || 0;
-      const cd = 10 + 5 * (passou + falhou), dado = rolarD20(), bonus = salvBonus(ent, "Fortitude"), r = montarTeste(dado, bonus, cd);
+      const cd = 10 + 5 * (passou + falhou), dado = rolarD20(), bonus = salvBonus(ent, "Fortitude") + (temVantagem(ent, "Tolerância Maior") ? 5 : 0), r = montarTeste(dado, bonus, cd); // Tolerância Maior: +5 contra sufocação
       const efeito = r.sucesso ? null : (falhou === 0 ? "Fatigado" : falhou === 1 ? "Exausto" : "Morrendo");
       sufoco = { passou: passou + (r.sucesso ? 1 : 0), falhou: falhou + (r.sucesso ? 0 : 1), efeito };
       log(`${ent.nome} testa Sufocando (Fortitude)`, `2d10(${dado}) ${fmtBonus(bonus)} = ${r.total} vs CD ${cd}`, r.sucesso ? `Passou — próxima CD ${cd + 5}` : `Falhou — fica ${efeito} (próxima CD ${cd + 5})`, r.sucesso ? "hs" : "hd");
@@ -6057,8 +6267,27 @@ export default function MesaMM3() {
         </div>
       </div>
       {pfCtx && <PontoFracoJanela origem={entidades.find((x) => x.id === pfCtx.origem.id) || pfCtx.origem} entidades={entidades} pf={pfCtx.ataque.pontoFraco} nomeHabilidade={pfCtx.ataque.nome} onFechar={() => setPfCtx(null)} registrar={registrar} animar={dispararAnimacao} enviarPontoFraco={enviarPontoFraco} />}
-      {modalCtx && <RollModal contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} enviarPontoFraco={enviarPontoFraco} iniciativa={iniciativa} />}
-      {acaoCtx && <AcaoModal ctx={acaoCtx} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} onAbrirRolagem={setModalCtx} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} iniciativa={iniciativa} />}
+      {modalCtx && <RollModal key={modalKey} enviarReacaoVantagem={enviarReacaoVantagem} onDomino={(ctx) => { setModalCtx(ctx); setModalKey((k) => k + 1); }} contexto={modalCtx} entidades={entidades} onFechar={() => setModalCtx(null)} registrar={registrar} animar={dispararAnimacao} aplicarDano={aplicarDano} atualizarCampo={atualizarCampo} enviarPontoFraco={enviarPontoFraco} iniciativa={iniciativa} />}
+      {acaoCtx && <AcaoModal ctx={acaoCtx} concederObjeto={concederObjeto} entidades={entidades} roster={roster} onFechar={() => setAcaoCtx(null)} onAbrirRolagem={setModalCtx} registrar={registrar} animar={dispararAnimacao} atualizarCampo={atualizarCampo} iniciativa={iniciativa} />}
+      {avisosRV.length > 0 && (() => {
+        const ev = avisosRV[0];
+        const def = entidades.find((x) => x.id === ev.alvoId);
+        const fechar = () => setAvisosRV((a) => a.slice(1));
+        const semReacao = !!def?.acoesGastas?.reacao;
+        const usar = (tipo) => { fechar(); const acao = ACOES_PADRAO.find((a) => a.id === (tipo === "prender" ? "desarmar" : "quebrar")); if (def && acao) setAcaoCtx({ origem: def, acao, alvoFixoId: ev.atacanteId, semAtaque: true, tagGasto: "Reação" }); };
+        return (
+          <div className="modal-backdrop" onClick={(e2) => { if (e2.target === e2.currentTarget) fechar(); }}>
+            <div className="modal-box" style={{ maxWidth: 420 }}>
+              <div className="modal-head"><span className="mt">{def?.nome || "Defesa"} se defendeu</span><button className="modal-close" onClick={fechar}>×</button></div>
+              <div className="field-note" style={{ marginBottom: 10 }}>Contra {ev.atacanteNome}{ev.habilidade ? ` (${ev.habilidade})` : ""}.</div>
+              {(ev.vantagens || []).map((t) => (
+                <button key={t} className="btn btn-accent btn-block" style={{ marginBottom: 8 }} disabled={semReacao} onClick={() => usar(t)}>{t === "prender" ? "Usar Prender Arma" : "Usar Quebrar Arma"}</button>
+              ))}
+              <button className="btn btn-ghost btn-block" onClick={fechar}>Não usar</button>
+            </div>
+          </div>
+        );
+      })()}
       {avisosPF.length > 0 && (
         <div className="modal-backdrop" onClick={(ev) => { if (ev.target === ev.currentTarget) setAvisosPF((a) => a.slice(1)); }}>
           <div className="modal-box" style={{ maxWidth: 420 }}>
@@ -7882,7 +8111,7 @@ function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir
   const ehPassiva = ataque.tipo === "passiva";
   const calc = ent ? calcularCustoAtaque(ataque, ent) : null;
   return (
-    <div className={"subcard ed-hab" + (ehPassiva ? " passiva" : "")}>
+    <div id={"hab-" + ataque.id} className={"subcard ed-hab" + (ehPassiva ? " passiva" : "")}>
       <div className="row-inline ed-hab-topo">
         <button type="button" className="small-btn" onClick={() => setColapsado((s) => !s)} title={colapsado ? "Expandir" : "Recolher"}>{colapsado ? "▶" : "▼"}</button>
         <div className="reorder-btns">
@@ -7966,6 +8195,24 @@ function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir
         </div>
         {ataque.imagem && ajImgAberto && <div style={{ marginTop: 8 }}><AjusteImagem src={ataque.imagem} ajuste={ataque.imagemAj} onMudar={(v) => upd("imagemAj", v)} proporcao="5 / 2" maxLargura={380} /></div>}
       </div>
+      {ataque.ferramentaImprov && ent && (() => {
+        const grad = (ent.vantagens || []).filter((v) => v.nome === "Ferramentas Improvisadas").reduce((t, v) => t + (v.graduacoes || 1), 0);
+        const limite = 5 * grad, custo = ppAtaque(ataque, ent), fi = ataque.ferramentaImprov, excede = custo > limite;
+        const rolar = () => {
+          const dado = rolarD20(), bonus = bonusPericia(ent, "Tecnologia"), cd = 5 + custo, r = montarTeste(dado, bonus, cd);
+          onMudar({ ...ataque, ferramentaImprov: { ...fi, sucesso: r.sucesso, custoTestado: custo, ultimo: { dado, bonus, total: r.total, cd } } });
+        };
+        return (
+          <div className="subcard2" style={{ marginBottom: 10 }}>
+            <div className={"pp-box" + (excede ? " excedido" : "")}>
+              <span>Pontos de poder da ferramenta</span><span className="pp-val">{custo} / {limite}</span>
+              <div className="ed-pp-trilho"><div className="ed-pp-fill" style={{ width: Math.min(100, limite > 0 ? (custo / limite) * 100 : 0) + "%" }} /></div>
+            </div>
+            <button type="button" className="btn btn-accent btn-block" style={{ marginTop: 8 }} disabled={excede || custo <= 0} onClick={rolar}>⚄ Rolar Teste de Ferramentas Improvisadas</button>
+            {fi.ultimo && <div className={"field-note"} style={{ marginTop: 6 }}>2d10({fi.ultimo.dado}) {fmtBonus(fi.ultimo.bonus)} = {fi.ultimo.total} vs CD {fi.ultimo.cd} — <b>{fi.sucesso && fi.custoTestado === custo ? "Sucesso" : fi.custoTestado === custo ? "Falhou" : "Refaça o teste"}</b></div>}
+          </div>
+        );
+      })()}
       <div className="section-title ed-sub">Construtor de poder</div>
       <ConstrutorVisual ataque={ataque} ent={ent} calc={calc} onMudar={onMudar} onCriarArremesso={onCriarArremesso} variaveis={variaveis} onCriarVariavel={onCriarVariavel} onMudarVariavel={onMudarVariavel} onExcluirVariavel={onExcluirVariavel} onLimparVariaveis={onLimparVariaveis} />
 
@@ -8525,7 +8772,7 @@ function fichaPadrao(rotulos) {
   };
 }
 
-function FichaForm({ autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidades, atualizarCampo, registrar, erroSalvar, nivelFixo }) {
+function FichaForm({ focoAtaque, autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidades, atualizarCampo, registrar, erroSalvar, nivelFixo }) {
   const [f, setF] = useState(() => {
     const base = fichaPadrao(rotulos);
     if (!inicial) return base;
@@ -8545,6 +8792,7 @@ function FichaForm({ autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidad
     };
   });
   const [erro, setErro] = useState("");
+  useEffect(() => { if (!focoAtaque) return; const t = setTimeout(() => document.getElementById("hab-" + focoAtaque)?.scrollIntoView({ block: "center", behavior: "smooth" }), 250); return () => clearTimeout(t); }, []); // eslint-disable-line
   const [fundamentosOpen, setFundamentosOpen] = useState(false);
   const [ajFotoAberto, setAjFotoAberto] = useState(false);
   const toggleFundamento = (fund) => {
@@ -8722,7 +8970,7 @@ function FichaForm({ autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidad
         return (
           <div key={v.id} className="ed-vant">
             <div className="vantagem-row">
-              <SearchableSelect value={v.nome} onChange={(e) => mudarVantagemNome(i, e.target.value)}>{VANTAGENS.map((opt) => <option key={opt.nome} value={opt.nome}>{opt.nome}</option>)}</SearchableSelect>
+              <SearchableSelect value={v.nome} onChange={(e) => mudarVantagemNome(i, e.target.value)}>{VANTAGENS.filter((opt) => !opt.unica || opt.nome === v.nome || !(f.vantagens || []).some((o) => o.nome === opt.nome)).map((opt) => <option key={opt.nome} value={opt.nome}>{opt.nome}</option>)}</SearchableSelect>
               {max > 1 && <input type="number" min={1} max={semLimite ? undefined : max} value={v.graduacoes} onChange={(e) => updVantagem(i, "graduacoes", Math.max(1, semLimite ? Number(e.target.value) : Math.min(max, Number(e.target.value))))} />}
               <button className="small-btn" onClick={() => rmVantagem(i)}>×</button>
             </div>
@@ -8734,7 +8982,7 @@ function FichaForm({ autoSalvar, inicial, rotulos, onSalvar, onCancelar, entidad
                     const arr = [...(v.periciasEscolhidas || [])]; arr[pi] = e.target.value; updVantagem(i, "periciasEscolhidas", arr);
                   }}>
                     <option value="">Perícia {pi + 1}…</option>
-                    {PERICIAS.map((p) => <option key={p.nome} value={p.nome}>{p.nome}</option>)}
+                    {PERICIAS.filter((p) => !info.mecanica.periciasPermitidas || info.mecanica.periciasPermitidas.includes(p.nome)).map((p) => <option key={p.nome} value={p.nome}>{p.nome}</option>)}
                   </SearchableSelect>
                 ))}
               </div>
@@ -8923,6 +9171,7 @@ const SCROLL_FICHAS = { v: null };
 function FichasTab({ onAbrirPontoFraco = () => {}, onConcederObjeto = () => {}, onTirarDaIniciativa = () => {}, entidades, salvar, identidade, usuario, registrar, onAbrirRolagem, onAbrirAcao, atualizarCampo, onRolarIniciativa, pastas = [], onSalvarPastas, fichasAbertas = {}, setFichasAbertas = () => {}, foco = null, onFocoConsumido = () => {} }) {
   const [editando, setEditandoRaw] = useState(null);
   // ao abrir o formulário guarda a rolagem (fora do componente: sobrevive a remontagens); ao fechar a lista volta ao mesmo ponto
+  const [focoHab, setFocoHab] = useState(null);
   const setEditando = (v) => { if (v && !editando && !SCROLL_FICHAS.v) SCROLL_FICHAS.v = { y: window.scrollY, col: document.querySelector(".col-fichas")?.scrollTop || 0 }; if (!v && !SCROLL_FICHAS.v) SCROLL_FICHAS.v = null; setEditandoRaw(v); };
   useEffect(() => {
     if (editando || !SCROLL_FICHAS.v) return;
@@ -9036,7 +9285,7 @@ function FichasTab({ onAbrirPontoFraco = () => {}, onConcederObjeto = () => {}, 
             ); })}
           </div>
         )}
-        <FichaForm key={editando === "novo" ? "novo" : editando.id} autoSalvar={gid ? (f) => atualizarCampo(f.id, "*", (e) => ({ ...e, ...f, composta: e.composta, condicoes: e.condicoes })) : null} inicial={editando === "novo" ? null : editando} rotulos={rotulosProprio} onSalvar={salvarFicha} onCancelar={() => setEditando(null)}
+        <FichaForm focoAtaque={focoHab} key={editando === "novo" ? "novo" : editando.id} autoSalvar={gid ? (f) => atualizarCampo(f.id, "*", (e) => ({ ...e, ...f, composta: e.composta, condicoes: e.condicoes })) : null} inicial={editando === "novo" ? null : editando} rotulos={rotulosProprio} onSalvar={salvarFicha} onCancelar={() => setEditando(null)}
           entidades={entidades} atualizarCampo={atualizarCampo} registrar={registrar} erroSalvar={erroSalvarFicha} />
       </div>
     );
@@ -9087,7 +9336,7 @@ function FichasTab({ onAbrirPontoFraco = () => {}, onConcederObjeto = () => {}, 
     onDragLeave: (ev) => { if (!ev.currentTarget.contains(ev.relatedTarget) && alvoDrop === chave) setAlvoDrop(null); },
     onDrop: (ev) => soltarEm(ev, pastaId),
   });
-  const renderItem = (e, forcar) => <EntidadeItem key={e.id} onAbrirPontoFraco={onAbrirPontoFraco} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={forcar ? true : !!fichasAbertas[e.id]} onAbertoExt={(v) => { if (!forcar) setAbertaFicha(e.id, v); }} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => (e.composta ? (tipoParte(e) === "torax" && !meusTodos.some((x) => x.composta?.grupoId === e.composta.grupoId && tipoParte(x) === "nucleo") ? window.alert("O núcleo não pode ser removido enquanto for o único. Para apagar tudo, use \"Excluir criatura\".") : setParteParaExcluir(e)) : excluir(e))} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} onConcederObjeto={onConcederObjeto} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
+  const renderItem = (e, forcar) => <EntidadeItem key={e.id} onAbrirPontoFraco={onAbrirPontoFraco} onEditarHab={(ent, novo) => { setFocoHab(novo.id); setEditando({ ...ent, ataques: [...(ent.ataques || []), novo] }); }} onArrastarFicha={iniciarArrasto} onArrastarFichaFim={fimArrasto} e={e} abertoExt={forcar ? true : !!fichasAbertas[e.id]} onAbertoExt={(v) => { if (!forcar) setAbertaFicha(e.id, v); }} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => (e.composta ? (tipoParte(e) === "torax" && !meusTodos.some((x) => x.composta?.grupoId === e.composta.grupoId && tipoParte(x) === "nucleo") ? window.alert("O núcleo não pode ser removido enquanto for o único. Para apagar tudo, use \"Excluir criatura\".") : setParteParaExcluir(e)) : excluir(e))} editavel onAbrirRolagem={onAbrirRolagem} onAtualizarCampo={atualizarCampo} onAbrirVantagem={abrirVantagem} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} onConcederObjeto={onConcederObjeto} podeMarcarOponente={podeMarcarOponente} entidades={entidades} registrar={registrar}
     pastas={pastas} onMoverPasta={(id) => atualizarCampo(e.id, "pasta", id || null)} />;
 
   return (
@@ -9149,7 +9398,7 @@ function FichasTab({ onAbrirPontoFraco = () => {}, onConcederObjeto = () => {}, 
         <>
           <div className="section-title">Outras fichas na mesa</div>
           {outros.length === 0 && <div className="card empty">Ninguém mais cadastrou fichas ainda.</div>}
-          {outros.map((e) => <EntidadeItem key={e.id} onAbrirPontoFraco={onAbrirPontoFraco} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} onConcederObjeto={onConcederObjeto} />)}
+          {outros.map((e) => <EntidadeItem key={e.id} onAbrirPontoFraco={onAbrirPontoFraco} onEditarHab={(ent, novo) => { setFocoHab(novo.id); setEditando({ ...ent, ataques: [...(ent.ataques || []), novo] }); }} e={e} abertoExt={!!fichasAbertas[e.id]} onAbertoExt={(v) => setAbertaFicha(e.id, v)} onEditar={() => { if (!e.metaAtual) setEditando(e); }} onExcluir={() => excluir(e)} editavel onAbrirRolagem={onAbrirRolagem} onAbrirVantagem={abrirVantagem} podeMarcarOponente={podeMarcarOponente} onAtualizarCampo={atualizarCampo} entidades={entidades} registrar={registrar} onAbrirAcao={onAbrirAcao} onRolarIniciativa={onRolarIniciativa} onConcederObjeto={onConcederObjeto} />)}
         </>
       )}
 
@@ -9238,7 +9487,7 @@ function ModalConcederObjeto({ ent, hab, entidades, onConfirmar, onFechar }) {
     </div>
   );
 }
-function EntidadeItem({ onAbrirPontoFraco, onConcederObjeto, onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta, abertoExt, onAbertoExt }) {
+function EntidadeItem({ onEditarHab, onAbrirPontoFraco, onConcederObjeto, onArrastarFicha, onArrastarFichaFim, e, onEditar, onExcluir, editavel, onAbrirRolagem, onAtualizarCampo, onAbrirVantagem, onAbrirAcao, onRolarIniciativa, podeMarcarOponente, entidades, registrar, pastas, onMoverPasta, abertoExt, onAbertoExt }) {
   const [abertoLocal, setAbertoLocal] = useState(false);
   const aberto = abertoExt !== undefined ? !!abertoExt : abertoLocal; // estado levantado: sobrevive ao salvar a ficha e à troca de aba
   const setAberto = (v) => { const novo = typeof v === "function" ? v(aberto) : v; if (onAbertoExt) onAbertoExt(novo); else setAbertoLocal(novo); };
@@ -9506,6 +9755,14 @@ function EntidadeItem({ onAbrirPontoFraco, onConcederObjeto, onArrastarFicha, on
             </div>
           </div>
 
+          {temVantagem(e, "Ferramentas Improvisadas") && (
+            <div className="subcard" style={{ marginBottom: 8 }}>
+              <div className="row-inline" style={{ justifyContent: "space-between" }}>
+                <div><b>Improvisar Ferramenta</b></div>
+                <button className="btn btn-accent btn-sm" onClick={() => { const novo = { id: uid(), nome: "Ferramenta Improvisada", tipo: "ativa", acao: "Ação Padrão", tipoAcerto: "corpo", custoVida: 0, custoNen: 0, extras: {}, ativo: false, efeitos: [], passivos: [], ferramentaImprov: {} }; onAtualizarCampo(e.id, "ataques", (l) => [...(l || []), novo]); if (onEditarHab) onEditarHab(e, novo); }}>Criar</button>
+              </div>
+            </div>
+          )}
           <div className="subcard" style={{ marginBottom: 8 }}>
             <div className="row-inline" style={{ justifyContent: "space-between" }}>
               <div><b>Meditar</b><div className="field-note">Cura Nen = Prontidão + Nível ({attr(e, "prontidao") + (e.nivel || 1)}).</div></div>
@@ -9565,11 +9822,12 @@ function EntidadeItem({ onAbrirPontoFraco, onConcederObjeto, onArrastarFicha, on
                 const k = chaveAcaoDeNome(acaoDaHabilidade(a));
                 const corAcao = ACOES_TIPOS.find((t) => t.k === k)?.cor || "var(--muted)";
                 const travada = !!a.concedidoA;
+                const semTeste = !!a.ferramentaImprov && !(a.ferramentaImprov.sucesso && a.ferramentaImprov.custoTestado === ppAtaque(a, e));
                 const podeConceder = editavel && ehHabilidadeObjeto(a);
                 return (
                   <div key={a.id} className="hab-wrap">
-                  <button type="button" className={"hab-card" + (passiva ? " passiva" : "") + (ativa ? " ativo" : "") + (itemQuebrado(a) ? " item-quebrado" : "") + (travada ? " hab-travada" : "")}
-                    disabled={travada || (passiva && !editavel)} onClick={() => (passiva ? (editavel ? alternarPassiva(a) : null) : abrirAtaque(a))}
+                  <button type="button" className={"hab-card" + (passiva ? " passiva" : "") + (ativa ? " ativo" : "") + (itemQuebrado(a) ? " item-quebrado" : "") + ((travada || semTeste) ? " hab-travada" : "")}
+                    disabled={travada || semTeste || (passiva && !editavel)} onClick={() => (passiva ? (editavel ? alternarPassiva(a) : null) : abrirAtaque(a))}
                     title={travada ? "Objeto concedido a outra ficha" : passiva ? (editavel ? (ativa ? "Clique para desativar" : "Clique para ativar") : "") : "Clique para usar"}>
                     {a.imagem ? <div className="hab-img-wrap"><ImgAj className="hab-img" src={a.imagem} aj={a.imagemAj} /></div> : <div className="hab-faixa" />}
                     <div className="hab-corpo">
@@ -9582,6 +9840,7 @@ function EntidadeItem({ onAbrirPontoFraco, onConcederObjeto, onArrastarFicha, on
                         {Number(a.custoVida) > 0 && <span className="hab-tag vida">{a.custoVida} PV</span>}
                         {a.sustentado && <span className="hab-tag">Sustentada{a.acaoSustentar && a.acaoSustentar !== "Nenhuma" ? ` · ${rotuloAcaoCurto(a.acaoSustentar)}` : ""}</span>}
                         {itemQuebrado(a) && <span className="hab-tag vida">Quebrado</span>}
+                        {semTeste && <span className="hab-tag">Sem teste</span>}
                         {travada && <span className="hab-tag vida">🔒 Com {(entidades || []).find((x) => x.id === a.concedidoA)?.nome || "outra ficha"}</span>}
                         {a.concedidoDe && <span className="hab-tag">Concedido por {a.concedidoDe.donoNome}</span>}
                       </div>
@@ -9688,7 +9947,7 @@ function EntidadeItem({ onAbrirPontoFraco, onConcederObjeto, onArrastarFicha, on
           </div>
           {secoes.manobras && (
             <div className="hab-grid">
-              {MANOBRAS.map((m) => <CartaoAcao key={m.id} a={m} onClick={() => abrirAcao(m)} />)}
+              {MANOBRAS.filter((m) => !m.vantagem || temVantagem(e, m.vantagem)).map((m) => <CartaoAcao key={m.id} a={m} onClick={() => abrirAcao(m)} />)}
             </div>
           )}
         </div>
