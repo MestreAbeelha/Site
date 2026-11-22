@@ -5934,10 +5934,10 @@ export default function MesaMM3() {
         const nomeNovo = (m.nome || "").replace(/ — Tórax$/, " — Núcleo");
         const mudou = JSON.stringify(cond) !== JSON.stringify(m.condicoes || {}) || incapAuto !== !!c0.incapAuto || imovelAuto !== !!c0.imovelAuto
           || JSON.stringify(espelho) !== JSON.stringify(c0.espelho || {}) || c0.mov !== mov || c0.espNen !== nen || c0.espVar !== espVar || c0.nenMax !== nenMax
-          || (m.nenAtual || 0) !== nen || JSON.stringify(m.variaveis || []) !== espVar || m.tipoNen !== tx.tipoNen
+          || (m.nenAtual || 0) !== nen || JSON.stringify(m.variaveis || []) !== espVar || m.tipoNen !== tx.tipoNen || m.rotulo !== tx.rotulo
           || nomeNovo !== m.nome || c0.nivelNucleo !== tx.nivel
           || (comp && (JSON.stringify(m.atributos || {}) !== JSON.stringify(comp.atributos) || JSON.stringify(m.periciaPontos || {}) !== JSON.stringify(comp.periciaPontos) || JSON.stringify(m.vantagens || []) !== JSON.stringify(comp.vantagens)));
-        if (mudou) atualizarCampo(m.id, "*", (e) => ({ ...e, condicoes: cond, nenAtual: nen, variaveis: vars, tipoNen: tx.tipoNen, nome: nomeNovo, ...(comp || {}), composta: { ...e.composta, espelho, incapAuto, imovelAuto, mov, espNen: nen, espVar, nenMax, nivelNucleo: tx.nivel } }));
+        if (mudou) atualizarCampo(m.id, "*", (e) => ({ ...e, condicoes: cond, nenAtual: nen, variaveis: vars, tipoNen: tx.tipoNen, rotulo: tx.rotulo, nome: nomeNovo, ...(comp || {}), composta: { ...e.composta, espelho, incapAuto, imovelAuto, mov, espNen: nen, espVar, nenMax, nivelNucleo: tx.nivel } }));
       });
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -9086,7 +9086,7 @@ function FichaForm({ focoAtaque, autoSalvar, inicial, rotulos, onSalvar, onCance
           </div>
           {f.foto && ajFotoAberto && <div style={{ marginTop: 12 }}><AjusteImagem src={f.foto} ajuste={f.fotoAj} onMudar={(v) => upd("fotoAj", v)} proporcao="1 / 1" maxLargura={220} /></div>}
           <div className="grid3" style={{ marginTop: 12 }}>
-            <div><label className="label">Tipo</label><SearchableSelect listaCheia value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>
+            {!ehParteSecundaria(f) && <div><label className="label">Tipo</label><SearchableSelect listaCheia value={f.rotulo} onChange={(e) => upd("rotulo", e.target.value)}>{rotulos.map((r) => <option key={r} value={r}>{r}</option>)}</SearchableSelect></div>}
             {!ehParteSecundaria(f) && <div><label className="label">Tipo de Nen</label><SearchableSelect listaCheia value={f.tipoNen} onChange={(e) => upd("tipoNen", e.target.value)}>{NEN_TIPOS.map((n) => <option key={n} value={n}>{n}</option>)}</SearchableSelect></div>}
             <div><label className="label">Nível</label><input type="number" min="1" value={f.nivel} disabled={!!nivelFixo} title={nivelFixo ? "Fixo: é a graduação da Metamorfose" : undefined} onChange={(e) => upd("nivel", Math.max(1, Number(e.target.value)))} /></div>
           </div>
@@ -9366,12 +9366,6 @@ function PainelComposta({ pastas = [], pastaAtual = null, onMoverPasta, onFoto, 
               <button className={"btn btn-sm " + (engajada ? "btn-danger" : "btn-ghost")} onClick={onEngajar}>{engajada ? "Desengajar tudo" : "Engajar tudo"}</button>
               <button className="btn btn-ghost btn-sm" onClick={onEditar}>✏️ Editar partes</button>
               <button className="btn btn-ghost btn-sm" onClick={() => setAddAberto(!addAberto)}>➕ Parte</button>
-              {pastas.length > 0 && onMoverPasta && (
-                <select className="btn btn-ghost btn-sm" value={pastaAtual || ""} onChange={(ev) => onMoverPasta(ev.target.value || null)} title="Pasta">
-                  <option value="">📁 Sem pasta</option>
-                  {pastas.map((pp) => <option key={pp.id} value={pp.id}>📁 {pp.nome}</option>)}
-                </select>
-              )}
               <button className="btn btn-ghost btn-sm" onClick={onExcluir}>🗑 Excluir criatura</button>
             </div>
           )}
@@ -9897,7 +9891,7 @@ function EntidadeItem({ onEditarHab, onAbrirPontoFraco, onConcederObjeto, onArra
             </div>
             <div className="hero-info">
               <span className="nome nome-clicavel" onClick={() => setAberto(false)}>{e.nome}</span>
-              <div className="rotulo">{e.rotulo} · Nv.{e.nivel} · {e.tipoNen} · {e.dono}</div>
+              <div className="rotulo">{e.rotulo} · Nv.{e.nivel}{ehParteSecundaria(e) ? "" : ` · ${e.tipoNen}`} · {e.dono}</div>
               <div className="hero-tags">
                 {e.oponente && <span className="tag-cond status">Engajado</span>}
                 {e.metaAtual && <span className={"tag-cond status" + (editavel ? " pode" : "")} title="Ação livre" onClick={() => { if (!editavel) return; onAtualizarCampo(e.id, "*", (en) => trocarForma(en, null, null)); gastarAcao(onAtualizarCampo, e.id, "Ação Livre"); if (registrar) registrar({ tipo: "rolagem", desc: `${e.nome} volta à forma base`, detalhe: "Metamorfose desfeita", total: "Ação livre", tipoClasse: "hs" }); }}>Forma: {e.metaAtual.nome}{editavel ? " · Voltar à base ×" : ""}</span>}
