@@ -299,9 +299,12 @@ export function calcularHabilidade(ctx, hab) {
     const c = base + somaG;
     // Dano Baseado Em: a parte da graduação que vem do atributo (gradGratis) tem custo base +0;
     // só extras/falhas (soma por graduação, sem ajuste de Nen) incidem sobre ela. O restante paga o custo normal.
-    const gradGratis = Math.min(Math.max(0, ef.gradGratis || 0), ef.grad);
-    const somaGSemNen = mods.filter((m) => m.k === "g").reduce((s, m) => s + m.valor, 0);
-    const custoParteGratis = gradGratis > 0 ? Math.max(0, gradGratis * somaGSemNen) : 0; // extras somam, falhas abatem (mínimo 0)
+    const temModsReais = mods.length > 0 || fixosEf.length > 0; // Sobrecarregado conta como extra
+    // a graduação do atributo só é grátis (0/g) com o Dano sozinho; com qualquer extra/falha ela passa a custar normalmente
+    const gradGratis = temModsReais ? 0 : Math.min(Math.max(0, ef.gradGratis || 0), ef.grad);
+    const somaGSemNen = somaG; // inclui o ajuste do tipo de Nen: a parte do atributo paga extras/falhas e o ajuste por graduação
+    const temModsGratis = mods.length > 0 || fixosEf.length > 0;
+    const custoParteGratis = gradGratis > 0 ? (temModsGratis ? Math.max(0, gradGratis * (base + somaGSemNen)) : 0) : 0; // sozinho custa 0/g; com qualquer modificador passa a pagar o custo base (+1/g) // extras somam, falhas abatem (mínimo 0)
     let custo = custoParteGratis + custoEfeito(c, ef.grad - gradGratis);
     // Dano baseado em atributo com extras/falhas nunca sai de graça: só o dano sozinho custa 0 (mínimo 1 com qualquer modificador).
     if (gradGratis > 0 && (mods.length > 0 || fixosEf.length > 0)) custo = Math.max(1, custo);
@@ -316,7 +319,7 @@ export function calcularHabilidade(ctx, hab) {
       if (alvo > ef.grad) dica = alvo;
     }
     if (dica) avisos.push(`${cat?.nome || ef.id}: pode ir para o nível ${dica} pelo mesmo custo (${custo} PP).`);
-    return { id: ef.id, nome: cat?.nome || ef.id, grad: ef.grad, base, tipo: tipoEf, mods, ajG, c, razao: razaoTxt(c), custo, limite, dicaNivel: dica,
+    return { id: ef.id, nome: cat?.nome || ef.id, grad: ef.grad, base, tipo: tipoEf, mods, ajG, c, razao: razaoTxt(c), custo, gradGratis, custoGratis: custoParteGratis, limite, dicaNivel: dica,
       alcance: ef.alcance ?? alcanceDoEfeito(cat?.alcance, mods), acao: ef.acao ?? acaoDoEfeito(cat?.acao, mods), duracao: ef.duracao ?? duracaoDoEfeito(cat?.duracao, mods), fixos: fixosEf };
   });
 
