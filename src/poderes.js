@@ -259,7 +259,7 @@ function resolverMod(it) {
  * Retorna { total, bruto, efeitos:[...], ajustesNen:[...], fixos:[...], avisos:[], erros:[] }
  */
 // Efeitos com limite de graduação fixo (múltiplo do nível); Sobrecarregado não ultrapassa
-export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, membros_extras: 1, variavel: 1, encolhimento: 0.5, crescimento: 0.5, metamorfose: 1, velocidade: 2, voo: 2 };
+export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, membros_extras: 1, variavel: 1, encolhimento: 0.5, crescimento: 0.5, metamorfose: 1, velocidade: 2, voo: 2, protecao: 2 };
 export const limiteFixoDe = (id, nivel) => (LIMITE_FIXO[id] ? Math.max(1, Math.floor(LIMITE_FIXO[id] * nivel)) : null);
 export function calcularHabilidade(ctx, hab) {
   const { nivel = 1, tipoNen = null } = ctx;
