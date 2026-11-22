@@ -1732,6 +1732,14 @@ function instanciasPassivasAtivas(ent) {
     if (a.tipo === "passiva" ? !passivaEstaAtiva(a) : !(a.sustentado && a.sustentando)) return;
     passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id] && !instApenasOutros(inst) && limAtivaOk(inst, ent)) out.push({ ataque: a, inst: comReducaoHab(comAquecimento(inst, ent), ent, a.id), idx }); });
   });
+  // Homogêneo (criatura composta): o efeito das outras partes que têm o extra vale também para esta parte
+  gruposDaEntidade(ent).forEach((o) => {
+    (o.ataques || []).forEach((a) => {
+      if (a.tipo === "passiva" ? !passivaEstaAtiva(a) : !(a.sustentado && a.sustentando)) return;
+      const pseudo = { id: `hom:${o.id}:${a.id}`, nome: `${a.nome || "habilidade"} (de ${o.nome})`, tipo: "passiva", ativo: true, recebido: true };
+      passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && (inst.mods || []).some((m) => m.id === "homogeneo") && !(o.efeitosPerdidos || {})[inst.id] && limAtivaOk(inst, o)) out.push({ ataque: pseudo, inst, idx }); });
+    });
+  });
   // Afeta Outros: efeitos de habilidades de outras fichas que escolheram esta como alvo (sem o Efeito Colateral do usuário)
   (ENTIDADES_GLOBAIS || []).forEach((o) => {
     if (!o || o.id === ent?.id) return;
@@ -7195,7 +7203,7 @@ function CartaoOpcao({ cor, titulo, selo, seloClasse, chips, texto, onAdd }) {
 const custoX = (ex) => (ex.custoPorGrad != null ? `${ex.custoPorGrad > 0 ? "+" : ""}${ex.custoPorGrad}/g` : ex.custoFixo != null ? `${ex.custoFixo > 0 ? "+" : ""}${ex.custoFixo} fixo` : ex.custoDinamico ? "variável" : "sem custo");
 const nomeX = (ex) => String(ex.label).split(" (")[0];
 const custoModTxt = (c) => (c ? `${c.v > 0 ? "+" : ""}${c.v}${c.k === "g" ? "/g" : " fixo"}` : "");
-function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
+function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco, ent }) {
   const defP = bloco && !bloco.ativo ? bloco.def : null;
   const [aba, setAba] = useState("extra");
   const [busca, setBusca] = useState("");
@@ -7210,6 +7218,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     if (LEG_EFEITO[m.id]) return (m.id === "efeito_colateral" || !LEG_EFEITO[m.id].ativo(item)) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria)));
     if (MODS_LEGADO.has(m.id)) return false;
     if (m.id === "caracteristica_f") return false;
+    if (m.id === "homogeneo") return !!ent?.composta?.grupoId && !mods.some((x) => x.id === "homogeneo") && EFEITO_CAT_POR_ID[idCat]?.alcance === "pessoal";
     if (m.id === "ataque") return !mods.some((x) => x.id === "ataque") && idCat !== "camuflagem" && (idCat === "teleporte" || EFEITO_CAT_POR_ID[idCat]?.alcance === "pessoal");
     if (m.id === "alcance_diminuido") { // só faz sentido em efeito que está à distância/percepção: desce um degrau (até corpo-a-corpo)
       const base = EFEITO_CAT_POR_ID[idCat]?.alcance;
@@ -7219,7 +7228,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     if (m.id === "baseado_forca") return mods.some((x) => x.id === "dimensional") && !mods.some((x) => x.id === "baseado_forca");
     return m.mult || m.id === "limitado" || !mods.some((x) => x.id === m.id);
   };
-  const excl = new Set(["explicar_pf", "ataque", ...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
+  const excl = new Set(["explicar_pf", "ataque", "homogeneo", ...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
   const q = semAcento(busca);
   const xs = defP ? (aba === "extra" ? defP.extras : defP.falhas || []).filter((e) => !item.extrasAtivos?.[e.chave]).map((e) => ({ id: "x:" + e.chave, nome: nomeX(e), v: aba === "extra" ? 1 : -1, k: "g", _custo: custoX(e), _texto: e.label })) : [];
   const base = [...(aba === "extra" ? disp.extras : disp.falhas).filter(livre), ...xs];
@@ -8190,7 +8199,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
     else if (sel.fixoHab) inspetor = <InspetorLegado id={sel.fixoHab} item={ataque} ehHab onMudar={onMudar} onRemover={() => { onMudar(LEG_HAB[sel.fixoHab].off(ataque)); setSel({ raiz: true }); }} grad={0} />;
   } else if (bSel) {
     if (sel.pal) {
-      inspetor = <PaletaMods ataque={ataque} bloco={bSel} idCat={bSel.idCat} item={bSel.item} ativo={bSel.ativo} ocultar={bSel.def ? modsOcultosDoPassivo(bSel.def) : undefined} onAdd={(m) => addMod(bSel, m)} />;
+      inspetor = <PaletaMods ent={ent} ataque={ataque} bloco={bSel} idCat={bSel.idCat} item={bSel.item} ativo={bSel.ativo} ocultar={bSel.def ? modsOcultosDoPassivo(bSel.def) : undefined} onAdd={(m) => addMod(bSel, m)} />;
     } else if (sel.fixo && sel.fixo.startsWith("x:") && bSel.def) {
       const ex = [...(bSel.def.extras || []), ...(bSel.def.falhas || [])].find((e) => e.chave === sel.fixo.slice(2));
       const negX = (bSel.def.falhas || []).includes(ex);
