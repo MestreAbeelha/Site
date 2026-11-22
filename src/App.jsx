@@ -2231,6 +2231,7 @@ function modsDoEfeito(ef, a) {
   if (ef.exigirTeste?.ativo) der("exigir_teste", -Math.max(1, ef.exigirTeste.graduacoes || 1));
   if (ef.peculiaridade?.ativo) der("peculiaridade", ef.peculiaridade.bonus === 5 ? -2 : -1);
   if (ef.aquecimento?.ativo) der("aquecimento", -(ef.aquecimento.turnos || 3));
+  if (ef.aquecimento?.ativo && ef.aquecimento.resfriamento) der("resfriamento", -1);
   if (ef.categoria === "Aflição") {
     if (ef.resistenciaAlternativa) der("resistencia_alt_afl", 1);
     if (ef.recuperacaoInstantanea) der("recuperacao_instantanea", -1);
@@ -4321,8 +4322,9 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       let n = { ...e, efeitosPerdidos: perd };
       if (!a.sustentado) {
         const aq = { ...(e.aquecimento || {}) };
-        efs.forEach((ef) => { if (ef.aquecimento?.ativo && !ef.exigirTeste?.ativo && res.legado?.sucesso !== false) aq[ef.id] = (aq[ef.id] || 0) + 1; });
-        n.aquecimento = aq;
+        const usados = { ...(e.aqUsado || {}) };
+        efs.forEach((ef) => { if (ef.aquecimento?.ativo && !ef.exigirTeste?.ativo && res.legado?.sucesso !== false) { aq[ef.id] = (aq[ef.id] || 0) + 1; usados[ef.id] = true; } });
+        n.aquecimento = aq; n.aqUsado = usados;
       }
       return n;
     });
@@ -6165,7 +6167,11 @@ export default function MesaMM3() {
     let mudouAquec = false;
     (ent.ataques || []).forEach((a) => {
       const ativa = a.tipo === "passiva" ? passivaEstaAtiva(a) : (a.sustentado && a.sustentando);
-      if (!ativa || paradas.includes(a.id)) return;
+      if (!ativa || paradas.includes(a.id)) {
+        // Resfriamento: efeito sustentado desativado perde todo o aquecimento a cada turno
+        if (a.tipo === "passiva" || a.sustentado) itensDaHabilidade(a).forEach((it) => { if (it?.aquecimento?.ativo && it.aquecimento.resfriamento && novoAquec[it.id]) { delete novoAquec[it.id]; mudouAquec = true; } });
+        return;
+      }
       itensDaHabilidade(a).forEach((it) => {
         if (!it?.aquecimento?.ativo || it?.exigirTeste?.ativo || idsPerdidos.includes(it.id) || (ent.efeitosPerdidos || {})[it.id]) return;
         novoAquec[it.id] = (novoAquec[it.id] || 0) + 1;
@@ -6294,7 +6300,18 @@ export default function MesaMM3() {
     let prox = iniciativa.turnoAtual + 1, rodada = iniciativa.rodada;
     if (prox >= ordem.length) { prox = 0; rodada += 1; }
     const quemTerminou = ordem[iniciativa.turnoAtual];
-    if (quemTerminou) processarDuracoes(quemTerminou.entidadeId, "fim");
+    if (quemTerminou) {
+      processarDuracoes(quemTerminou.entidadeId, "fim");
+      // Resfriamento: efeito não sustentado que não foi usado no turno perde 1 passo de aquecimento
+      atualizarCampo(quemTerminou.entidadeId, "*", (e) => {
+        const aq = { ...(e.aquecimento || {}) }; let mud = false;
+        (e.ataques || []).forEach((a) => {
+          if (a.tipo === "passiva" || a.sustentado) return;
+          itensDaHabilidade(a).forEach((it) => { if (it?.aquecimento?.ativo && it.aquecimento.resfriamento && !(e.aqUsado || {})[it.id] && aq[it.id] > 0) { aq[it.id] -= 1; mud = true; } });
+        });
+        return { ...e, ...(mud ? { aquecimento: aq } : {}), aqUsado: {} };
+      });
+    }
     await salvarIniciativa({ ...iniciativa, turnoAtual: prox, rodada });
     const alvo = ordem[prox];
     if (alvo) { limparTurnoFlags(alvo.entidadeId); processarDuracoes(alvo.entidadeId, "inicio"); iniciarTurnoAutomatico(alvo.entidadeId); }
@@ -6644,6 +6661,13 @@ function ExigirTesteEditor({ valor, onMudar }) {
       )}
     </>
   );
+}
+function aquecTags(a, ent) {
+  return itensDaHabilidade(a).filter((it) => it?.aquecimento?.ativo && !it?.exigirTeste?.ativo && typeof (it.graduacao ?? it.graduacaoNulificar) === "number").map((it) => {
+    const G = Math.max(0, Math.floor(it.graduacao ?? it.graduacaoNulificar ?? 0));
+    const atual = graduacaoAquecida(G, it.aquecimento.turnos, (ent?.aquecimento || {})[it.id] || 0);
+    return `Aquecimento ${atual}/${G}`;
+  });
 }
 function AquecimentoEditor({ valor, onMudar }) {
   const v = valor || {};
@@ -7039,7 +7063,7 @@ function DesgastanteEditor({ desgastante, onMudar }) {
 
 
 /* ---------- Construtor de poder: extras/falhas por efeito + painel de custo da habilidade ---------- */
-const MODS_LEGADO = new Set(["alcance_estendido", "alcance_reduzido", "efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "ponto_fraco", "explicar_pf", "dividido", "multiataque", "desgastante", "efeito_alternativo",
+const MODS_LEGADO = new Set(["alcance_estendido", "alcance_reduzido", "efeito_colateral", "exigir_teste", "peculiaridade", "aquecimento", "resfriamento", "ponto_fraco", "explicar_pf", "dividido", "multiataque", "desgastante", "efeito_alternativo",
   "resistencia_alt_afl", "recuperacao_instantanea", "cumulativo_afl", "condicao_extra", "grau_limitado_afl", "variavel_nen_vida", "variavel_carga", "variavel_municao"]);
 const capNen = (t) => (t ? t.charAt(0).toUpperCase() + t.slice(1) : "");
 const DUR_TXT = { instantaneo: "instantâneo", sustentado: "sustentado", permanente: "permanente", continuo: "contínuo" };
@@ -7068,7 +7092,8 @@ const LEG_EFEITO = {
   efeito_colateral: { ...objAtivo("colateral", { condicao: "", comTeste: false }), on: (o) => (o.colateral?.ativo ? { ...o, colateraisExtra: [...(o.colateraisExtra || []), { condicao: "", comTeste: false }] } : { ...o, colateral: { condicao: "", comTeste: false, ...(o.colateral || {}), ativo: true } }) },
   exigir_teste: objAtivo("exigirTeste", { graduacoes: 1 }),
   peculiaridade: objAtivo("peculiaridade", { bonus: 2 }),
-  aquecimento: objAtivo("aquecimento", { turnos: 3 }),
+  aquecimento: { ...objAtivo("aquecimento", { turnos: 3 }), off: (o) => ({ ...o, aquecimento: { ...(o.aquecimento || {}), ativo: false, resfriamento: false } }) },
+  resfriamento: { ativo: (o) => !!o.aquecimento?.ativo && !!o.aquecimento?.resfriamento, on: (o) => ({ ...o, aquecimento: { ...(o.aquecimento || {}), resfriamento: true } }), off: (o) => ({ ...o, aquecimento: { ...(o.aquecimento || {}), resfriamento: false } }) },
   resistencia_alt_afl: boolAtivo("resistenciaAlternativa"),
   recuperacao_instantanea: boolAtivo("recuperacaoInstantanea"),
   cumulativo_afl: boolAtivo("cumulativo"),
@@ -7215,7 +7240,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco, ent }) 
     if (LEG_HAB[m.id]) return false;
     if (m.id === "sobrecarregado") return false; // automático
     if (ocultar && ocultar.has(m.id)) return false;
-    if (LEG_EFEITO[m.id]) return (m.id === "efeito_colateral" || !LEG_EFEITO[m.id].ativo(item)) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria)));
+    if (LEG_EFEITO[m.id]) return (m.id === "efeito_colateral" || !LEG_EFEITO[m.id].ativo(item)) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria))) && (m.id !== "resfriamento" || !!item.aquecimento?.ativo);
     if (MODS_LEGADO.has(m.id)) return false;
     if (m.id === "caracteristica_f") return false;
     if (m.id === "homogeneo") return !!ent?.composta?.grupoId && !mods.some((x) => x.id === "homogeneo") && EFEITO_CAT_POR_ID[idCat]?.alcance === "pessoal";
@@ -7228,7 +7253,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco, ent }) 
     if (m.id === "baseado_forca") return mods.some((x) => x.id === "dimensional") && !mods.some((x) => x.id === "baseado_forca");
     return m.mult || m.id === "limitado" || !mods.some((x) => x.id === m.id);
   };
-  const excl = new Set(["explicar_pf", "ataque", "homogeneo", ...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
+  const excl = new Set(["explicar_pf", "resfriamento", "ataque", "homogeneo", ...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
   const q = semAcento(busca);
   const xs = defP ? (aba === "extra" ? defP.extras : defP.falhas || []).filter((e) => !item.extrasAtivos?.[e.chave]).map((e) => ({ id: "x:" + e.chave, nome: nomeX(e), v: aba === "extra" ? 1 : -1, k: "g", _custo: custoX(e), _texto: e.label })) : [];
   const base = [...(aba === "extra" ? disp.extras : disp.falhas).filter(livre), ...xs];
@@ -10065,6 +10090,7 @@ function EntidadeItem({ onEditarHab, onAbrirPontoFraco, onConcederObjeto, onArra
                         <span className="hab-tag" style={{ "--hab-cor": corAcao }}><span className="hab-dot" />{rotuloAcaoCurto(acaoDaHabilidade(a))}</span>
                         {Number(a.custoNen) > 0 && <span className="hab-tag nen">{a.custoNen} Nen</span>}
                         {Number(a.custoVida) > 0 && <span className="hab-tag vida">{a.custoVida} PV</span>}
+                        {aquecTags(a, e).map((t, k) => <span key={k} className="hab-tag nen" title="Aquecimento">🔥 {t}</span>)}
                         {a.sustentado && <span className="hab-tag">Sustentada{a.acaoSustentar && a.acaoSustentar !== "Nenhuma" ? ` · ${rotuloAcaoCurto(a.acaoSustentar)}` : ""}</span>}
                         {itemQuebrado(a) && <span className="hab-tag vida">Quebrado</span>}
                         {semTeste && <span className="hab-tag">Sem teste</span>}
