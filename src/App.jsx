@@ -904,6 +904,8 @@ const ordenarPartes = (ms) => [...ms].sort((x, y) => ordemParte(x) - ordemParte(
 const membrosDe = (entidades, gid) => ordenarPartes((entidades || []).filter((x) => x.composta?.grupoId === gid));
 const PERICIAS_DA_PARTE = ["Atletismo", "Acrobacia"];
 const somaPericiasPP = (e) => Object.values(e?.periciaPontos || {}).reduce((s, v) => s + (v || 0), 0);
+/* partes da mesma criatura composta não são alvos umas das outras */
+const mesmaCriatura = (a, b) => !!a?.composta?.grupoId && a.composta.grupoId === b?.composta?.grupoId;
 function opcoesEntidades(lista) {
   const out = []; const vistos = new Set();
   lista.forEach((o) => {
@@ -4106,7 +4108,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   const temMultiataque = ehAtaque && !isArea && !!contexto.ataque?.extras?.multiataque && !contexto.ataque?.extras?.dividido;
   const [multiAtaques, setMultiAtaques] = useState([]);
   const [multiAlvoEscolha, setMultiAlvoEscolha] = useState("");
-  const alvosEngajados = entidades.filter((e2) => e2.id !== origemAtual.id && e2.oponente);
+  const alvosEngajados = entidades.filter((e2) => e2.id !== origemAtual.id && e2.oponente && !mesmaCriatura(origemAtual, e2));
   const efeitosDoAtaque = (contexto.ataque?.efeitos || []).filter((ef) => !semRolagemEf(ef) && !falhouTeste(ef));
   // habilidade só com efeitos de utilidade (Metamorfose, Invocar, Variável…): não tem alvo nem rolagem de acerto
   const soUtil = ehAtaque && (contexto.ataque?.efeitos || []).length > 0 && (contexto.ataque.efeitos || []).every((ef) => UTIL_CATS.includes(ef.categoria) && !utilAtaque(ef));
@@ -4147,12 +4149,20 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     setMultiAlvoEscolha("");
   };
 
+  const candidatosInterporMulti = (ma) => (!ehAtaque || isArea || !["corpo", "distancia"].includes(contexto.ataque?.tipoAcerto) || ma.r === "auto" || !ma.r.sucesso)
+    ? [] : entidades.filter((e) => e.id !== origemAtual.id && e.id !== ma.alvo.id && e.oponente && ladoDe(e) === ladoDe(ma.alvo) && temVantagem(e, "Interpor-se") && (e.id === ma.interpositorId || !multiAtaques.some((x) => x.id !== ma.id && x.interpositorId === e.id)));
+  const alternarInterporMulti = (ma, cand, marcado) => {
+    atualizarCampo(cand.id, "reacoesGastas", Math.max(0, (cand.reacoesGastas || 0) + (marcado ? 1 : -1)));
+    setMultiAtaques((s2) => s2.map((m) => (m.id === ma.id ? { ...m, interpositorId: marcado ? cand.id : undefined } : m)));
+    registrar({ tipo: "rolagem", desc: marcado ? `${cand.nome} se interpõe no lugar de ${ma.alvo.nome}` : `${cand.nome} desiste de se interpor`, detalhe: marcado ? "Gasta uma reação; sofre os efeitos do ataque extra no lugar do alvo" : "Reação devolvida", total: marcado ? "Interpor-se" : "—", tipoClasse: "hw" });
+  };
   const rolarEfeitoMulti = (maId, efeito) => {
     const ma = multiAtaques.find((m) => m.id === maId);
     if (!ma) return;
     const key = `multi:${maId}:${efeito.id}`;
     const critico = ma.r && ma.r !== "auto" && ma.r.ehCrit;
-    const res = rolarEfeitoGenerico(efeito, ma.alvo, !!protecaoLimitada[key], critico);
+    const alvoM = (ma.interpositorId && entidades.find((x) => x.id === ma.interpositorId)) || ma.alvo;
+    const res = rolarEfeitoGenerico(efeito, alvoM, !!protecaoLimitada[key], critico);
     setMultiAtaques((s) => s.map((m) => (m.id === maId ? { ...m, efeitosR: { ...m.efeitosR, [efeito.id]: res } } : m)));
   };
 
@@ -4240,13 +4250,13 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
     atualizarCampo(origemAtual.id, "descansoAtivos", { ...(origemAtual.descansoAtivos || {}), [chaveDescanso]: false });
   };
 
-  const custoVida = Number(ehAtaque ? contexto.ataque?.custoVida : 0) || 0;
-  const custoNen = Number(ehAtaque ? contexto.ataque?.custoNen : 0) || 0;
+  const custoVida = Number(ehAtaque && !contexto.semCusto ? contexto.ataque?.custoVida : 0) || 0;
+  const custoNen = Number(ehAtaque && !contexto.semCusto ? contexto.ataque?.custoNen : 0) || 0;
   // Se a habilidade é um Equipamento com PV próprio, o custo de vida sai do item, não da ficha.
   const itemComPv = ehAtaque && contexto.ataque?.equipamento && (contexto.ataque?.pvItemMax || 0) > 0;
   const custoAplicadoRef = useRef(false);
   useEffect(() => {
-    if (!ehAtaque || custoAplicadoRef.current || !atualizarCampo) return;
+    if (!ehAtaque || custoAplicadoRef.current || !atualizarCampo || contexto.semCusto) return;
     if (bloqueioVar) return;
     const usoVar = aplicarUsoVariaveis(origemAtual, contexto.ataque);
     const temDesgastante = !!contexto.ataque?.desgastante?.ativo;
@@ -4293,7 +4303,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
   /* Extras/falhas com efeito automático ao usar (Cansativo, Incontrolável, Retroalimentação…) */
   const modsUsoRef = useRef(false);
   useEffect(() => {
-    if (!ehAtaque || modsUsoRef.current || !atualizarCampo || bloqueioVar || !contexto.ataque || contexto.ataque.tipo === "passiva") return;
+    if (!ehAtaque || modsUsoRef.current || !atualizarCampo || bloqueioVar || !contexto.ataque || contexto.ataque.tipo === "passiva" || contexto.semCusto) return;
     modsUsoRef.current = true;
     aplicarUsoMods(origemAtual, contexto.ataque, atualizarCampo, registrar);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -4464,8 +4474,8 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
           <>
             <label className="label">Alvos (área — múltiplos)</label>
             <div className="subcard2" style={{ marginBottom: 12 }}>
-              {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).length === 0 && <div className="field-note">Nenhum oponente marcado pelo Mestre.</div>}
-              {entidades.filter((e) => e.id !== origemAtual.id && e.oponente).map((e) => (
+              {entidades.filter((e) => e.id !== origemAtual.id && e.oponente && !mesmaCriatura(origemAtual, e)).length === 0 && <div className="field-note">Nenhum oponente marcado pelo Mestre.</div>}
+              {entidades.filter((e) => e.id !== origemAtual.id && e.oponente && !mesmaCriatura(origemAtual, e)).map((e) => (
                 <label key={e.id} className="checkbox-row">
                   <input type="checkbox" checked={!!oponentesArea[e.id]} onChange={(ev) => setOponentesArea((s) => ({ ...s, [e.id]: ev.target.checked }))} />
                   {e.nome}
@@ -4504,7 +4514,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
             <label className="label">Oponente</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setAtaqueAcertoR(null); setEfeitosR({}); setMultiAtaques([]); setMultiAlvoEscolha(""); setUsarDividido(false); setDividAlvo2Id(""); setDividGrad({}); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {opcoesEntidades(entidades.filter((e) => e.id !== origemAtual.id && e.oponente))}
+              {opcoesEntidades(entidades.filter((e) => e.id !== origemAtual.id && e.oponente && !mesmaCriatura(origemAtual, e)))}
             </SearchableSelect>
 
             {oponente && podeDerrubarRapido && !ataqueAcertoR && (
@@ -4695,11 +4705,22 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
                         ) : (
                           <div style={{ marginBottom: 8 }}><ResultadoCard r={ma.r} efeito={{ classe: ma.r.sucesso ? "ok" : "dano", titulo: ma.r.sucesso ? "Acertou!" : "Errou" }} /></div>
                         )}
+                        {candidatosInterporMulti(ma).map((cand) => {
+                          const marcado = ma.interpositorId === cand.id;
+                          const semReacao = (cand.reacoesGastas || 0) >= maxReacoes(cand);
+                          const travado = Object.keys(ma.efeitosR).length > 0;
+                          return (
+                            <label key={cand.id} className="checkbox-row" style={{ marginBottom: 8, opacity: !marcado && (semReacao || ma.interpositorId || travado) ? 0.5 : 1 }}>
+                              <input type="checkbox" checked={marcado} disabled={travado || (!marcado && (semReacao || !!ma.interpositorId))} onChange={(e) => alternarInterporMulti(ma, cand, e.target.checked)} />
+                              Interpor-se {cand.nome}{semReacao && !marcado ? " (sem reação)" : ""}
+                            </label>
+                          );
+                        })}
                         {(ma.r === "auto" || ma.r.sucesso) && efeitosDoAtaque.map((efeito) => {
                           const res = ma.efeitosR[efeito.id];
                           return (
                             <div key={efeito.id} style={{ marginBottom: 8 }}>
-                              {!res && !limStatus(efeito, (id) => ma.efeitosR[id]) && renderProtecaoLimitada(efeito, ma.alvo, `multi:${ma.id}:${efeito.id}`)}
+                              {!res && !limStatus(efeito, (id) => ma.efeitosR[id]) && renderProtecaoLimitada(efeito, (ma.interpositorId && entidades.find((x) => x.id === ma.interpositorId)) || ma.alvo, `multi:${ma.id}:${efeito.id}`)}
                               {!res && (limStatus(efeito, (id) => ma.efeitosR[id]) ? avisoLim(limStatus(efeito, (id) => ma.efeitosR[id])) : <button className="btn btn-ghost btn-block" onClick={() => rolarEfeitoMulti(ma.id, efeito)}>⚄ Rolar Resistência ({efeito.categoria})</button>)}
                               {res && <ResultadoCard r={res.r} efeito={montarEfeitoCard(efeito, res)} />}
                             </div>
@@ -4761,7 +4782,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
             <label className="label">Oponente</label>
             <SearchableSelect listaCheia value={oponenteId} onChange={(e) => { setOponenteId(e.target.value); setStatOponente(""); }} style={{ marginBottom: 12 }}>
               <option value="">Selecione…</option>
-              {opcoesEntidades(entidades.filter((e) => e.id !== origemAtual.id && e.oponente))}
+              {opcoesEntidades(entidades.filter((e) => e.id !== origemAtual.id && e.oponente && !mesmaCriatura(origemAtual, e)))}
             </SearchableSelect>
             {oponente && (
               <>
@@ -4814,7 +4835,7 @@ function AcaoModal({ ctx, concederObjeto, entidades, roster, onFechar, onAbrirRo
   const origemBase = entidades.find((e) => e.id === origem.id) || origem;
   const origemAtual = empatia ? { ...origemBase, _empatia: true } : origemBase;
   const outros = entidades.filter((e) => e.id !== origemAtual.id);
-  const oponentesDisponiveis = outros.filter((e) => e.oponente);
+  const oponentesDisponiveis = outros.filter((e) => e.oponente && !mesmaCriatura(origemAtual, e));
   // O roster é uma lista pública enxuta (só id + nome) que existe justamente pra isso: deixar
   // qualquer um escolher um aliado pra ajudar sem precisar ter acesso à ficha completa dele.
   const aliadosDisponiveis = (roster || []).filter((r) => r.id !== origemAtual.id);
@@ -5073,6 +5094,10 @@ function AcaoModal({ ctx, concederObjeto, entidades, roster, onFechar, onAbrirRo
       if (atuais["Agarrado"]) { delete atuais["Agarrado"]; mudou = true; }
       if (atuais["Amarrado"]) { delete atuais["Amarrado"]; mudou = true; }
       if (mudou) { atualizarCampo(origemAtual.id, "agarradoCD", null); atualizarCampo(origemAtual.id, "agarradoPor", null); } if (mudou) atualizarCampo(origemAtual.id, "condicoes", atuais);
+    }
+    if (acao.id === "levantarse" && res.sucesso && origemAtual.condicoes?.["Caído"]) {
+      atualizarCampo(origemAtual.id, "condicoes", (c) => { const n = { ...(c || {}) }; delete n["Caído"]; return n; });
+      atualizarCampo(origemAtual.id, "duracoes", (l) => (l || []).filter((d) => !(d.tipo === "condicao" && d.nome === "Caído")));
     }
     registrar({ tipo: "rolagem", desc: `${origemAtual.nome} testa ${acao.nome} (${periciaUsada === "inteligencia" ? "Inteligência" : periciaUsada})`, detalhe: `2d10(${dado}) ${fmtBonus(bonus)} = ${res.total} vs CD ${cd}${fmtMods([...(periciaUsada === "inteligencia" ? notasCondicoesGerais(origemAtual) : notasPericiaEnt(origemAtual, periciaUsada)), ...nDescanso(), ...(ajudaBonus ? [`Ajuda ${fmtBonus(ajudaBonus)}`] : [])])}`, total: acao.id === "escapar" ? (res.sucesso ? "Escapou! Condição removida" : "Continua preso") : res.grauTexto, tipoClasse: res.tipoClasse });
     if (animar) animar({ modo: "simples", nome: `${origemAtual.nome} testa ${acao.nome}`, foto: origemAtual.foto, dado, bonus, total: res.total, cd: Number(cd) || 10, sucesso: res.sucesso, ehCrit: res.ehCrit, grauTexto: acao.id === "escapar" ? (res.sucesso ? "Escapou!" : "Continua preso") : res.grauTexto });
@@ -6201,13 +6226,16 @@ export default function MesaMM3() {
     });
     (ent.duracoes || []).filter((d) => d.quando === "recupera" && !d.persistente).forEach((d) => log(`${ent.nome} recupera de Enfraquecer`, `${d.chave || d.nome} −${d.valor} → −${Math.max(0, d.valor - 1)}`, "Recuperando", "hs"));
     // Ciclo: habilidade sustentada com Ciclo dispara sozinha no começo do turno, sem custo de ação
-    const avisosCiclo = [];
+    const avisosCiclo = [], ciclosAbrir = [];
     (ent.ataques || []).forEach((a) => {
       if (a.tipo === "passiva" || !(a.sustentado && a.sustentando) || paradas.includes(a.id)) return;
       if (!modsDaHabilidade(a).some((m) => m.id === "ciclo")) return;
       log(`"${a.nome}" dispara (Ciclo)`, "Sem custo de ação; atinge quem estiver na área", "Role o efeito", "hw");
       avisosCiclo.push({ id: uid(), texto: `Ciclo: "${a.nome}" dispara agora, sem custo de ação. Use a habilidade para rolar o efeito contra quem estiver na área.` });
+      ciclosAbrir.push(a);
     });
+    // Ciclo: abre sozinho a janela do efeito (sem custo de Nen/ação) para escolher quem faz o teste
+    if (ciclosAbrir.length) setTimeout(() => { setModalCtx({ origem: ent, tipo: "ataque", ataque: ciclosAbrir[0], label: `${ent.nome} · ${ciclosAbrir[0].nome || "Habilidade"} (Ciclo)`, semGastoAcao: true, semCusto: true }); setModalKey((k) => k + 1); }, 250);
     // Explosão acaba no começo do turno e deixa Fatigado
     const teveExplosao = (ent.ataques || []).some((a) => a.tipo === "passiva" && passivosDe(a).some((p) => p.explosaoLigada));
     if (teveExplosao) log(`A Explosão de ${ent.nome} acabou`, "Fica Fatigado", "Fatigado", "hw");
