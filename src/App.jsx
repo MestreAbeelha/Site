@@ -7555,6 +7555,7 @@ function PainelInfo({ info, calc, aberto, setAberto, total, ent, conteudo }) {
                     ))}
                     {e.ajG.map((x, k) => <div key={"a" + k} className="pi-sub">Tipo de Nen — {x.nome} ({x.rel}): {x.g > 0 ? "+" : "−"}{Math.abs(x.g)} por graduação</div>)}
                     <div className="pi-sub">Custo por graduação final: {e.c} → razão {e.razao}</div>
+                    {e.gradGratis > 0 && <div className="pi-sub">{e.gradGratis} graduação(ões) vêm do atributo (custo base 0 sozinho; com modificadores paga o base + extras/falhas + ajuste do tipo de Nen: {e.custoGratis} PP); as outras {e.grad - e.gradGratis} pagam {e.c}/g</div>}
                     <div>{e.grad} graduações → <b>{e.custo} PP</b></div>
                     {e.fixos.length > 0 && <div className="pi-sub">Fixos deste efeito (somam à habilidade): {e.fixos.map((m) => `${m.nome} ${m.valor > 0 ? "+" : ""}${m.valor}`).join(", ")}</div>}
                   </div>
