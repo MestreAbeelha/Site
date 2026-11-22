@@ -81,7 +81,7 @@ export const EFEITO_POR_ID = Object.fromEntries(EFEITOS.map((e) => [e.id, e]));
 const M = (id, nome, k, v, extra = {}) => ({ id, nome, k, v, ...extra });
 export const EXTRAS = [
   M("afeta_objetos", "Afeta Objetos", "g", 1, { opcoes: [0, 1] }),
-  M("afeta_outros", "Afeta Outros", "g", 1, { opcoes: [0, 1] }),
+  M("afeta_outros", "Afeta Outros", "g", 1, { opcoes: [0, 1], tipo: "emissor" }),
   M("alcance_estendido", "Alcance Estendido", "f", 1, { mult: true, tipo: "emissor" }),
   M("area", "Área", "g", 1, { tipo: "emissor", opcoes_area: ["Cone", "Cilindro", "Explosão", "Linha", "Nuvem"] }),
   M("ataque", "Ataque", "g", 0),
@@ -96,6 +96,7 @@ export const EXTRAS = [
   M("caracteristica_g", "Característica (+1/g)", "g", 1),
   M("caracteristica_f", "Característica (+1 fixo)", "f", 1),
   M("efeito_secundario", "Efeito Secundário", "g", 5),
+  M("homogeneo", "Homogêneo", "g", 3),
   M("indireto", "Indireto", "g", 3, { tipo: "emissor" }),
   M("multiataque", "Multiataque", "g", 2),
   M("permear", "Permear", "g", 1, { tipo: "emissor" }),
@@ -137,7 +138,7 @@ export const FALHAS = [
 export const EXCLUSIVOS = {
   aflicao: [M("concentracao_afl", "Concentração (Aflição)", "g", 1), M("condicao_extra", "Condição Extra", "g", 1), M("cumulativo_afl", "Cumulativo", "g", 2), M("resistencia_alt_afl", "Resistência Alternativa", "g", 1),
     M("grau_limitado_afl", "Grau Limitado", "g", -1, { opcoes: [-1, -2] }), M("recuperacao_instantanea", "Recuperação Instantânea", "g", -1), M("sustentado_afl", "Sustentado", "g", -1, { muda: "duracao" })],
-  camuflagem: [M("afeta_outros_cam", "Afeta Outros", "g", 1), M("ataque_cam", "Ataque", "g", 0), M("preciso_cam", "Preciso", "f", 1), M("sentido_extra", "Sentido Extra", "g", 1, { mult: true }),
+  camuflagem: [M("afeta_outros_cam", "Afeta Outros", "g", 1, { tipo: "emissor" }), M("ataque_cam", "Ataque", "g", 0), M("preciso_cam", "Preciso", "f", 1), M("sentido_extra", "Sentido Extra", "g", 1, { mult: true }),
     M("mesclar", "Mesclar", "g", -1), M("parcial", "Parcial", "g", -1), M("passiva", "Passiva", "g", -1)],
   caracteristica_aumentada: [M("explosao", "Explosão", "g", 1), M("brutal", "Brutal", "g", 1, { mult: true }), M("apenas_pericia", "Apenas Perícia", "g", -1)],
   comunicacao: [M("rapida", "Rápida", "g", 1), M("seletiva_com", "Seletiva", "g", 1), M("sutil_com", "Sutil", "g", 1), M("unilateral", "Unilateral", "g", -1)],
@@ -160,6 +161,7 @@ export const EXCLUSIVOS = {
     M("veloz", "Veloz", "g", 2), M("concentrado", "Concentrado", "g", -1), M("direcao_limitada", "Direção Limitada", "g", -1)],
   dano: [M("penetrante", "Penetrante", "g", 1, { mult: true }), M("rebote", "Rebote", "g", -3, { opcoes: [-3, -6] })],
   nulificar: [M("concentracao_nul", "Concentração", "g", 1), M("cumulativo_nul", "Cumulativo", "g", 2), M("grau_limitado_nul", "Grau Limitado", "g", -1, { opcoes: [-1, -2] })],
+  sentidos: [M("permanente_sent", "Permanente", "g", 0, { muda: "duracao" })],
   rapidez: [M("continuo_rap", "Contínuo", "g", 1, { muda: "duracao" }), M("permanente_rap", "Permanente", "g", 0, { muda: "duracao" })],
   salto: [M("quicar", "Quicar", "g", 1), M("poder_total", "Poder Total", "g", -1)],
   sentido_remoto: [M("camuflagem_sr", "Camuflagem", "g", 1), M("forma_astral", "Forma Astral", "g", 3), M("simultanea", "Simultânea", "g", 2)],
@@ -222,7 +224,7 @@ export function alcanceDoEfeito(alcBase0, mods) {
 }
 export function duracaoDoEfeito(durBase, mods) {
   if (durBase === "instantaneo" && mods.some((m) => ["duracao_aumentada", "sustentado_afl"].includes(m.id))) return "sustentado";
-  if (mods.some((m) => ["permanente_rap", "continuo_criar"].includes(m.id))) return "permanente";
+  if (mods.some((m) => ["permanente_rap", "permanente_sent", "continuo_criar"].includes(m.id))) return "permanente";
   return durBase;
 }
 
@@ -434,7 +436,7 @@ Object.assign(REGRAS, {
   camuflagem_mo: () => "Camuflagem: os objetos movidos ficam camuflados.", dano_mo: () => "Dano: objetos movidos causam dano.", dividido_mo: () => "Dividido: move com mais precisão em vários alvos.",
   impulso: () => "Impulso: arremessa com mais força.", preciso_mo: () => "Preciso: manipulação fina.", veloz: () => "Veloz: objetos se movem mais rápido.", concentrado: () => "Concentrado: precisa se concentrar.", direcao_limitada: () => "Direção Limitada: move só em uma direção.",
   aquatico: () => "Aquático: voo também na água.", asas: () => "Asas: o voo depende de asas.", levitacao: () => "Levitação: só vertical.", planar: () => "Planar: só plana.", plataforma: () => "Plataforma: voo sobre uma plataforma.",
-  continuo_rap: () => "Contínuo: a rapidez dura sem sustentar.", permanente_rap: () => "Permanente: rapidez sempre ativa.",
+  continuo_rap: () => "Contínuo: a rapidez dura sem sustentar.", permanente_rap: () => "Permanente: rapidez sempre ativa.", permanente_sent: () => "Permanente: os sentidos ficam sempre ativos, sem sustentar.", homogeneo: () => "Homogêneo: o efeito vale para todas as partes da criatura composta.",
   camuflagem_sr: () => "Camuflagem: o sentido remoto fica camuflado.", forma_astral: () => "Forma Astral: o sentido atravessa objetos.", simultanea: () => "Simultânea: sentidos remoto e normal juntos.",
   ligacao_sensorial: () => "Ligação Sensorial: sente o que o alvo sente.",
   azarado: () => "Azarado: você sofre o azar.", ataque_sorte: () => "Ataque: exige acerto.", resistir_sorte: () => "Resistir: o alvo pode resistir.",
@@ -616,6 +618,8 @@ export const DESC_MOD = {
   grau_limitado_nul: "A nulificação só chega a um grau máximo menor (−1 ou −2/g).",
   continuo_rap: "A rapidez dura sem sustentar. +1/g.",
   permanente_rap: "A rapidez é permanente. +0/g.",
+  permanente_sent: "Os sentidos são permanentes. +0/g.",
+  homogeneo: "Exclusivo de efeitos pessoais de criaturas compostas: o efeito é concedido a todas as partes da criatura, e não só à parte que tem o poder (um braço com Proteção e Homogêneo dá Proteção para todas as partes). +3/g.",
   quicar: "Divide o salto em vários saltos curtos (+1 por vez). +1/g.",
   poder_total: "O salto consome todo o seu turno. −1/g.",
   camuflagem_sr: "O sentido remoto fica camuflado. +1/g.",
