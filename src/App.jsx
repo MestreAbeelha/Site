@@ -705,14 +705,14 @@ const GlobalStyle = () => (
     .mm3 .mp-raiz b { font-size:.82rem; line-height:1.1; max-height:2.2em; overflow:hidden; }
     .mm3 .mp-raiz span { font-family:'Bebas Neue',sans-serif; font-size:1.2rem; letter-spacing:.03em; white-space:nowrap; }
     .mm3 .mp-ef { display:flex; align-items:center; justify-content:center; text-align:center; padding:6px 10px; border-radius:18px; font-weight:800; font-size:.86rem; line-height:1.12; box-shadow:0 4px 0 rgba(0,0,0,.4), 0 8px 18px rgba(0,0,0,.4); border:3px solid transparent; }
-    .mm3 .mp-ef-nome { display:block; overflow:visible; overflow-wrap:anywhere; }
+    .mm3 .mp-ef-nome { display:block; overflow:visible; overflow-wrap:break-word; }
     .mm3 .mp-ef em { position:absolute; right:-9px; top:-10px; min-width:26px; height:26px; border-radius:99px; background:#0f0f16; color:#fff; border:2px solid #8a90a0; font-size:.74rem; font-style:normal; display:flex; align-items:center; justify-content:center; padding:0 5px; }
     .mm3 .mp-ef.sel { border-color:#fff; box-shadow:0 0 0 4px #e8c84a, 0 8px 18px rgba(0,0,0,.4); }
     .mm3 .mp-ef.passivo { border-radius:99px; }
     .mm3 .mp-ef.mp-novo { background:#1b1b24 !important; color:#cfd2dc !important; border:3px solid #4b5163; border-radius:50% !important; box-shadow:none; padding:0; font-size:1.6rem; }
     .mm3 .mp-ef.mp-novo .mp-ef-nome { font-size:1.6rem; line-height:1; max-height:none; }
     .mm3 .mp-mod { display:flex; align-items:center; justify-content:center; text-align:center; padding:4px 10px; border-radius:99px; font-size:.7rem; font-weight:700; line-height:1.1; color:#fff; border:3px solid transparent; box-shadow:0 3px 0 rgba(0,0,0,.4); }
-    .mm3 .mp-mod span { display:block; overflow:visible; overflow-wrap:anywhere; }
+    .mm3 .mp-mod span { display:block; overflow:visible; overflow-wrap:normal; word-break:normal; }
     .mm3 .mp-mod.extra { background:#1f9a43; }
     .mm3 .mp-mod.falha { background:#b72c34; }
     .mm3 .mp-mod.sel { border-color:#fff; box-shadow:0 0 0 4px #e8c84a; }
@@ -1706,12 +1706,31 @@ const ehNpcOuCriatura = (ent) => ent?.rotulo === "Criatura" || ent?.rotulo === "
 function passivaEstaAtiva(ataque) {
   return !!(ataque?.ativo ?? ataque?.passivo?.ativo);
 }
+/* Limitado a ter outra habilidade ativada: o efeito só vale enquanto a habilidade escolhida está ativa (em criaturas compostas, a lista é compartilhada entre as partes) */
+const modLimAtiva = (item) => (item?.mods || []).find((m) => m.id === "limitado" && m.limAtiva && m.limHabId);
+function gruposDaEntidade(ent) {
+  const gid = ent?.composta?.grupoId;
+  return gid ? (ENTIDADES_GLOBAIS || []).filter((x) => x.composta?.grupoId === gid && x.id !== ent.id) : [];
+}
+function acharHabilidade(id, ent) {
+  return (ent?.ataques || []).find((a) => a.id === id) || gruposDaEntidade(ent).flatMap((x) => x.ataques || []).find((a) => a.id === id) || null;
+}
+function limAtivaOk(item, ent) {
+  const m = modLimAtiva(item);
+  if (!m) return true;
+  const h = acharHabilidade(m.limHabId, ent);
+  return !!h && (h.tipo === "passiva" ? passivaEstaAtiva(h) : !!h.sustentando);
+}
+function habilidadeBloqueada(a, ent) {
+  const itens = a?.tipo === "passiva" ? passivosDe(a) : (a?.efeitos || []);
+  return itens.length > 0 && itens.every((i) => modLimAtiva(i) && !limAtivaOk(i, ent));
+}
 function instanciasPassivasAtivas(ent) {
   const out = [];
   (ent?.ataques || []).forEach((a) => {
     // passiva: vale quando está ligada; ativa: os efeitos de aprimoramento valem enquanto ela é sustentada
     if (a.tipo === "passiva" ? !passivaEstaAtiva(a) : !(a.sustentado && a.sustentando)) return;
-    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id] && !instApenasOutros(inst)) out.push({ ataque: a, inst: comReducaoHab(comAquecimento(inst, ent), ent, a.id), idx }); });
+    passivosDe(a).forEach((inst, idx) => { if (inst?.tipoId && !(ent?.efeitosPerdidos || {})[inst.id] && !instApenasOutros(inst) && limAtivaOk(inst, ent)) out.push({ ataque: a, inst: comReducaoHab(comAquecimento(inst, ent), ent, a.id), idx }); });
   });
   // Afeta Outros: efeitos de habilidades de outras fichas que escolheram esta como alvo (sem o Efeito Colateral do usuário)
   (ENTIDADES_GLOBAIS || []).forEach((o) => {
@@ -2781,7 +2800,7 @@ function dadosEfeito(efeito, oponente, critico, brutal = 0) {
   if (efeito.categoria === "Cura") return { bonus: efeito.graduacao || 0, cd: 10, salvLabel: "Cura (CD 10)", quemRolaAtacante: true };
   if (efeito.categoria === "Aflição") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
   if (efeito.categoria === "Enfraquecer") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
-  if (efeito.categoria === "Camuflagem") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 15 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
+  if (efeito.categoria === "Camuflagem") return { bonus: salvBonus(oponente, efeito.salvamento), cd: 8 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento };
   if (efeito.categoria === "Nulificar") { const sv = efeito.salvamento === "Fortitude" ? "Fortitude" : "Vontade"; return { bonus: efeito.graduacaoNulificar || 0, cd: 10 + statDefesa(oponente, sv.toLowerCase()), salvLabel: `${sv} do alvo`, quemRolaAtacante: true }; }
   if (efeito.categoria === "Teleporte") return { bonus: salvBonus(oponente, efeito.salvamento || "Fortitude"), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: efeito.salvamento || "Fortitude" };
   if (efeito.categoria === "Leitura Mental") return { bonus: salvBonus(oponente, "Vontade"), cd: 10 + (efeito.graduacao || 0) + bonusCrit, salvLabel: "Vontade" };
@@ -3620,7 +3639,7 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
 
   const testesExigidos = ehAtaque ? exigirTestesDe(contexto.ataque) : [];
   // Efeito cujo Exigir Teste falhou: não funciona nesta ação (a falha antiga, da habilidade inteira, derruba todos).
-  const falhouTeste = (ef) => !!exigirTesteR && (exigirTesteR.legado?.sucesso === false || exigirTesteR[ef?.id]?.sucesso === false);
+  const falhouTeste = (ef) => !limAtivaOk(ef, origemAtual) || !!exigirTesteR && (exigirTesteR.legado?.sucesso === false || exigirTesteR[ef?.id]?.sucesso === false);
   const renderExigirTestes = (mb) => testesExigidos.map((it) => {
     const r = exigirTesteR?.[it.id];
     return (
@@ -3951,7 +3970,15 @@ function RollModal({ contexto, entidades, onFechar, registrar, animar, aplicarDa
       }
     }
     extra.notasMods = notasExclusivos(efeito, CAT_PARA_EFEITO[efeito.categoria], efeito.graduacao ?? efeito.graduacaoNulificar);
-    if (efeito.categoria === "Camuflagem") extra.sentidos = r.sucesso ? [] : (efeito.sentidos || []);
+    if (efeito.categoria === "Camuflagem") {
+      extra.sentidos = r.sucesso ? [] : (efeito.sentidos || []);
+      // Camuflagem com Ataque: o alvo que falha fica sem os sentidos escolhidos (sem Visão = Cego; sem Audição = Surdo)
+      if (!r.sucesso && atualizarCampo && temModEf(efeito, "ataque_cam")) {
+        const sn = efeito.sentidos || [];
+        const add = [...(sn.includes("Visão") ? ["Cego"] : []), ...(sn.includes("Audição") ? ["Surdo"] : [])];
+        if (add.length) atualizarCampo(alvo.id, "condicoes", (c) => { const n = { ...(c || {}) }; add.forEach((k) => { n[k] = n[k] || 1; }); return n; });
+      }
+    }
     registrar({
       tipo: "rolagem",
       desc: `${alvo.nome} resiste a ${efeito.categoria} (${dados.salvLabel})${cdMetade ? " — esquivou, CD pela metade" : ""}`,
@@ -6531,10 +6558,14 @@ function EfeitoForm({ efeito, onMudar, onCriarArremesso }) {
             <div><label className="label">Salvamento</label><SearchableSelect value={efeito.salvamento} onChange={(e) => upd("salvamento", e.target.value)}>{(temModEf(efeito, "resistencia_alternativa") ? SALVAMENTOS_ESCOLHA_ALT : SALVAMENTOS_ESCOLHA).map((s) => <option key={s} value={s}>{s}</option>)}</SearchableSelect></div>
           </div>
           <label className="label">Sentidos afetados</label>
-          {(efeito.sentidos || []).map((s, i) => (
-            <div className="row-inline" key={i}><input type="text" value={s} onChange={(e) => updSentido(i, e.target.value)} /><button className="small-btn" onClick={() => rmSentido(i)}>×</button></div>
-          ))}
-          <button className="btn btn-ghost btn-sm" onClick={addSentido}>+ Sentido</button>
+          <div className="subcard2" style={{ marginBottom: 8 }}>
+            {["Visão", "Audição", "Olfato", "Paladar", "Tato", ...SENTIDOS_ESPECIAIS].map((sn) => (
+              <label key={sn} className="checkbox-row">
+                <input type="checkbox" checked={(efeito.sentidos || []).includes(sn)} onChange={(ev) => upd("sentidos", ev.target.checked ? [...(efeito.sentidos || []), sn] : (efeito.sentidos || []).filter((x) => x !== sn))} />
+                {sn}
+              </label>
+            ))}
+          </div>
         </>
       )}
       {utilAtaque(efeito) && (
@@ -7071,7 +7102,7 @@ function cdDoEfeito(ef) {
     case "Dano": return `Dano ${g}: alvo resiste com Resistência, CD ${15 + g}`;
     case "Aflição": return `Aflição ${g}: ${sv}, CD ${10 + g}`;
     case "Enfraquecer": return `Enfraquecer ${g}: ${sv}, CD ${10 + g}`;
-    case "Camuflagem": return `Camuflagem ${g}: ${sv}, CD ${15 + g}`;
+    case "Camuflagem": return `Camuflagem ${g}: ${sv}, CD ${8 + g}`;
     case "Leitura Mental": return `Leitura Mental ${g}: Vontade, CD ${10 + g}`;
     case "Nulificar": return `Nulificar ${g}: você rola +${g} contra 10 + a defesa do alvo`;
     case "Cura": return `Cura ${g}: você rola +${g} contra CD 10`;
@@ -7178,6 +7209,8 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     if (ocultar && ocultar.has(m.id)) return false;
     if (LEG_EFEITO[m.id]) return (m.id === "efeito_colateral" || !LEG_EFEITO[m.id].ativo(item)) && (m.id !== "peculiaridade" || (ativo && CATEGORIAS_COM_RESISTENCIA.includes(item.categoria)));
     if (MODS_LEGADO.has(m.id)) return false;
+    if (m.id === "caracteristica_f") return false;
+    if (m.id === "ataque") return !mods.some((x) => x.id === "ataque") && idCat !== "camuflagem" && (idCat === "teleporte" || EFEITO_CAT_POR_ID[idCat]?.alcance === "pessoal");
     if (m.id === "alcance_diminuido") { // só faz sentido em efeito que está à distância/percepção: desce um degrau (até corpo-a-corpo)
       const base = EFEITO_CAT_POR_ID[idCat]?.alcance;
       return !!ativo && ["distancia", "percepcao"].includes(alcanceDoEfeito(base, mods.map((x) => ({ ...x, valor: x.valor ?? MOD_POR_ID[x.id]?.v }))));
@@ -7186,7 +7219,7 @@ function PaletaMods({ idCat, item, ativo, ocultar, onAdd, ataque, bloco }) {
     if (m.id === "baseado_forca") return mods.some((x) => x.id === "dimensional") && !mods.some((x) => x.id === "baseado_forca");
     return m.mult || m.id === "limitado" || !mods.some((x) => x.id === m.id);
   };
-  const excl = new Set([...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
+  const excl = new Set(["explicar_pf", "ataque", ...(EXCLUSIVOS_CAT[idCat] || []).map((m) => m.id), ...(defP ? [...(defP.extras || []), ...(defP.falhas || [])].map((e) => "x:" + e.chave) : [])]);
   const q = semAcento(busca);
   const xs = defP ? (aba === "extra" ? defP.extras : defP.falhas || []).filter((e) => !item.extrasAtivos?.[e.chave]).map((e) => ({ id: "x:" + e.chave, nome: nomeX(e), v: aba === "extra" ? 1 : -1, k: "g", _custo: custoX(e), _texto: e.label })) : [];
   const base = [...(aba === "extra" ? disp.extras : disp.falhas).filter(livre), ...xs];
@@ -7232,8 +7265,7 @@ function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, 
         nota={res ? `${res.grad} graduações · base ${res.base}${res.ajG.length ? " · " + res.ajG.map((a) => `${a.nome} ${a.g > 0 ? "+" : ""}${a.g}`).join(" · ") : ""}` : null} notaTitulo="Como o custo foi calculado" />
       {!ativo && infoPassivo(item, ent).length > 0 && <div className="field-note" style={{ margin: "6px 0" }}>{infoPassivo(item, ent).map((l, i) => <div key={i}>• {l}</div>)}</div>}
       {res?.dicaNivel && <div className="px-dica">💡 Pode subir para a graduação {res.dicaNivel} pelo mesmo custo.</div>}
-      <button type="button" className="px-cfg" onClick={() => setCfg((v) => !v)}>{cfg ? "▼ Fechar configuração" : "⚙ Configurar este efeito"}</button>
-      {cfg && (
+      {true && (
         <div className="px-config">
           <div className="cb-linha" style={{ marginBottom: 8 }}>
             <label className="label" style={{ margin: 0 }}>Tipo de Nen do efeito</label>
@@ -7247,7 +7279,7 @@ function InspetorEfeito({ ativo, item, res, idCat, onMudar, onRemover, onSubir, 
     </div>
   );
 }
-function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra, efsLista }) {
+function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra, efsLista, habsLista }) {
   const mods = item.mods || [];
   const m = mods[idx];
   const c = m ? MOD_POR_ID[m.id] : null;
@@ -7272,7 +7304,7 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra, efsList
             <span className="vb-stepper"><button type="button" className="small-btn" disabled={(m.vezes || 1) <= 1} onClick={() => upd({ vezes: (m.vezes || 1) - 1 })}>−</button><b>×{m.vezes || 1}</b><button type="button" className="small-btn" onClick={() => upd({ vezes: (m.vezes || 1) + 1 })}>+</button></span>
           </div>
         )}
-        {c.opcoes && c.opcoes.length > 1 && (
+        {c.opcoes && c.opcoes.length > 1 && !(m.id === "limitado" && m.limAtiva) && (
           <div className="px-linha"><span>Opção</span>
             <select className="cb-sel" value={String(m.valor ?? c.v)} onChange={(e) => upd({ valor: Number(e.target.value) })}>
               {[...new Set(c.opcoes)].map((v) => <option key={v} value={v}>{m.id === "afeta_outros" ? (v === 0 ? "Afeta apenas outros (+0/g)" : "Afeta você e outros (+1/g)") : m.id === "reacao" ? (v === 0 ? "Não reduz a ação (+0/g)" : `Reduz ${v} degrau${v > 1 ? "s" : ""} (+${v}/g)`) : `${v > 0 ? "+" : ""}${v}${c.k === "g" ? "/g" : ""}`}</option>)}
@@ -7284,7 +7316,7 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra, efsList
         )}
         {m.id === "limitado" && efsLista && efsLista.length > 0 && (
           <>
-            <label className="checkbox-row"><input type="checkbox" checked={!!m.limFalha} onChange={(e) => upd({ limFalha: e.target.checked, limEfeitoId: e.target.checked ? (m.limEfeitoId || efsLista[0].id) : undefined })} />Limitado a falhar no teste de…</label>
+            <label className="checkbox-row"><input type="checkbox" checked={!!m.limFalha} onChange={(e) => upd({ limFalha: e.target.checked, limEfeitoId: e.target.checked ? (m.limEfeitoId || efsLista[0].id) : undefined, ...(e.target.checked ? { limAtiva: false, limHabId: undefined } : {}) })} />Limitado a falhar no teste de…</label>
             {m.limFalha && (
               <div className="px-linha"><span>Efeito</span>
                 <select className="cb-sel" value={m.limEfeitoId || efsLista[0].id} onChange={(e) => upd({ limEfeitoId: e.target.value })}>
@@ -7293,6 +7325,18 @@ function InspetorMod({ item, grad, idx, onMudar, onRemover, passosExtra, efsList
               </div>
             )}
             {m.limFalha && <div className="field-note">Este efeito só pode ser rolado se o alvo falhar no teste de resistência do efeito escolhido.</div>}
+          </>
+        )}
+        {m.id === "limitado" && habsLista && habsLista.length > 0 && (
+          <>
+            <label className="checkbox-row"><input type="checkbox" checked={!!m.limAtiva} onChange={(e) => upd({ limAtiva: e.target.checked, limHabId: e.target.checked ? (m.limHabId || habsLista[0].id) : undefined, ...(e.target.checked ? { valor: -1, limFalha: false, limEfeitoId: undefined } : {}) })} />Limitado a ter habilidade ativada</label>
+            {m.limAtiva && (
+              <div className="px-linha"><span>Habilidade</span>
+                <select className="cb-sel" value={m.limHabId || habsLista[0].id} onChange={(e) => upd({ limHabId: e.target.value })}>
+                  {habsLista.map((h) => <option key={h.id} value={h.id}>{h.nome}</option>)}
+                </select>
+              </div>
+            )}
           </>
         )}
         {m.id === "area" && (
@@ -7496,7 +7540,7 @@ function InspetorUso({ u, variaveis, onMudar, onRemover, onMudarVariavel, onExcl
 }
 
 /* ---------- layout e mapa ---------- */
-const largMod = (t) => Math.min(210, Math.max(56, 26 + String(t).length * 6.0));
+const largMod = (t) => Math.min(240, Math.max(64, 36 + String(t).length * 7.2));
 function layoutMapa(blocos, nHab) {
   const ROOT_X = 8, ROOT_W = 84, EF_X = 118, EF_W = 124, EF_H = 62, MOD_X = 296, MOD_H = 42, GAP = 54;
   let cursor = 14, maxW = 100;
@@ -8162,7 +8206,7 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
     } else if (sel.fixo) {
       inspetor = <InspetorLegado id={sel.fixo} item={bSel.item} grad={gradDe(bSel)} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { atualizarBloco(bSel, removerFixoEfeito(bSel.item, sel.fixo)); setSel({ key: bSel.key }); }} />;
     } else if (sel.mod != null) {
-      inspetor = <InspetorMod efsLista={bSel.ativo ? efs.filter((e) => e.id !== bSel.item.id && !CATS_SEM_ROLAGEM.includes(e.categoria) && e.categoria !== "Outros") : undefined} passosExtra={(ataque.alcances || []).filter((x) => x.efeitoId === bSel.item.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1) * Math.max(1, x.vezes || 1), 0)} item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { removerModIdx(bSel, new Set([sel.mod])); setSel({ key: bSel.key }); }} />;
+      inspetor = <InspetorMod habsLista={habsLimitado} efsLista={bSel.ativo ? efs.filter((e) => e.id !== bSel.item.id && !CATS_SEM_ROLAGEM.includes(e.categoria) && e.categoria !== "Outros") : undefined} passosExtra={(ataque.alcances || []).filter((x) => x.efeitoId === bSel.item.id).reduce((t, x) => t + (x.tipo === "red" ? -1 : 1) * Math.max(1, x.vezes || 1), 0)} item={bSel.item} grad={gradDe(bSel)} idx={sel.mod} onMudar={(n) => atualizarBloco(bSel, n)} onRemover={() => { removerModIdx(bSel, new Set([sel.mod])); setSel({ key: bSel.key }); }} />;
     } else {
       inspetor = (
         <InspetorEfeito key={bSel.key} ent={ent} ativo={bSel.ativo} item={bSel.item} res={bSel.res} idCat={bSel.idCat}
@@ -8211,6 +8255,9 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
 }
 
 function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir, onDescer, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel, onLimparVariaveis }) {
+  const habsLimitado = [...(ent?.ataques || []).map((a) => ({ a, par: null })), ...gruposDaEntidade(ent).flatMap((x) => (x.ataques || []).map((a) => ({ a, par: x.nome })))]
+    .filter(({ a }) => a.id !== ataque.id && (a.tipo === "passiva" || a.sustentado))
+    .map(({ a, par }) => ({ id: a.id, nome: (a.nome || "(sem nome)") + (par ? ` — ${par}` : "") }));
   const [ajImgAberto, setAjImgAberto] = useState(false);
   const colapsado = !!ataque.colapsado;
   const setColapsado = (fnOuValor) => {
@@ -8620,7 +8667,7 @@ function PainelFicha({ f }) {
       let cd = null;
       if (ef.categoria === "Dano") cd = 15 + graduacaoEfetiva(ef, f);
       else if (["Aflição", "Enfraquecer", "Leitura Mental"].includes(ef.categoria)) cd = 10 + g;
-      else if (ef.categoria === "Camuflagem") cd = 15 + g;
+      else if (ef.categoria === "Camuflagem") cd = 8 + g;
       if (cd != null) efeitosDano.push({ hab: a.nome || "(sem nome)", cor: PAL_DASH[i % PAL_DASH.length], cat: ef.categoria, g, cd, dist: distribuicao(cd, resAlvo) });
     });
   });
@@ -9998,13 +10045,14 @@ function EntidadeItem({ onEditarHab, onAbrirPontoFraco, onConcederObjeto, onArra
                 const k = chaveAcaoDeNome(acaoDaHabilidade(a));
                 const corAcao = ACOES_TIPOS.find((t) => t.k === k)?.cor || "var(--muted)";
                 const travada = !!a.concedidoA;
+                const bloq = habilidadeBloqueada(a, e);
                 const semTeste = !!a.ferramentaImprov && !(a.ferramentaImprov.sucesso && a.ferramentaImprov.custoTestado === ppAtaque(a, e));
                 const podeConceder = editavel && ehHabilidadeObjeto(a);
                 return (
                   <div key={a.id} className="hab-wrap">
-                  <button type="button" className={"hab-card" + (passiva ? " passiva" : "") + (ativa ? " ativo" : "") + (itemQuebrado(a) ? " item-quebrado" : "") + ((travada || semTeste) ? " hab-travada" : "")}
-                    disabled={travada || semTeste || (passiva && !editavel)} onClick={() => (passiva ? (editavel ? alternarPassiva(a) : null) : abrirAtaque(a))}
-                    title={travada ? "Objeto concedido a outra ficha" : passiva ? (editavel ? (ativa ? "Clique para desativar" : "Clique para ativar") : "") : "Clique para usar"}>
+                  <button type="button" className={"hab-card" + (passiva ? " passiva" : "") + (ativa ? " ativo" : "") + (itemQuebrado(a) ? " item-quebrado" : "") + ((travada || semTeste || bloq) ? " hab-travada" : "")}
+                    disabled={travada || semTeste || bloq || (passiva && !editavel)} onClick={() => (passiva ? (editavel ? alternarPassiva(a) : null) : abrirAtaque(a))}
+                    title={bloq ? "Bloqueada: ative a habilidade exigida" : travada ? "Objeto concedido a outra ficha" : passiva ? (editavel ? (ativa ? "Clique para desativar" : "Clique para ativar") : "") : "Clique para usar"}>
                     {a.imagem ? <div className="hab-img-wrap"><ImgAj className="hab-img" src={a.imagem} aj={a.imagemAj} /></div> : <div className="hab-faixa" />}
                     <div className="hab-corpo">
                       <div className="hab-nome">{a.nome || "(sem nome)"}</div>
@@ -10017,6 +10065,7 @@ function EntidadeItem({ onEditarHab, onAbrirPontoFraco, onConcederObjeto, onArra
                         {a.sustentado && <span className="hab-tag">Sustentada{a.acaoSustentar && a.acaoSustentar !== "Nenhuma" ? ` · ${rotuloAcaoCurto(a.acaoSustentar)}` : ""}</span>}
                         {itemQuebrado(a) && <span className="hab-tag vida">Quebrado</span>}
                         {semTeste && <span className="hab-tag">Sem teste</span>}
+                        {bloq && <span className="hab-tag vida">🔒 Bloqueada</span>}
                         {travada && <span className="hab-tag vida">🔒 Com {(entidades || []).find((x) => x.id === a.concedidoA)?.nome || "outra ficha"}</span>}
                         {a.concedidoDe && <span className="hab-tag">Concedido por {a.concedidoDe.donoNome}</span>}
                       </div>
