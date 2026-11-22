@@ -7956,6 +7956,9 @@ function MapaPoder({ ataque, blocos, habMods, selecionado, onSel, onNovo, total,
 const modKey = (b, m) => (m.fixa ? `${b.key}:f${m.id}` : `${b.key}:m${m.idx}`);
 
 function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArremesso, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel, onLimparVariaveis }) {
+  const habsLimitado = [...(ent?.ataques || []).map((a) => ({ a, par: null })), ...gruposDaEntidade(ent).flatMap((x) => (x.ataques || []).map((a) => ({ a, par: x.nome })))]
+    .filter(({ a }) => a.id !== ataque.id && (a.tipo === "passiva" || a.sustentado))
+    .map(({ a, par }) => ({ id: a.id, nome: (a.nome || "(sem nome)") + (par ? ` — ${par}` : "") }));
   const efs = ataque.efeitos || [];
   const pas = passivosDe(ataque);
   const ehPassiva = efs.length === 0 && pas.length > 0;
@@ -8255,9 +8258,6 @@ function ConstrutorVisual({ ataque, ent, calc, onMudar: onMudarRaw, onCriarArrem
 }
 
 function AtaqueForm({ ent, ataque, onMudar, onRemover, onCriarArremesso, onSubir, onDescer, variaveis = [], onCriarVariavel, onMudarVariavel, onExcluirVariavel, onLimparVariaveis }) {
-  const habsLimitado = [...(ent?.ataques || []).map((a) => ({ a, par: null })), ...gruposDaEntidade(ent).flatMap((x) => (x.ataques || []).map((a) => ({ a, par: x.nome })))]
-    .filter(({ a }) => a.id !== ataque.id && (a.tipo === "passiva" || a.sustentado))
-    .map(({ a, par }) => ({ id: a.id, nome: (a.nome || "(sem nome)") + (par ? ` — ${par}` : "") }));
   const [ajImgAberto, setAjImgAberto] = useState(false);
   const colapsado = !!ataque.colapsado;
   const setColapsado = (fnOuValor) => {
