@@ -130,6 +130,7 @@ export const FALHAS = [
   M("incontrolavel", "Incontrolável", "g", -2, { opcoes: [-2, -3] }),
   M("perceptivel", "Perceptível", "f", -1),
   M("ponto_fraco", "Ponto Fraco", "g", -4),
+  M("explicar_pf", "Explicar Ponto Fraco", "g", -1),
   M("retroalimentacao", "Retroalimentação", "g", -3),
   M("peculiaridade", "Peculiaridade", "g", -1),
 ];
@@ -143,7 +144,7 @@ export const EXCLUSIVOS = {
   comunicacao: [M("rapida", "Rápida", "g", 1), M("seletiva_com", "Seletiva", "g", 1), M("sutil_com", "Sutil", "g", 1), M("unilateral", "Unilateral", "g", -1)],
   controle_sorte: [M("azar", "Azar", "g", 1), M("sortudo", "Sortudo", "g", 1), M("ataque_sorte", "Ataque", "g", -1), M("azarado", "Azarado", "g", -1), M("resistir_sorte", "Resistir", "g", -1)],
   crescimento: [M("musculos_densos", "Músculos Densos", "g", 1), M("so_tamanho", "Só Tamanho", "f", 1), M("pesado_demais", "Pesado Demais", "g", -2)],
-  criar: [M("continuo_criar", "Contínuo", "g", 2, { muda: "duracao" }), M("dimensional", "Dimensional", "g", 5), M("estacionario", "Estacionário", "g", 1), M("impenetravel", "Impenetrável", "g", 1, { mult: true }),
+  criar: [M("continuo_criar", "Contínuo", "g", 2, { muda: "duracao" }), M("dimensional", "Dimensional", "g", 5), M("baseado_forca", "Baseado em Força", "g", -1), M("estacionario", "Estacionário", "g", 1), M("impenetravel", "Impenetrável", "g", 1, { mult: true }),
     M("sutil_criar", "Sutil", "g", 1), M("proporcional", "Proporcional", "g", -1)],
   cura: [M("energizante", "Energizante", "g", 2), M("empatico", "Empático", "f", -1), M("temporario", "Temporário", "g", -2)],
   deflexao: [M("que_vai_volta", "O Que Vai Volta", "g", 1), M("multitarefas", "Multitarefas", "g", 1, { mult: true })],
@@ -180,7 +181,7 @@ export function modsDisponiveis(efeitoId) {
 
 /* ---------- Efeito Colateral: custo por grau da condição (dobra se automático) ---------- */
 const COLATERAL_GRAU = {
-  1: ["Adoecido", "Compelido", "Impedido", "Machucado", "Molhado", "Prejudicado", "Prendendo a Respiração", "Surdo", "Tonto", "Vulnerável", "Agarrado", "Caído"],
+  1: ["Adoecido", "Chamuscado", "Compelido", "Impedido", "Machucado", "Molhado", "Prejudicado", "Prendendo a Respiração", "Surdo", "Tonto", "Vulnerável", "Agarrado", "Caído"],
   2: ["Atordoado", "Debilitado", "Em Chamas", "Envenenado", "Imóvel", "Indefeso", "Sangrando", "Sufocando", "Cego", "Transe"],
   3: ["Controlado", "Zetsu", "Amarrado", "Morrendo", "Paralisado", "Nulificado"],
 };
@@ -210,7 +211,8 @@ export function acaoDoEfeito(acaoBase, mods) {
   return ESCALA_ACAO[Math.max(0, Math.min(3, i + sobe - desce))];
 }
 const ESCALA_ALCANCE = ["pessoal", "perto", "distancia", "percepcao"];
-export function alcanceDoEfeito(alcBase, mods) {
+export function alcanceDoEfeito(alcBase0, mods) {
+  const alcBase = alcBase0 === "graduacao" && mods.some((m) => m.id === "ataque") ? "distancia" : alcBase0; // Teleporte com Ataque vira um ataque à distância
   const i = ESCALA_ALCANCE.indexOf(alcBase);
   if (i < 0) return alcBase;
   let j = i;
@@ -278,6 +280,7 @@ export function calcularHabilidade(ctx, hab) {
       const falta = ef.grad - Math.max(nivel, ef.limiteBase || 0);
       if (falta > 0) mods.push(resolverMod({ id: "sobrecarregado", vezes: falta, derivado: true }));
     }
+    if (mods.some((m) => m.id === "baseado_forca") && !mods.some((m) => m.id === "dimensional")) erros.push("Criar: Baseado em Força exige o extra Dimensional.");
     if (mods.some((m) => m.id === "preso_corpo") && !mods.some((m) => m.id === "invocar_objeto")) erros.push("Invocar: Preso ao Corpo exige o extra Invocar Objeto.");
     const tiposEf = new Set([tipoEf, ...mods.map((m) => m.tipo).filter(Boolean)]);
     tiposEf.forEach((t) => tiposHab.add(t));
@@ -363,7 +366,7 @@ export const REGRAS = {
   ataque: () => "Ataque: o efeito de alcance pessoal passa a exigir jogada de ataque contra o alvo.",
   automatizado: () => "Automatizado: sem ação; ativa sempre que o alvo perde PV ou é selecionado como alvo, antes de qualquer rolagem.",
   contagioso: () => "Contagioso: o efeito pode passar para quem tocar/for tocado pelo alvo.",
-  indireto: () => "Indireto: o efeito pode partir de um ponto diferente de você.",
+  indireto: () => "Indireto: o efeito pode se originar de um ponto que não seja você, ignorando cobertura. Ao declarar o ataque, você testa Percepção (CD 20 + graduação, −5 a cada uso no mesmo alvo); se falhar, o alvo fica Vulnerável a esse efeito. Distância máxima de origem = graduação de distância do efeito.",
   multiataque: () => "Multiataque: ataca vários alvos (−5 no mesmo alvo / −2 em outro alvo).",
   penetrante: (n) => `Penetrante ${n}: ignora ${n} ponto(s) de Proteção/redução de dano do alvo (aplicado automaticamente).`,
   permear: () => "Permear: atravessa barreiras e cobertura.",
@@ -393,7 +396,7 @@ export const REGRAS = {
   incontrolavel: (n, v) => (v ?? -2) <= -3 ? "Incontrolável (sem teste): sempre foge do controle; o mestre decide." : "Incontrolável: ao usar, teste de Vontade CD 10 + graduação; falhar = o mestre decide o efeito (automático).",
   perceptivel: () => "Perceptível: o efeito é muito visível/audível.",
   ponto_fraco: () => "Ponto Fraco: o efeito tem uma fraqueza que anula o poder quando atingida.",
-  retroalimentacao: () => "Retroalimentação: você também sofre o efeito (lembrete automático no registro).",
+  retroalimentacao: () => "Retroalimentação: se o seu efeito for atingido por um ataque ou condição, você também sofre o mesmo dano ou condição.",
   peculiaridade: () => "Peculiaridade: o efeito tem uma limitação peculiar combinada com o mestre.",
 };
 export function regraDoMod(id, vezes, valor, grad, ctx) {
@@ -415,7 +418,7 @@ Object.assign(REGRAS, {
   amplo: () => "Amplo: ao enfraquecer, você também pode escolher uma habilidade do alvo (o nível dela é reduzido).", persistente: () => "Persistente: o enfraquecimento não se recupera sozinho.", simultaneo: (n) => `Simultâneo: você escolhe ${1 + n} opções da lista de Enfraquecer.`,
   concentracao_nul: () => "Concentração: o nulificar dura enquanto você se concentra.",
   quicar: (n) => `Quicar ${n}: divide o salto em ${n + 1} saltos.`, poder_total: () => "Poder Total: o salto gasta todo o seu turno.",
-  continuo_criar: () => "Contínuo: os objetos permanecem sem sustentar.", dimensional: () => "Dimensional: cria uma dimensão de bolso.", estacionario: () => "Estacionário: o objeto não pode ser movido.", impenetravel: (n) => `Impenetrável ${n}: +${n} de resistência.`, proporcional: () => "Proporcional: resistência baseada no volume.",
+  continuo_criar: () => "Contínuo: os objetos permanecem sem sustentar.", dimensional: () => "Dimensional: cria uma dimensão de bolso.", baseado_forca: () => "Baseado em Força: o que está na dimensão de bolso pesa como se você o carregasse; o limite é a graduação de massa igual à sua Força.", explicar_pf: () => "Explicar Ponto Fraco: quem enfrenta o poder sempre percebe o ponto fraco.", estacionario: () => "Estacionário: o objeto não pode ser movido.", impenetravel: (n) => `Impenetrável ${n}: +${n} de resistência.`, proporcional: () => "Proporcional: resistência baseada no volume.",
   mudar_velocidade: () => "Mudar a Velocidade: chega parado.", portal: () => "Portal: abre um portal sustentado.",
   horda: (n) => `Horda ${n}: ${2 ** (n || 1)} criaturas com a fração dos pontos.`, ativo: () => "Ativo: a criatura age com ação completa.", atitude: () => "Atitude: a criatura pode desobedecer.",
   alcance_invocar: (n) => `Alcance ${n}: invoca mais longe.`, preso_corpo: () => "Preso ao Corpo: o objeto não pode ser desarmado.", persistente_inv: () => "Persistente: a criatura permanece sem sustentar.",
@@ -505,7 +508,7 @@ export const DESC_MOD = {
   itens_perdidos: "O equipamento que você carrega cai ou se destrói ao se transformar. −1 ponto fixo. (Sem Itens Perdidos nem Equipamento Incorporado, os itens ficam na ficha base, como se tivessem se transformado junto.)",
   efeito_alternativo: "A habilidade pode trocar este efeito por outro de custo igual ou menor (um por vez). +1 ponto fixo.",
   efeito_secundario: "O efeito se repete automaticamente no turno seguinte do alvo, sem nova rolagem de acerto. +5/g.",
-  indireto: "O efeito pode partir de um ponto diferente de você, em outra direção. +3/g; conta como Emissor.",
+  indireto: "Um efeito à distância com este modificador pode se originar de um ponto que não seja o usuário, ignorando cobertura entre o usuário e o alvo, como paredes e outras barreiras. Ao declarar um ataque em um alvo com um efeito indireto, ele deve ser bem sucedido em um Teste de Percepção (CD 20 + graduação do efeito). Ao falhar, o alvo é considerado Vulnerável para esse efeito. A cada vez que esse efeito é usado no mesmo alvo, a CD diminui em −5. A distância máxima que um efeito indireto pode aparecer é a graduação de distância do efeito. Conta como um poder de Emissor. +3/g.",
   multiataque: "Permite um ataque extra por ataque: contra o mesmo alvo com −5 no acerto, ou contra outro alvo engajado com −2. Não combina com Dividido. +2/g.",
   rebote: "Você sofre o mesmo dano e faz o mesmo teste de resistência: metade dos PV com −3, todo o dano com −6. Proteção não reduz.",
   penetrante: "O dano ignora 1 ponto de Proteção/redução de dano do alvo por vez. +1/g, pode ser comprado várias vezes.",
@@ -538,14 +541,14 @@ export const DESC_MOD = {
   incontrolavel: "O efeito pode fugir ao seu controle: teste de Vontade (CD 10 + graduação) para controlá-lo; na opção −3/g não há teste e o mestre decide.",
   perceptivel: "O efeito é muito visível/audível. −1 fixo.",
   ponto_fraco: "O poder tem uma fraqueza: quem notá-la (Investigação contra sua Enganação) vê o texto do ponto fraco. −4/g.",
-  retroalimentacao: "Você também sofre o efeito (ou parte dele) ao usá-lo. −3/g.",
+  retroalimentacao: "Se o seu efeito for atingido por um ataque ou condição, você também sofre o mesmo dano ou condição. −3/g.",
   peculiaridade: "O efeito é mais fraco/forte numa situação peculiar (ex.: alvo sofreu dano no turno anterior dá +2 para resistir). −1/g.",
   concentracao_afl: "A aflição dura enquanto você se concentrar. +1/g.",
   condicao_extra: "O grau da aflição aplica uma condição adicional. +1/g.",
   cumulativo_afl: "Impor de novo o mesmo grau (1 ou 2) num alvo que já sofre a condição faz a aflição subir um grau. +2/g.",
   resistencia_alt_afl: "O alvo pode resistir à aflição com Esquiva ou Aparar. +1/g.",
   grau_limitado_afl: "A aflição só chega até o grau 2 (−1/g) ou 1 (−2/g).",
-  recuperacao_instantanea: "A condição acaba no começo do turno do alvo (com o dano antes, se Em Chamas/Sangrando). −1/g; não vale em sustentada nem em Caído.",
+  recuperacao_instantanea: "No teste repetido ao fim de cada turno do alvo para sair da condição, ele sempre passa. −1/g; não vale em sustentada nem em Caído.",
   sustentado_afl: "A aflição só dura enquanto você sustentar. −1/g.",
   afeta_outros_cam: "A camuflagem pode ser aplicada em outra pessoa. +1/g.",
   ataque_cam: "A camuflagem exige um acerto para afetar um alvo. +0/g.",
@@ -569,6 +572,8 @@ export const DESC_MOD = {
   so_tamanho: "O efeito dá só o tamanho, sem Força e Vigor extras. +1 fixo.",
   pesado_demais: "Seu peso cresce junto, dificultando a mobilidade. −2/g.",
   continuo_criar: "Os objetos criados permanecem sem sustentar, até serem destruídos ou dispensados. +2/g.",
+  baseado_forca: "O que está dentro da sua dimensão de bolso pesa como se você estivesse carregando. O limite do que cabe é a graduação de massa igual à sua Força. Só com Dimensional. −1/g.",
+  explicar_pf: "Quem enfrenta o poder sempre percebe o ponto fraco, sem teste. Só com a falha Ponto Fraco. −1/g.",
   dimensional: "Cria uma dimensão de bolso (tamanho = graduação −2); efeitos aplicados no Criar atingem todos dentro; acesso só por Teleporte; se parar de sustentar, tudo é expulso. +5/g.",
   estacionario: "O objeto criado não pode ser movido (resiste com Força igual à graduação). +1/g.",
   impenetravel: "+1 de resistência do objeto por vez. +1/g, pode repetir.",
