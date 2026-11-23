@@ -69,7 +69,7 @@ export const EFEITOS = [
   // efeitos que já existiam no app como "passivos" mas não estão nos PDFs
   E("natacao", "Natação", 1, "livre", "pessoal", "sustentado", "coringa", { legado: true }),
   E("bonus_pericia", "Característica Aumentada (Bônus de Perícia)", 1, "livre", "pessoal", "sustentado", "coringa", { legado: true, escondido: true }),
-  E("caracteristica", "Característica", 1, "nenhuma", "nenhum", "permanente", "coringa", { legado: true }),
+  E("caracteristica", "Característica", 1, "nenhuma", "nenhum", "permanente", "coringa", { legado: true, escondido: true }),
 ];
 export const EFEITO_POR_ID = Object.fromEntries(EFEITOS.map((e) => [e.id, e]));
 
@@ -259,7 +259,10 @@ function resolverMod(it) {
  * Retorna { total, bruto, efeitos:[...], ajustesNen:[...], fixos:[...], avisos:[], erros:[] }
  */
 // Efeitos com limite de graduação fixo (múltiplo do nível); Sobrecarregado não ultrapassa
-export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, membros_extras: 1, variavel: 1, encolhimento: 0.5, crescimento: 0.5, metamorfose: 1, velocidade: 2, voo: 2, protecao: 2 };
+export const LIMITE_FIXO = { controle_sorte: 1, deflexao: 1, membros_extras: 1, variavel: 1, encolhimento: 0.5, crescimento: 0.5, metamorfose: 1, velocidade: 2, voo: 2 };
+/** limite base (antes de Sobrecarregado) = multiplicador × nível */
+export const LIMITE_BASE_MULT = { protecao: 2 };
+const baseNivel = (id, nivel) => nivel * (LIMITE_BASE_MULT[id] || 1);
 export const limiteFixoDe = (id, nivel) => (LIMITE_FIXO[id] ? Math.max(1, Math.floor(LIMITE_FIXO[id] * nivel)) : null);
 export function calcularHabilidade(ctx, hab) {
   const { nivel = 1, tipoNen = null } = ctx;
@@ -279,7 +282,7 @@ export function calcularHabilidade(ctx, hab) {
     // Sobrecarregado automático: a graduação acima do limite vira o extra (exceto efeitos de limite fixo)
     for (let k = mods.length - 1; k >= 0; k--) if (mods[k].id === "sobrecarregado") mods.splice(k, 1);
     if (!LIMITE_FIXO[ef.id] && !ef.semLimite) {
-      const falta = ef.grad - Math.max(nivel, ef.limiteBase || 0);
+      const falta = ef.grad - Math.max(baseNivel(ef.id, nivel), ef.limiteBase || 0);
       if (falta > 0) mods.push(resolverMod({ id: "sobrecarregado", vezes: falta, derivado: true }));
     }
     if (mods.some((m) => m.id === "baseado_forca") && !mods.some((m) => m.id === "dimensional")) erros.push("Criar: Baseado em Força exige o extra Dimensional.");
@@ -309,7 +312,7 @@ export function calcularHabilidade(ctx, hab) {
     if (gradGratis > 0 && (mods.length > 0 || fixosEf.length > 0)) custo = Math.max(1, custo);
     const sobre = mods.filter((m) => m.id === "sobrecarregado").reduce((s, m) => s + m.vezes, 0);
     const mult = LIMITE_FIXO[ef.id];
-    const limite = mult ? limiteFixoDe(ef.id, nivel) : Math.max(nivel, ef.limiteBase || 0) + sobre; // Dano baseado em atributo: a parte do atributo não precisa de Sobrecarregado
+    const limite = mult ? limiteFixoDe(ef.id, nivel) : Math.max(baseNivel(ef.id, nivel), ef.limiteBase || 0) + sobre; // Dano baseado em atributo: a parte do atributo não precisa de Sobrecarregado
     if (!ef.semLimite && ef.grad > limite) erros.push(mult ? `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (Sobrecarregado não passa deste limite).` : `${cat?.nome || ef.id}: graduação ${ef.grad} acima do limite ${limite} (nível ${nivel}${sobre ? ` + ${sobre} Sobrecarregado` : ""}).`);
     let dica = null;
     if (c <= 0 && !gradGratis) {
